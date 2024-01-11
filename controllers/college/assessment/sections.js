@@ -4,6 +4,9 @@ const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const Assessments = require("../../../models/college/assessment/assessments");
 const College = require("../../../models/college/collegeModel");
 
+
+const ErrorHandler = require("../../../utils/errorHandler");
+
 // ===================================================| Create Section |===================================================================
 
 exports.createSection = catchAsyncErrors(async (req, res, next) => {

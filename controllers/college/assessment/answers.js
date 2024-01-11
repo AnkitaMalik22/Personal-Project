@@ -43,7 +43,7 @@ const getAnswerByQuestionId = async (req, res) => {
   }
 };
 
-addMarksLongAnswerStudent = catchAsyncErrors(async (req, res, next) => {
+ const addMarksLongAnswerStudent = catchAsyncErrors(async (req, res, next) => {
   const { questionId } = req.params;
   const { studentId, marks } = req.body;
   const question = await Questions.findById(questionId);
