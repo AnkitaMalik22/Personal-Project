@@ -1,7 +1,7 @@
 const {Student} = require('../../models/student/studentModel');
 const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
 const sendToken = require('../../utils/jwtToken');
-const ErrorHandler = require('../../utils/errorhandler');
+const ErrorHandler = require('../../utils/errorHandler');
 const crypto = require('crypto');
 
 const College = require('../../models/college/collegeModel');

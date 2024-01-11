@@ -1,6 +1,6 @@
 const Job = require("../../models/company/jobModel");
 const catchAsyncErrors = require("../../middlewares/catchAsyncErrors");
-const ErrorHandler = require("../../utils/errorhandler");
+const ErrorHandler = require("../../utils/errorHandler");
 const Assessment = require("../../models/college/assessment/assessments");
 const { Student } = require("../../models/student/studentModel");
 

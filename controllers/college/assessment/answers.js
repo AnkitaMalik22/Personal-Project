@@ -1,6 +1,8 @@
 const Questions = require("../../../models/college/assessment/questions");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 
+const ErrorHandler = require("../../../utils/errorHandler");
+
 // =============================== COLLEGE && COMPANY ==========================================================
 
 // ======================= SET ANSWER | LONG ANS TYPE || COLLEGE && COMPANY =======================================
