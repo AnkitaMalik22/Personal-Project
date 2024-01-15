@@ -4,13 +4,16 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
 const collegeSchema = new mongoose.Schema({
+  role: {
+    type: String,
+    default: 'college',
+  },
   avatar: String,
   CollegeName : {
     type: String,
     required: [true, 'Please Enter Your College Name'],
     unique: true,
   },
-
   Email: {
     type: String,
     required: [true, 'Please Enter Your Email'],
@@ -113,4 +116,5 @@ collegeSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
-module.exports = mongoose.model('College', collegeSchema);
+const College = mongoose.model('College', collegeSchema);
+module.exports = College;

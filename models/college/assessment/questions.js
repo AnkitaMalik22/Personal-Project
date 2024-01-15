@@ -11,48 +11,44 @@ const questionsSchema = new Schema({
     type: Array,
     default: [],
   },
-  // For Long Ans Type
   Answer: {
     type: String,
     default: '',
   },
-  // For MCQ
+
+ //---------- For Students -----------
+
+ McqAnswers: [{
+  studentId : {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Student",
+  },
   AnswerIndex: {
     type: Number,
     default: -1,
   },
-  //---------- For Students -----------
-  McqAnswers: [{
-    studentId : {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
-    },
-    AnswerIndex: {
-      type: Number,
-      default: -1,
-    },
-    Marks : {
-      type: Number,
-      default: 0,
-    },
-  }],
+  Marks : {
+    type: Number,
+    default: 0,
+  },
+}],
 
-  LengthyAnswers: [{
+LengthyAnswers: [{
 
-    studentId : {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
-    },
-    AnswerText: {
-      type: String,
-      default: '',
-    },
-    Marks : {
-      type: Number,
-      default: 0,
-    },
-  }],
-  // --------------------------------
+  studentId : {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Student",
+  },
+  AnswerText: {
+    type: String,
+    default: '',
+  },
+  Marks : {
+    type: Number,
+    default: 0,
+  },
+}],
+// ----------------------------
 
   // MCQAnswer: {
   //   type: mongoose.Schema.Types.ObjectId,

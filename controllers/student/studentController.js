@@ -1,7 +1,7 @@
 const {Student} = require('../../models/student/studentModel');
 const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
 const sendToken = require('../../utils/jwtToken');
-const ErrorHandler = require('../../utils/errorHandler');
+const ErrorHandler = require('../../utils/errorhandler');
 const crypto = require('crypto');
 
 const College = require('../../models/college/collegeModel');
@@ -25,7 +25,9 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
 
 exports.getStudent = catchAsyncErrors(async (req, res, next) => {
 
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findById(req.user.id);
+
+    console.log(req.user)
     
     if (!student) {
         return next(new ErrorHandler('Student not found', 404));
@@ -185,7 +187,7 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- UPDATE A STUDENT --------------------------------------------------------
 
 exports.updateProfileStudent = catchAsyncErrors(async (req, res, next) => {
-  let student = await Student.findById(req.params.id);
+  let student = await Student.findById(req.user.id);
   
     if (!student) {
       return next(new ErrorHandler('Student not found', 404));
@@ -212,7 +214,7 @@ exports.updateProfilePictureStudent = catchAsyncErrors(async (req, res, next) =>
     crop: "scale",
   });
 
-  const student = await Student.findByIdAndUpdate(  req.params.id,
+  const student = await Student.findByIdAndUpdate(  req.user.id,
     {
       avatar: {
         public_id: myCloud.public_id,
@@ -240,7 +242,7 @@ exports.updateProfilePictureStudent = catchAsyncErrors(async (req, res, next) =>
 
 exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
 
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findById(req.user.id);
   
     if (!student) {
       return next(new ErrorHandler('Student not found', 404));
@@ -321,7 +323,7 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 
 // -- Your Assessments
 exports.getYourAssessments = catchAsyncErrors(async (req, res, next) => {
-  const student = await Student.findById(req.params.id).populate("Assessments");
+  const student = await Student.findById(req.user.id).populate("Assessments");
 
   res.status(200).json({
     success: true,
@@ -343,7 +345,7 @@ exports.getNewJobs = catchAsyncErrors(async (req, res, next) => {
 // -- RECOMMENDED JOBS
 
 exports.getRecommendedJobs = catchAsyncErrors(async (req, res, next) => {
-  const { studentId } = req.params;
+  const  studentId  = req.user.id;
 
   // get the student's skills for the studentId
   const student = await Student.findById(studentId).select('Skills');
@@ -365,7 +367,7 @@ exports.getRecommendedJobs = catchAsyncErrors(async (req, res, next) => {
 // GET RESULT By Student ID
 
 exports.getResultByStudentId = catchAsyncErrors(async (req, res, next) => {
-  const student = await Student.findById(req.params.id).populate("Score");
+  const student = await Student.findById(req.user.id).populate("Score");
 
   if (!student) {
     return next(new ErrorHandler("Student not found", 404));

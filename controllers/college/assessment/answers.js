@@ -1,7 +1,7 @@
 const Questions = require("../../../models/college/assessment/questions");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 
-const ErrorHandler = require("../../../utils/errorHandler");
+const ErrorHandler = require("../../../utils/errorhandler");
 
 // =============================== COLLEGE && COMPANY ==========================================================
 
@@ -186,6 +186,7 @@ const getLongAnswerStudent = catchAsyncErrors(async (req, res, next) => {
 
 const setAnswerIndexStudent = catchAsyncErrors(async (req, res, next) => {
   const { questionId } = req.params;
+  console.log(req.user)
   const { answerIndex, studentId } = req.body;
   const question = await Questions.findById(questionId);
 
@@ -193,7 +194,7 @@ const setAnswerIndexStudent = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Question not found", 404));
   }
 
-  question.MCQAnswer.push({
+  question.MCQAnswers.push({
     studentId: studentId,
     AnswerIndex: answerIndex,
   });
@@ -217,7 +218,7 @@ const checkAnswerIndexStudent = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Question not found", 404));
   }
 
-  let answer = question.MCQAnswer.filter(
+  let answer = question.MCQAnswers.filter(
     (answer) => answer.studentId === studentId
   );
 
@@ -237,7 +238,7 @@ const addMarksMCQ = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Question not found", 404));
   }
 
-  let answer = question.MCQAnswer.filter(
+  let answer = question.MCQAnswers.filter(
     (answer) => answer.studentId === studentId
   );
 
@@ -263,7 +264,7 @@ const updateMarksMCQ = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Question not found", 404));
   }
 
-  let answer = question.MCQAnswer.filter(
+  let answer = question.MCQAnswers.filter(
     (answer) => answer.studentId === studentId
   );
 

@@ -38,16 +38,15 @@ const dashboardSchema = new mongoose.Schema({
 });
 
 const companySchema = new mongoose.Schema({
-  googleId:
-  {
-    type: String,
-    required: false,
-  },
   Email: {
     type: String,
     required: [true, 'Please provide your email'],
     unique: true,
     lowercase: true,
+  },
+  role: {
+    type: String,
+    default: 'company',
   },
   FirstName: {
     type: String,
@@ -59,7 +58,7 @@ const companySchema = new mongoose.Schema({
   },
   Password: {
     type: String,
-    // required: [true, 'Please provide your password'],
+    required: [true, 'Please provide your password'],
     minlength: 8,
     select: false,
   },

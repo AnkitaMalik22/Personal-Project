@@ -46,7 +46,7 @@ const sectionSchema = new Schema({
   QuestionBankID: Number,
   Status: String,
   TotalMarks: Number,
-
+  // Students Enrolled in the Test
   Student :[{
     studentId : {
       type: mongoose.Schema.Types.ObjectId,
@@ -66,7 +66,6 @@ const sectionSchema = new Schema({
     },
 
   }]
-
 });
 
 const Section = mongoose.model('Section', sectionSchema);

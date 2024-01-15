@@ -1,38 +1,11 @@
-const ErrorHandler = require("../../utils/errorHandler");
+const ErrorHandler = require("../../utils/errorhandler");
 const catchAsyncErrors = require("../../middlewares/catchAsyncErrors");
 const Company = require("../../models/company/companyModel");
 const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
 
-const configureGoogleAuth = require("../../utils/configureGoogleAuth");
-const { config } = require("dotenv");
-
 // ================================================================================================================================
-
-// ================================================== google login ================================================================
-
-// exports.googleLogin = catchAsyncErrors(async (req, res, next) => {
-
-//   configureGoogleAuth(Company, process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_CALLBACK_URL);
-
-//   passport.authenticate("google", { scope: ["profile", "email"] });
-
-//   passport.authenticate("google", {
-//     successRedirect: "/dashboard",
-//     failureRedirect: "/login",
-//   });
-
-//   res.status(200).json({
-//     success: true,
-//     message: "Logged In",
-//   });
-// });
-
-
-
-
-  
 
 // =================================================== REGISTER Company ===========================================================
 

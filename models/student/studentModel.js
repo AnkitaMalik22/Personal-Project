@@ -83,6 +83,10 @@ const studentSchema = new mongoose.Schema({
     required: [true, "Please Enter Your Email"],
     unique: true,
   },
+  role: {
+    type: String,
+    default: "student",
+  },
   FirstName: {
     type: String,
     required: [true, "Please Enter Your First Name"],
@@ -128,6 +132,11 @@ const studentSchema = new mongoose.Schema({
       ref: "Assessments",
     },
   ],
+  OnGoingAssessment: 
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assessments",
+    },
   PhoneNumber: String,
   Address: String,
   Website: String,

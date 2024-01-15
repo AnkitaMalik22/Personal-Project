@@ -4,9 +4,6 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "./config/config.env" });
 const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
-const cors = require("cors");
-
-const passport = require('passport');
 
 
 
@@ -19,17 +16,6 @@ const PORT = process.env.PORT || 3000;
 connectToMongoDB();
 
 // ======================================================= MIDDLEWARES ===================================================
-
-
-app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin:"http://localhost:3000",
-  methods:"GET,POST,PUT,DELETE",
-  credentials:true
-}));
-
-// app.use(passport.initialize());
-// app.use(passport.session());
 
 app.use(express.json());
 app.use(cookieParser());
@@ -49,7 +35,6 @@ app.use("/api/company", companyRoutes);
 app.get("/test", (req, res) => {
   res.send("API is running");
 });
-
 
 
 
