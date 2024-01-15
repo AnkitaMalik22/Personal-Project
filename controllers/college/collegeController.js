@@ -79,7 +79,7 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 // ==================================================== GET COLLEGE PROFILE ===========================================================
 // Get College Details
 exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
-  const college = await College.findById(req.query.id);
+  const college = await College.findById(req.user.id);
 
   res.status(200).json({
     success: true,

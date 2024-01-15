@@ -96,7 +96,7 @@ exports.deleteCompany = catchAsyncErrors(async (req, res, next) => {
 // ==================================================== GET Company PROFILE ===========================================================
 // Get Company Details
 exports.getCompanyDetails = catchAsyncErrors(async (req, res, next) => {
-  const company = await Company.findById(req.params.companyId);
+  const company = await Company.findById(req.user.id);
 
 
   res.status(200).json({
