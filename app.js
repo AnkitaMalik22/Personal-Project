@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "./config/config.env" });
 const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
+const cors = require("cors");
 
 
 
@@ -17,6 +18,12 @@ connectToMongoDB();
 
 // ======================================================= MIDDLEWARES ===================================================
 
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://65a11283c51a3ba9c2cdb954--mellifluous-conkies-ba7b88.netlify.app/'],
+  credentials: true
+}));
+
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
