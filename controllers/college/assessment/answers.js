@@ -16,6 +16,10 @@ const setAnswer = async (req, res) => {
     if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
+// check if this user created this question or not
+    if (question.college !== req.user.id || question.company !== req.user.id) {   
+      return res.status(401).json({ error: "Unauthorized" });
+    }
     question.Answer = req.body.answer;
     await question.save();
 

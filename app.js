@@ -32,7 +32,7 @@ app.use("/api/college", collegeRoutes );
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student",studentRoutes );
 app.use("/api/company", companyRoutes);
-app.get("/test", (req, res) => {
+app.get("/", (req, res) => {
   res.send("API is running");
 });
 

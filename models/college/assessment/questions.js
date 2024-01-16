@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const questionsSchema = new Schema({
+  assessment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Assessment',
+  },
   section: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Section',
@@ -15,6 +19,18 @@ const questionsSchema = new Schema({
     type: String,
     default: '',
   },
+
+  AnswerIndex: {
+    type: Number,
+    default: -1,
+  },
+  QuestionType: {
+    type: String,
+    default: '',
+  },
+  QuestionBankID: Number,
+  Status: String,
+  TotalMarks: Number,
 
  //---------- For Students -----------
 
@@ -60,6 +76,26 @@ LengthyAnswers: [{
   // },
   SectionTime: Number, // Assuming time is in minutes
   SectionHeading: String,
+
+
+    // if this is an college assessment - question
+    college: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'College',
+    },
+    // if this is an company assessment - question
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+    },
+    job: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Job',
+    },
+    createdByCompany: {
+      type: Boolean,
+      default: false,
+    },
 });
 
 const Questions = mongoose.model('Questions', questionsSchema);

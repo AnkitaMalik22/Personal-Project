@@ -65,7 +65,26 @@ const sectionSchema = new Schema({
       default: 0,
     },
 
-  }]
+  }],
+
+    // if this is an college assessment -section
+    college: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'College',
+    },
+    // if this is an company assessment- section
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+    },
+    job: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Job',
+    },
+    createdByCompany: {
+      type: Boolean,
+      default: false,
+    },
 });
 
 const Section = mongoose.model('Section', sectionSchema);

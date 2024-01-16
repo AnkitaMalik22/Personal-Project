@@ -2,7 +2,7 @@ const router = require('express').Router();
 const {isAuthenticatedCompany, isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
 
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
-const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword} = require('../../controllers/company/companyController');
+const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout} = require('../../controllers/company/companyController');
 ;
 
 
@@ -14,12 +14,13 @@ router.route("/me").get(isAuthenticatedCompany, getCompanyDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update/:companyId").put(isAuthenticatedCompany, updatePassword);
+router.route("/logout").post(isAuthenticatedCompany, logout);
 
-router.get('/:companyId', isAuthenticatedCompany, getCompanyDetails);
-router.put('/:companyId', isAuthenticatedCompany,updateProfile);
-router.delete('/:companyId', isAuthenticatedCompany, deleteCompany);
-router.put('/update/logo/:companyId', isAuthenticatedCompany, updateLogoCompany);
-router.put('/update/cover/:companyId', isAuthenticatedCompany, updateCoverPictureCompany);
+router.get('/me', isAuthenticatedCompany, getCompanyDetails);
+router.put('/update', isAuthenticatedCompany,updateProfile);
+router.delete('/delete', isAuthenticatedCompany, deleteCompany);
+router.put('/update/logo', isAuthenticatedCompany, updateLogoCompany);
+router.put('/update/cover', isAuthenticatedCompany, updateCoverPictureCompany);
 
 // ============================================= JOB ROUTES ====================================================
 
@@ -40,9 +41,12 @@ router.post('/jobs/assessment/:jobId', isAuthenticatedCompany, createAssessmentF
 router.get('/jobs/assessments/:comapnyId', isAuthenticatedCompany, getAllAssessmentsCompany);
 router.get('/jobs/assessments/student/:studentId', isAuthenticatedCompany, getAllAssessmentsStudent);
 
+
+// Apply for Job --Student
+router.post('/jobs/assessments/apply/:jobId', isAuthenticatedStudent, applyJob);
 // Invite Student to Job
-router.post('/jobs/assessments/apply/:jobId', isAuthenticatedCollege, addStudentToJob);
-router.post('/jobs/assessments/apply/:jobId/:studentId', isAuthenticatedStudent, applyJob);
+router.post('/jobs/assessments/apply/college/:jobId', isAuthenticatedCollege, addStudentToJob);
+
 
 
 router.get('/jobs/:companyId', getAllJobsCompany);

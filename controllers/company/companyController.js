@@ -79,10 +79,20 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 // delete Company
 
 exports.deleteCompany = catchAsyncErrors(async (req, res, next) => {
-  const company = await Company.findById(req.params.id);
+  const company = await Company.findById(req.user.id);
 
   if (!company) {
     return next(new ErrorHandler("Company not found", 404));
+  }
+
+  // check if the user is authorized to delete the Company
+  if (company._id.toString() !== req.user.id && req.user.role !== "admin") {
+    return next(
+      new ErrorHandler(
+        "You are not authorized to delete this Company",
+        401
+      )
+    );
   }
 
   await company.remove();
@@ -98,7 +108,9 @@ exports.deleteCompany = catchAsyncErrors(async (req, res, next) => {
 exports.getCompanyDetails = catchAsyncErrors(async (req, res, next) => {
   const company = await Company.findById(req.user.id);
 
-
+  if (!company) {
+    return next(new ErrorHandler("Company not found", 404));
+  }
   res.status(200).json({
     success: true,
     company,
@@ -185,7 +197,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
 // Update Company Password
 exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
  
-  const company = await Company.findById(req.params.companyId).select("+Password");
+  const company = await Company.findById(req.user.id).select("+Password");
 
   // Check if old password is correct
   const isPasswordMatched = await company.comparePassword(req.body.oldPassword);
@@ -215,7 +227,7 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
   // Update Company profile
   const updatedCompany = await Company.findByIdAndUpdate(
-    req.params.companyId,
+    req.user.id,
     newCompanyData,
     {
       new: true,
@@ -241,7 +253,7 @@ exports.updateCoverPictureCompany = catchAsyncErrors(async (req, res) => {
         crop: "scale",
     });
     
-    const company = await Company.findByIdAndUpdate(req.params.id, {
+    const company = await Company.findByIdAndUpdate(req.user.id, {
         basic: {
             coverPhoto: {
                 public_id: myCloud.public_id,
@@ -270,7 +282,7 @@ exports.updateLogoCompany = catchAsyncErrors(async (req, res, next) => {
         crop: "scale",
     });
     
-    const company = await Company.findByIdAndUpdate(  req.params.id,
+    const company = await Company.findByIdAndUpdate(  req.user.id,
         {
         logo: {
             public_id: myCloud.public_id,

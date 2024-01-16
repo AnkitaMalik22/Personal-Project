@@ -1,50 +1,76 @@
 // Import necessary models and modules
-const catchAsyncErrors = require('../../../middlewares/catchAsyncErrors');
-const Questions = require('../../../models/college/assessment/questions');
-const Section = require('../../../models/college/assessment/sections');
+const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
+const Questions = require("../../../models/college/assessment/questions");
+const Section = require("../../../models/college/assessment/sections");
 
 // =========================================================================================================================================
 
-
 // ===================================================| Create Question |===================================================================
 exports.createQuestion = catchAsyncErrors(async (req, res, next) => {
-  const {  Title, Options, Answer, SectionTime, SectionHeading } = req.body;
+  const { Title, Options, Answer, SectionTime, SectionHeading } = req.body;
 
   const { sectionId } = req.params;
   console.log(sectionId);
-let section = await Section.findById(sectionId);
+
+  const userId = req.user.id;
+
+  // Only Authorized Company/College can create questions
+
+  let section = await Section.findById(sectionId);
 
   if (!section) {
-    return res.status(404).json({ error: 'Section not found' });
+    return res.status(404).json({ error: "Section not found" });
   }
 
+  if (section.createdByCompany === true) {
+    if (section.company !== userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    } else {
+      const question = await Questions.create({
+        section: sectionId,
+        Title,
+        SectionTime: section.Time,
+        SectionHeading: section.SectionHeading,
+        company: userId,
+        createdByCompany: true,
+        QuestionType: section.Type,
+      });
 
+      section.questions.push(question._id);
+      section = await section.save();
+    }
+  } else {
+    if (section.college !== userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    } else {
+      const question = await Questions.create({
+        section: sectionId,
+        Title,
+        SectionTime: section.Time,
+        SectionHeading: section.SectionHeading,
+        college: userId,
+        createdByCompany: false,
+        QuestionType: section.Type,
+      });
 
-  const question = await Questions.create({
-    section: sectionId,
-    Title,
-    Options,
-    Answer,
-    SectionTime : section.Time,
-    SectionHeading :section.SectionHeading
-  });
-
-  section.questions.push(question._id);
-  section = await section.save();
+      section.questions.push(question._id);
+      section = await section.save();
+    }
+  }
 
   res.status(201).json({
     success: true,
-    question,
+    message: "Question created successfully",
   });
 });
 
 // ===================================================| Get All Questions  |===================================================================
 // Controller to get all questions  -- // By Section //
 exports.getAllQuestions = catchAsyncErrors(async (req, res, next) => {
-const { sectionId } = req.params;
+  const { sectionId } = req.params;
   console.log(sectionId);
 
-const questions = await Section.findById(sectionId).populate('questions');
+  const questions = await Section.findById(sectionId).populate("questions");
 
   res.status(200).json({
     success: true,
@@ -61,7 +87,7 @@ exports.getQuestionById = catchAsyncErrors(async (req, res, next) => {
   if (!question) {
     return res.status(404).json({
       success: false,
-      message: 'Question not found',
+      message: "Question not found",
     });
   }
 
@@ -75,16 +101,35 @@ exports.getQuestionById = catchAsyncErrors(async (req, res, next) => {
 // Controller to update question by ID
 exports.updateQuestionById = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
-
-  const question = await Questions.findByIdAndUpdate(id, req.body, { new: true });
-
+  const userId = req.user.id;
+  let question = await Questions.findById(id);
   if (!question) {
     return res.status(404).json({
       success: false,
-      message: 'Question not found',
+      message: "Question not found",
     });
   }
 
+  // Only Authorized Company/College can update questions
+
+  if (question.createdByCompany === true) {
+    if (req.body.company !== userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }else{
+      await Questions.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
+    }
+  } else {
+    if (question.college !== userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    else{
+      await Questions.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
+    }
+  }
   res.status(200).json({
     success: true,
     question,
@@ -95,20 +140,33 @@ exports.updateQuestionById = catchAsyncErrors(async (req, res, next) => {
 // Controller to delete question by ID
 exports.deleteQuestionById = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
-  const question = await Questions.findByIdAndDelete(id);
+  const question = await Questions.findById(id);
 
   if (!question) {
     return res.status(404).json({
       success: false,
-      message: 'Question not found',
+      message: "Question not found",
     });
   }
 
+  // Check if the user is authorized to delete the question
+  if (question.createdByCompany && req.body.company !== userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  if (!question.createdByCompany && question.college !== userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // If the user is authorized, delete the question
+  await Questions.findByIdAndDelete(id);
+
   res.status(200).json({
     success: true,
-    message: 'Question deleted successfully',
+    message: "Question deleted successfully",
   });
 });
-// ==========================================================================================================================================
 
+// ==========================================================================================================================================

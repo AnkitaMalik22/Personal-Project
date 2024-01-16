@@ -6,29 +6,42 @@ const College = require("../../../models/college/collegeModel");
 
 // ===================================================| Create Section |===================================================================
 
-exports.createSection = catchAsyncErrors(async (req, res, next) => {
+exports.createSection = catchAsyncErrors(async (req, res) => {
   try {
-    // assessment id
     const { id } = req.body;
-    // const collegeId = req.user.id;
-    // const college = await College.findById(collegeId);
-    // let assessment = college.assessments.find((assessment) => assessment._id == id);
-    let assessment = await Assessments.findById(id);
+    const userId = req.user.id;
 
-    // console.log(assessment, id);
+    // Find the assessment by ID
+    const assessment = await Assessment.findById(id);
 
     if (!assessment) {
       return res.status(404).json({ error: "Assessment not found" });
     }
 
-    const section = await Section.create(req.body);
+    // Check if the user is authorized to create sections for the assessment
+    if (assessment.college === userId) {
+      const section = await Section.create(req.body);
 
-    assessment.AssessmentId = id;
-    assessment.totalTime += section.Time;
-  
+      // Update assessment details
+      assessment.AssessmentId = id;
+      assessment.totalTime += section.Time;
+      assessment.sections.push(section._id);
+      section.createdByCompany = false;
+      section.college = userId;
+      await assessment.save();
+    } else if (assessment.company === userId) {
+      const section = await Section.create(req.body);
 
-    assessment.sections.push(section._id);
-    await assessment.save();
+      // Update assessment details
+      assessment.AssessmentId = id;
+      assessment.totalTime += section.Time;
+      assessment.sections.push(section._id);
+      section.createdByCompany = true;
+      section.company = userId;
+      await assessment.save();
+    } else {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     res.status(201).json(section);
   } catch (error) {
@@ -83,13 +96,33 @@ exports.getSectionById = catchAsyncErrors(async (req, res, next) => {
 exports.updateSection = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const section = await Section.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
+    const userId = req.user.id;
+    const role = req.user.role;
 
+    const section = await Section.findById(id);
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
     }
+
+    // Check if the user is authorized to update the section
+
+    if (role === "college") {
+      if (section.college != userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+    } else if (role === "company") {
+      if (section.company != userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+    } else {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+     await Section.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+
+  
 
     res.json(section);
   } catch (error) {
@@ -103,11 +136,34 @@ exports.updateSection = catchAsyncErrors(async (req, res, next) => {
 exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const section = await Section.findByIdAndDelete(id);
 
+    const userId = req.user.id;
+    const role = req.user.role;
+
+ let section = await Section.findById(id);
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
     }
+
+    // Check if the user is authorized to delete the section
+
+    if (role === "college") {
+      if (section.college != userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+    }
+    else if (role === "company") {
+      if (section.company != userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+    } else {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Delete the section
+    await Section.findByIdAndDelete(id);
+
+
 
     const assessment = await Assessment.findById(section.AssessmentId);
     assessment.sections.pull(id);

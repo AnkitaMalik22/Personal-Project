@@ -196,7 +196,7 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
   // Update college profile
   const updatedCollege = await College.findByIdAndUpdate(
-    req.params.id,
+    req.user.id,
     newCollegeData,
     {
       new: true,
@@ -221,7 +221,7 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
     crop: "scale",
   });
 
-  const college = await College.findByIdAndUpdate(  req.params.id,
+  const college = await College.findByIdAndUpdate(  req.user.id,
     {
       avatar: {
         public_id: myCloud.public_id,

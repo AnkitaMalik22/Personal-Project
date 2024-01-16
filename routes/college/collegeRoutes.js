@@ -21,7 +21,7 @@ router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update").put(isAuthenticatedCollege, updatePassword);
 router.route("/logout").get(logout);
-router.route("/update/:id").put(isAuthenticatedCollege, updateProfile);
-router.route ("/update/avatar/:id").put(isAuthenticatedCollege, updateProfilePictureCollege);
+router.route("/update").put(isAuthenticatedCollege, updateProfile);
+router.route ("/update/avatar").put(isAuthenticatedCollege, updateProfilePictureCollege);
 
 module.exports = router;
