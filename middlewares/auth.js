@@ -7,7 +7,8 @@ const{ Student} = require("../models/student/studentModel");
 
 const isAuthenticatedUser = (model) => {
   return catchAsyncErrors(async (req, res, next) => {
-    const { token } = req.header("auth-token");
+    const token  = req.header("auth-token");
+
 
     if (!token) {
       return next(new ErrorHander("Please Login to access this resource", 401));
