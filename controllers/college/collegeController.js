@@ -10,26 +10,105 @@ const crypto = require("crypto");
 // =================================================== REGISTER COLLEGE ===========================================================
 
 exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
-  const { Email, FirstName, LastName, Password } = req.body;
+  if (req.body.googleAccessToken) {
+    try {
+      const { googleAccessToken } = req.body;
 
-  // Check if required fields are present
-  if (!Email || !FirstName || !LastName || !Password) {
-    return next(new ErrorHandler("Please Enter All Fields", 400));
+      const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: {
+          "Authorization": `Bearer ${googleAccessToken}`
+        }
+      });
+
+      const { given_name: FirstName, family_name: LastName, email: Email, picture: profilePicture } = response.data;
+
+      const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
+        folder: "avatars",
+        width: 150,
+        crop: "scale",
+      });
+
+      const avatar = {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      };
+
+      const existingUser = await College.findOne({ Email });
+
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      const college = await College.create({
+        FirstName,
+        LastName,
+        Email,
+        avatar
+      });
+
+      sendToken(college, 200, res);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  } else {
+    const { Email, FirstName, LastName, Password } = req.body;
+
+    // Check if required fields are present
+    if (!Email || !FirstName || !LastName || !Password) {
+      return next(new ErrorHandler("Please Enter All Fields", 400));
+    }
+
+    // Create a new college
+    const college = await College.create(req.body);
+
+    // Log college details
+    console.log(college);
+
+    // Send JWT token in response
+    sendToken(college, 201, res);
   }
-
-  // Create a new college
-  const college = await College.create(req.body);
-
-  // Log college details
-  console.log(college);
-
-  // Send JWT token in response
-  sendToken(college, 201, res);
 });
+
 
 // =================================================== LOGIN COLLEGE ===========================================================
 // Login College
 exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
+
+
+  if(req.body.googleAccessToken){
+
+    const {googleAccessToken} = req.body;
+  
+          axios
+              .get("https://www.googleapis.com/oauth2/v3/userinfo", {
+              headers: {
+                  "Authorization": `Bearer ${googleAccessToken}`
+              }
+          })
+              .then(async response => {
+                
+                  const Email = response.data.email;
+                 
+                  const college = await College.findOne({Email})
+  
+                  if (!college) 
+                  return res.status(404).json({message: "User don't exist!"})
+  
+                 
+                  sendToken(college, 200, res);
+              })
+  
+              .catch(err => {
+                  res
+                      .status(400)
+                      .json({message: "Invalid access token!"})
+              })
+  
+  
+  }else{
+
+
   const { Email, Password,confirmPassword } = req.body;
 
 
@@ -60,6 +139,8 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
 
   // Send JWT token in response
   sendToken(college, 200, res);
+
+  }
 });
 
 // ====================================================== LOGOUT COLLEGE ===========================================================

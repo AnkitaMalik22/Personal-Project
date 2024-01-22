@@ -15,21 +15,21 @@ const { setAnswer, getAnswerByQuestionId ,setAnswerIndex,addMarksLongAnswerStude
 
 
 // Assessments Routes
-router.get('/assessments', isAuthenticatedCollege || isAuthenticatedCompany,
+router.get('/', isAuthenticatedCollege || isAuthenticatedCompany,
  getAllAssessments);
-router.get('/assessments/:id', isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, 
+router.get('/:id', isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, 
 getAssessmentById);
-router.post('/assessments/create', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), createAssessment);
-router.put('/assessments/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), updateAssessmentById);
-router.delete('/assessments/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), deleteAssessmentById);
+router.post('/create', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), createAssessment);
+router.put('/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), updateAssessmentById);
+router.delete('/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), deleteAssessmentById);
 
 // Start Assessment && End Assessment
-router.get('/assessments/start/:assessmentId/:studentId', isAuthenticatedStudent,authorizeRoles('student'), startAssessment);
-router.get('/assessments/end/:assessmentId/:studentId', isAuthenticatedStudent,authorizeRoles('student'), endAssessment);
+router.post('/start/:assessmentId/:studentId', isAuthenticatedStudent,authorizeRoles('student'), startAssessment);
+router.post('/end/:assessmentId/:studentId', isAuthenticatedStudent,authorizeRoles('student'), endAssessment);
 
 
 // Sections Routes
-router.post('sections/create', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), createSection);
+router.post('/sections/create', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), createSection);
 router.get('/sections/assessmentId',isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, getSectionsByAssessmentId);
 router.get('/section/:id',isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, getSectionById);
 router.put('/section/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), updateSection);

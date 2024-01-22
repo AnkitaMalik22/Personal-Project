@@ -2,7 +2,7 @@ const Assessments = require("../../../models/college/assessment/assessments");
 const ErrorHandler = require("../../../utils/errorhandler");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
-const Student = require("../../../models/student/studentModel");
+const {Student} = require("../../../models/student/studentModel");
 
 
 
@@ -146,8 +146,9 @@ const deleteAssessmentById = catchAsyncErrors(async (req, res, next) => {
 const startAssessment = catchAsyncErrors(async (req, res, next) => {
   const { assessmentId ,studentId } = req.params;
 
-  const assessment = Assessments.findById(assessmentId);
-  const student = Student.findById(studentId);
+  const assessment = await Assessments.findById(assessmentId);
+  
+  const student = await Student.findById(studentId);
  
   if (!assessment) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
@@ -155,7 +156,7 @@ const startAssessment = catchAsyncErrors(async (req, res, next) => {
   if (!student) {
     return next(new ErrorHandler(`Student not found with ID: ${id}`, 404));
   }
-  if(student.OnGoingAssessment === assessmentId){
+  if(student.OnGoingAssessment.toString() === assessmentId){
     return next(new ErrorHandler(`Assessment already started`, 404));
   }
 
@@ -183,8 +184,8 @@ const endAssessment = catchAsyncErrors(async (req, res, next) => {
 
 const { assessmentId ,studentId } = req.params;
 
-const assessment = Assessments.findById(assessmentId);
-const  student = Student.findById(studentId);
+const assessment = await Assessments.findById(assessmentId);
+const  student = await Student.findById(studentId);
 
 if (!assessment) {
   return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
@@ -192,7 +193,8 @@ if (!assessment) {
 if (!student) {
   return next(new ErrorHandler(`Student not found with ID: ${id}`, 404));
 }
-if(student.OnGoingAssessment !== assessmentId){
+if(student.OnGoingAssessment.toString() !== assessmentId.toString()){
+
   return next(new ErrorHandler(`Assessment not started`, 404));
 }
 
