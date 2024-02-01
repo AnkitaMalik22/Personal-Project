@@ -5,6 +5,9 @@ const ErrorHandler = require('../../utils/errorhandler');
 const crypto = require('crypto');
 
 const College = require('../../models/college/collegeModel');
+const Job = require('../../models/company/jobModel');
+
+
 
 
 // ============================================= STUDENT CONTROLLERS ====================================================
@@ -62,7 +65,7 @@ if (Password !== ConfirmPassword) {
   return next(new ErrorHandler('Passwords do not match', 400));
 }
 
-const student = await Student.create(req.body);
+const student = await Student.create({ ...req.body, CollegeId: college._id });
 
 college.students.push(student._id);
 
@@ -259,7 +262,9 @@ exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
 //   --------------------------------------------- get students by college id --------------------------------------------
 
 exports.getStudentsByCollegeId = catchAsyncErrors(async (req, res, next) => {
-    const students = await Student.find({ CollegeId: req.params.id });
+    const students = await Student.find({ CollegeId: req.user.id });
+
+    console.log(students)
 
     res.status(200).json({
         success: true,
@@ -334,7 +339,7 @@ exports.getYourAssessments = catchAsyncErrors(async (req, res, next) => {
 
 //  -- New Jobs
 exports.getNewJobs = catchAsyncErrors(async (req, res, next) => {
-  const recentJobs = await Jobs.find().sort({ createdAt: -1 }).limit(5);
+  const recentJobs = await Job.find().sort({ createdAt: -1 }).limit(5);
 
   res.status(200).json({
     success: true,

@@ -71,7 +71,12 @@ const jobSchema = new mongoose.Schema({
   createdAt : {
     type: Date,
     default: Date.now
-  }
+  },
+
+  PlacedStudents: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+  }],
 });
 
 const Job = mongoose.model('Job', jobSchema);

@@ -3,7 +3,7 @@ const router = require('express').Router();
 
 
 const { getAllStudents, getStudent, createStudent, loginStudent ,updateProfileStudent,resetPasswordStudent,forgotPasswordStudent, getStudentsByCollegeId, getStudentsByAssessmentId, getStudentsByJobId, logout, updateProfilePictureStudent, getResultByStudentId, getNewJobs, getRecommendedJobs, getYourAssessments} = require('../../controllers/student/studentController');
-const { isAuthenticatedStudent } = require('../../middlewares/auth');
+const { isAuthenticatedStudent, isAuthenticatedCollege, authorizeRoles } = require('../../middlewares/auth');
 
 
 
@@ -17,7 +17,7 @@ router.put('/resetpassword', resetPasswordStudent);
 router.put('/forgotpassword', forgotPasswordStudent);
 router.post('/logout', logout);
 
-router.get('/college/:id', getStudentsByCollegeId);
+router.post('/college/get/all', isAuthenticatedCollege,authorizeRoles('college'), getStudentsByCollegeId);
 router.get('assessments/:id', getStudentsByAssessmentId);
 router.get('/job/:id', getStudentsByJobId);
 

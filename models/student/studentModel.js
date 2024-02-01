@@ -118,7 +118,7 @@ const studentSchema = new mongoose.Schema({
   },
   Major: {
     type: String,
-    required: [true, "Please Enter Your Major"],
+    // required: [true, "Please Enter Your Major"],
   },
   From: Date,
   To: Date,
@@ -154,6 +154,18 @@ const studentSchema = new mongoose.Schema({
     },
   ],
   Score: ScoreSchema,
+  Placed: {
+    type: Boolean,
+    default: false,
+  },
+  CompanyPlaced: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+  },
+  JobPlaced: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Jobs",
+  },
   recommendedAssessments: [
     {
       type: mongoose.Schema.Types.ObjectId,

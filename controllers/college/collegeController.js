@@ -4,6 +4,9 @@ const College = require("../../models/college/collegeModel");
 const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
+const Company = require("../../models/company/companyModel");
+const {Student} = require("../../models/student/studentModel");
+const Job = require("../../models/company/jobModel");
 
 // ================================================================================================================================
 
@@ -323,6 +326,137 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
 });
 
 // Add Student to College
+
+exports.addStudentToCollege = catchAsyncErrors(async (req, res, next) => {
+
+  const { studentId } = req.body;
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const student = await Student.findById(studentId);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  if (student.college) {
+    return next(new ErrorHandler("Student already registered", 400));
+  }
+
+  student.college = req.user.id;
+  await student.save();
+
+  college.students.push(studentId);
+  await college.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Student added successfully",
+  });
+});
+
+
+// ============================================ dashboard ===========================================================
+
+
+// getTotalJobs
+
+exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
+  // const college = await College.findById(req.user.id).populate({
+  //   path: "jobs",
+  // });
+  const jobs =  await Job.find({});
+
+  res.status(200).json({
+    success: true,
+    jobs: jobs,
+    // totalJobs: college.jobs.length,
+  });
+})
+
+// get available assessments
+
+exports.getAvailableAssessments = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id).populate({
+    path: "assessments",
+    // match: { Available: true },
+  });
+
+  res.status(200).json({
+    success: true,
+    assessments: college.assessments,
+    totalAssessments: college.assessments.length,
+  });
+})
+
+// get total students
+
+exports.getTotalStudents = catchAsyncErrors(async (req, res, next) => {
+  // const college = await College.findById(req.user.id).populate({
+  //   path: "students",
+  // });
+  const students = await Student.find({
+    CollegeId: req.user.id,
+  });
+
+  res.status(200).json({
+    success: true,
+    students: college.students,
+    totalStudents: college.students.length,
+  });
+})
+
+// get total companies
+
+exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
+  const companies = await Company.find({});
+  res.status(200).json({
+    success: true,
+    companies: companies,
+ 
+  });
+})
+
+// get recent companies
+
+exports.getRecentCompanies = catchAsyncErrors(async (req, res, next) => {
+  const companies = await Company.find({}).sort({createdAt: -1}).limit(5);
+
+  if (companies.length > 0) {
+    res.status(200).json({
+      success: true,
+      companies: companies,
+    });
+  } else {
+    res.status(404).json({
+      success: false,
+      message: 'No recent companies found',
+    });
+  }
+  ;
+})
+
+
+
+
+// get Placed Students
+
+exports.getPlacedStudents = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id).populate({
+    path: "students",
+    model: Student,
+    match: { Placed: true },
+  });
+
+  res.status(200).json({
+    success: true,
+    students: college.students,
+    totalPlacedStudents: college.students.length,
+  });
+})
 
 
 
