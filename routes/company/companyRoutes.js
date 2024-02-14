@@ -2,7 +2,7 @@ const router = require('express').Router();
 const {isAuthenticatedCompany, isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
 
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
-const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout} = require('../../controllers/company/companyController');
+const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout, getCompany} = require('../../controllers/company/companyController');
 ;
 
 
@@ -10,7 +10,7 @@ const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateP
 
 router.route("/register").post(registerCompany);
 router.route("/login").post(loginCompany);
-router.route("/me").get(isAuthenticatedCompany, getCompanyDetails);
+// router.route("/me").get(isAuthenticatedCompany, getCompanyDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update/:companyId").put(isAuthenticatedCompany, updatePassword);
@@ -52,6 +52,8 @@ router.post('/jobs/assessments/apply/college/:jobId', isAuthenticatedCollege, ad
 router.get('/jobs/:companyId', getAllJobsCompany);
 router.get('/jobs/:collegeId', getAllJobsCollege);
 router.get('/jobs/:studentId', isAuthenticatedStudent, getAllJobsStudent);
+
+router.get('/:companyId', getCompany);
 
 
 module.exports = router;

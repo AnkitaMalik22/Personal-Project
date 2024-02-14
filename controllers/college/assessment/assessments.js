@@ -3,6 +3,7 @@ const ErrorHandler = require("../../../utils/errorhandler");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
 const {Student} = require("../../../models/student/studentModel");
+const Section = require("../../../models/college/assessment/sections")
 
 
 
@@ -16,6 +17,8 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
 
   const { role, id } = req.user;
+
+  const {testSections} = req.body;
   const createdByCompany = role === "company";
   
   if (role !== "college" && role !== "company") {
@@ -23,13 +26,50 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   }
 
 
-  const assessment = await Assessments.create({
+let assessment = await Assessments.create({
     ...req.body,
     college: id,
     company : id,
     createdByCompany
 
   });
+
+// assessment created
+// now save the sections in Section table
+
+// console.log("A 1" , assessment)
+
+
+for(let test of testSections){
+console.log(test,"test")
+
+    const section = await Section.create({
+      Heading :test.name,
+      Description :test.description,
+      Type : test.type,
+      createdByCompany,
+      college :id,
+      comapny : id
+    })
+  
+
+    assessment.sections.push(section._id);
+
+    await section.save()
+
+    console.log(section)
+    await assessment.save();
+
+
+
+
+} 
+
+
+console.log("A 2" , assessment)
+
+
+
 
   res.status(201).json({
     success: true,

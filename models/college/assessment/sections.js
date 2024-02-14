@@ -28,7 +28,7 @@ const sectionSchema = new Schema({
   },
   Type: {
     type: String,
-    enum: ['mcq', 'lengthy'],
+    // enum: ['mcq', 'lengthy'],
   },
   TotalStudentsAttempted: {
     type: Number,

@@ -21,7 +21,7 @@ const assessmentsSchema = new Schema({
   level: {
     type: String,
     default: "beginner",
-    enum: ["beginner", "intermediate", "advanced"],
+    // enum: ["beginner", "intermediate", "advanced"],
     // required: true,
   },
   type: {
@@ -56,6 +56,7 @@ const assessmentsSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Section',
   }],
+  testSections:[]
 });
 
 const Assessments = mongoose.model("Assessments", assessmentsSchema);

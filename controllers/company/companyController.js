@@ -117,6 +117,22 @@ exports.getCompanyDetails = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+
+// ==================================================== GET Company PROFILE ===========================================================
+
+exports.getCompany = catchAsyncErrors(async (req, res, next) => {
+  const company = await Company.findById(req.params.companyId);
+
+  if (!company) {
+    return next(new ErrorHandler("Company not found", 404));
+  }
+  res.status(200).json({
+    success: true,
+    company,
+  });
+}
+);
+
 // ====================================================== FORGOT PASSWORD ===========================================================
 // Forgot Password
 exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
