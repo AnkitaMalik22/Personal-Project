@@ -5,6 +5,8 @@ dotenv.config({ path: "./config/config.env" });
 const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
 const cors = require("cors");
+const fileUpload = require("express-fileupload");
+const cloudinary=require("cloudinary")
 
 
 
@@ -13,11 +15,20 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 // Connect to MongoDB
 connectToMongoDB();
 
-// ======================================================= MIDDLEWARES ===================================================
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+
+// ======================================================= MIDDLEWARES ===================================================
+app.use(fileUpload());
 app.use(cors({
   origin: ['http://localhost:3000', 'https://65a11283c51a3ba9c2cdb954--mellifluous-conkies-ba7b88.netlify.app/','https://deploy-preview-8--mellifluous-conkies-ba7b88.netlify.app','https://skillaccessclient.netlify.app'],
   credentials: true
