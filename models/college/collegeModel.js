@@ -8,7 +8,15 @@ const collegeSchema = new mongoose.Schema({
     type: String,
     default: 'college',
   },
-  avatar: String,
+  avatar: {
+    public_id:{
+    type:String,
+    required:true
+},
+url:{
+    type:String,
+    required:true
+}     },
   CollegeName : {
     type: String,
     required: [true, 'Please Enter Your College Name'],
@@ -45,6 +53,9 @@ const collegeSchema = new mongoose.Schema({
     type: String,
     enum: ['Statistics', 'Percentage', 'DataName'],
   },
+  Phone : Number,
+  Overview :String,
+  Website : String,
   Performance: String,
   Link: String,
   Inbox: String,

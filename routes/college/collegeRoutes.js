@@ -15,9 +15,15 @@ const {
   getTotalJobs,
   getTotalCompanies,
   getPlacedStudents,
-  getRecentCompanies
+  getRecentCompanies,
+  uploadStudents,
+  getStudents,
+  inviteStudents,
+  getUploadedStudents
 } = require("../../controllers/college/collegeController");
 const { getAllAssessments } = require("../../controllers/college/assessment/assessments");
+const uploadedStudents = require("../../models/student/uploadedStudents");
+const { getAllStudents } = require("../../controllers/student/studentController");
 
 
 router.route("/register").post(registerCollege);
@@ -29,6 +35,20 @@ router.route("/password/update").put(isAuthenticatedCollege, updatePassword);
 router.route("/logout").get(logout);
 router.route("/update").put(isAuthenticatedCollege, updateProfile);
 router.route ("/update/avatar").put(isAuthenticatedCollege, updateProfilePictureCollege);
+
+
+// upload students
+router.post('/upload/students',isAuthenticatedCollege, uploadStudents);
+
+// get uploaded students -- from excel
+router.get('/upload/students/get',isAuthenticatedCollege, getUploadedStudents);
+
+// get all registered students
+router.get('/students',isAuthenticatedCollege, getStudents );
+
+// invite students
+router.post('/invite/students',isAuthenticatedCollege, inviteStudents);
+
 
 
 // dashboard

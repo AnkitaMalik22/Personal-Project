@@ -6,6 +6,7 @@ const crypto = require('crypto');
 
 const College = require('../../models/college/collegeModel');
 const Job = require('../../models/company/jobModel');
+const Invitation = require('../../models/student/inviteModel');
 
 
 
@@ -42,39 +43,96 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
     });
     });
 
+// =======================================================================================================================
+
+
+
 
 // --------------------------------------------- CREATE A STUDENT --------------------------------------------------------
 
+
 exports.createStudent = catchAsyncErrors(async (req, res, next) => {
 
-const { Email, Password, ConfirmPassword ,CollegeName } = req.body;
+// const { Email, Password, ConfirmPassword ,CollegeName } = req.body;
 
-const college = await College.findOne({ 
-  CollegeName: CollegeName
-});
+// const college = await College.findOne({ 
+//   CollegeName: CollegeName
+// });
+
+// if (!college) {
+//   return next(new ErrorHandler('College not found', 404));
+// }
+
+// if (!Email || !Password || !ConfirmPassword) {
+//   return next(new ErrorHandler('Please Enter All Fields', 400));
+// }
+
+// if (Password !== ConfirmPassword) {
+//   return next(new ErrorHandler('Passwords do not match', 400));
+// }
+
+// const student = await Student.create({ ...req.body, CollegeId: college._id });
+
+// college.students.push(student._id);
+
+// await college.save();
+
+// console.log("Student Created Successfully");
+
+
+//   sendToken(student, 201, res);
+
+
+// STUDENT WILL REGISTER USING THE REGISTRATION LINK SENT TO THEIR EMAIL 
+
+const { Email, Password, FirstName, LastName, Major, From, To} = req.body;
+
+// const CollegeId = req.params.CollegeId;
+const { CollegeId, inviteLink } = req.query;
+
+const college = await College.findById(CollegeId);
+
+// const inviteLink = req.params.inviteLink;
+
+console.log(inviteLink, CollegeId)
 
 if (!college) {
   return next(new ErrorHandler('College not found', 404));
 }
 
-if (!Email || !Password || !ConfirmPassword) {
+if (!inviteLink || !Email || !Password || !FirstName || !LastName || !Major || !From || !To) {
   return next(new ErrorHandler('Please Enter All Fields', 400));
 }
 
-if (Password !== ConfirmPassword) {
-  return next(new ErrorHandler('Passwords do not match', 400));
+const invite = await Invitation.findOne({ invitationLink: inviteLink });
+
+if (!invite) {
+  return next(new ErrorHandler('Invalid invitation link', 400));
 }
 
-const student = await Student.create({ ...req.body, CollegeId: college._id });
+// if (invite.status !== 'pending') {
+//   return next(new ErrorHandler('Invitation link has been expired', 400));
+// }
+
+if (invite.recipientEmail !== Email) {
+  return next(new ErrorHandler('Invalid email', 400));
+}
+
+
+invite.status = 'accepted';
+
+await invite.save();
+
+const student = await Student.create({ ...req.body });
 
 college.students.push(student._id);
 
 await college.save();
 
-console.log("Student Created Successfully");
+console.log("Student Created Successfully");  
 
+sendToken(student, 201, res);
 
-  sendToken(student, 201, res);
 });
 
 // --------------------------------------------- LOGIN A STUDENT --------------------------------------------------------

@@ -7,6 +7,10 @@ const crypto = require("crypto");
 const Company = require("../../models/company/companyModel");
 const {Student} = require("../../models/student/studentModel");
 const Job = require("../../models/company/jobModel");
+const Invitation = require("../../models/student/inviteModel");
+const UploadedStudents = require("../../models/student/uploadedStudents");
+const cloudinary = require("cloudinary");
+const axios = require("axios");
 
 // ================================================================================================================================
 
@@ -66,7 +70,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
     const college = await College.create(req.body);
 
     // Log college details
-    console.log(college);
+    // console.log(college);
 
     // Send JWT token in response
     sendToken(college, 201, res);
@@ -77,6 +81,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
 // =================================================== LOGIN COLLEGE ===========================================================
 // Login College
 exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
+
 
 
   if(req.body.googleAccessToken){
@@ -163,6 +168,8 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 // ==================================================== GET COLLEGE PROFILE ===========================================================
 // Get College Details
 exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
+
+  // console.log("user = ", req.user)
   const college = await College.findById(req.user.id);
 
   res.status(200).json({
@@ -318,6 +325,7 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
       useFindAndModify: false,
     }
   );
+console.log(college)
 
   res.status(200).json({
     success: true,
@@ -325,36 +333,159 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
   });
 });
 
-// Add Student to College
+// ===============================================================================================================
 
-exports.addStudentToCollege = catchAsyncErrors(async (req, res, next) => {
 
-  const { studentId } = req.body;
+
+//------------------------ Upload Students----------------------------
+
+
+exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {  students } = req.body;
+  // console.log(students)
+
+  const CollegeId = req.user.id;
+
+  const college = await College.findById(CollegeId);
+  
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  for (let i = 0; i < students.length; i++) {
+    const { FirstName, LastName, Email } = students[i];
+    const student = await
+   UploadedStudents.create({
+      college_id: CollegeId,
+      FirstName,
+      LastName,
+      Email,
+    });
+  }
+
+  // college.uploadedStudents = students;
+  // await college.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Students uploaded successfully",
+  });
+});
+
+
+
+// ------------------------------get uploaded students-----------------------------
+exports.getUploadedStudents = catchAsyncErrors(async (req, res) => {
   const college = await College.findById(req.user.id);
 
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
 
-  const student = await Student.findById(studentId);
+  console.log(req.user.id)
+  const students = await UploadedStudents.find({ college_id: req.user.id });
 
-  if (!student) {
-    return next(new ErrorHandler("Student not found", 404));
-  }
-
-  if (student.college) {
-    return next(new ErrorHandler("Student already registered", 400));
-  }
-
-  student.college = req.user.id;
-  await student.save();
-
-  college.students.push(studentId);
-  await college.save();
 
   res.status(200).json({
     success: true,
-    message: "Student added successfully",
+    uploadedStudents: students,
+  });
+});
+
+
+
+
+// -------------------------- // INVITE STUDENTS------------------------------
+
+exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
+
+  // const { studentId } = req.body;
+  // const college = await College.findById(req.user.id);
+
+  // if (!college) {
+  //   return next(new ErrorHandler("College not found", 404));
+  // }
+
+  // const student = await Student.findById(studentId);
+
+  // if (!student) {
+  //   return next(new ErrorHandler("Student not found", 404));
+  // }
+
+  // if (student.college) {
+  //   return next(new ErrorHandler("Student already registered", 400));
+  // }
+
+  // student.college = req.user.id;
+  // await student.save();
+
+  // college.students.push(studentId);
+  // await college.save();
+
+  // res.status(200).json({
+  //   success: true,
+  //   message: "Student added successfully",
+  // });
+
+
+ const { students} = req.body;
+ const CollegeId = req.user.id;
+
+  const college = await College.findById(CollegeId);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  for (let i = 0; i < students.length; i++) {
+
+    // from uploaded students
+ const student = await UploadedStudents.findOne({college_id: CollegeId, Email: students[i].Email});
+ if (student) {
+  // console.log(student)
+  console.log({ sender: CollegeId, recipientEmail: student.Email });
+} else {
+  console.log('Student not found.');
+}
+
+  const invite = await Invitation.create({
+    sender: CollegeId,
+    recipientEmail: student.Email,
+    invitationLink: crypto.randomBytes(20).toString('hex'),
+  });
+
+
+  sendEmail({
+    email: student.Email,
+    subject: "Invitation to join College",
+        message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: http://localhost:4000/api/students/CollegeId=${CollegeId}/inviteLink=${invite.invitationLink}`,
+    // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+  });
+
+  student.invited = true;
+  await student.save();
+
+  
+  }
+
+
+  res.status(200).json({
+    success: true,
+    message: "Students invited successfully",
+   
+  });
+
+
+});
+
+// ------------------------------get students-----------------------------
+
+exports.getStudents = catchAsyncErrors(async (req, res, next) => {
+  const students = await Student.find({ CollegeId: req.user.id });
+  res.status(200).json({
+    success: true,
+    students: students,
   });
 });
 

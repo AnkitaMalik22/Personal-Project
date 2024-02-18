@@ -9,6 +9,8 @@ const isAuthenticatedUser = (model) => {
   return catchAsyncErrors(async (req, res, next) => {
     const token  = req.header("auth-token");
 
+    console.log(token)
+
 
     if (!token) {
       return next(new ErrorHander("Please Login to access this resource", 401));
@@ -17,6 +19,8 @@ const isAuthenticatedUser = (model) => {
     const decodedData = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = await model.findById(decodedData.id);
+    // req.user = await model.findById('65d18ec3e1ce90d072446007');
+    // console.log(req.user)
 
     next();
   });

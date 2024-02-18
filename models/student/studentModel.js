@@ -114,7 +114,7 @@ const studentSchema = new mongoose.Schema({
   
   CollegeName: {
     type: String,
-    required: [true, "Please Enter Your College Name"],
+    // required: [true, "Please Enter Your College Name"],
   },
   Major: {
     type: String,
@@ -126,6 +126,16 @@ const studentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "College",
   },
+// ----
+registrationLink: { type: String,unique: true },
+registeredAt: { type: Date },
+confirmationToken: { type: String },
+emailConfirmed: { type: Boolean, default: false },
+
+lastLogin: { type: Date },
+loginAttempts: { type: Number, default: 0 },
+loggedOut: { type: Boolean, default: false },
+// ----
   Assessments: [
     {
       type: mongoose.Schema.Types.ObjectId,
