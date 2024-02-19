@@ -117,7 +117,7 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
   }else{
 
 
-  const { Email, Password,confirmPassword } = req.body;
+  const { Email, Password } = req.body;
 
 
   // Check if email and password are provided
@@ -125,9 +125,9 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Please Enter Email & Password", 400));
   }
 
-  if (Password !== confirmPassword) {
-    return next(new ErrorHandler("Passwords do not match", 400));
-  }
+  // if (Password !== confirmPassword) {
+  //   return next(new ErrorHandler("Passwords do not match", 400));
+  // }
 
   // Find college by email
   const college = await College.findOne({ Email }).select("+Password");
