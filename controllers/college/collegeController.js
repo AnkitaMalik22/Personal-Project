@@ -61,13 +61,21 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
   } else {
     const { Email, FirstName, LastName, Password } = req.body;
 
+
     // Check if required fields are present
     if (!Email || !FirstName || !LastName || !Password) {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
 
+    const avatar = {
+      public_id: "avatars/wy3fbtukb75frndzgnxx",
+      url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png"
+    };
+
     // Create a new college
-    const college = await College.create(req.body);
+    const college = await College.create({
+      ...req.body,avatar
+    });
 
     // Log college details
     // console.log(college);

@@ -56,6 +56,7 @@ url:{
   Phone : Number,
   Description :String,
   Website : String,
+  Address : String,
   Performance: String,
   Link: String,
   Inbox: String,
