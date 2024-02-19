@@ -266,6 +266,10 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Old password is incorrect", 400));
   }
 
+  if (req.body.oldPassword === req.body.newPassword) {
+    return next(new ErrorHandler("New password cannot be the same as old password", 400));
+  }
+
   // Check if new passwords match
   if (req.body.newPassword !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));

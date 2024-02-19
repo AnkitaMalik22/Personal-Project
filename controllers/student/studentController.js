@@ -123,7 +123,7 @@ invite.status = 'accepted';
 
 await invite.save();
 
-const student = await Student.create({ ...req.body });
+const student = await Student.create({ ...req.body, CollegeId: CollegeId });
 
 college.students.push(student._id);
 

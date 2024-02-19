@@ -9,7 +9,7 @@ const isAuthenticatedUser = (model) => {
   return catchAsyncErrors(async (req, res, next) => {
     const token  = req.header("auth-token");
 
-    console.log(token)
+    // console.log(token)
 
 
     if (!token) {

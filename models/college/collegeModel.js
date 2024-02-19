@@ -11,11 +11,11 @@ const collegeSchema = new mongoose.Schema({
   avatar: {
     public_id:{
     type:String,
-    required:true
+    // required:true
 },
 url:{
     type:String,
-    required:true
+    // required:true
 }     },
   CollegeName : {
     type: String,
@@ -54,7 +54,7 @@ url:{
     enum: ['Statistics', 'Percentage', 'DataName'],
   },
   Phone : Number,
-  Overview :String,
+  Description :String,
   Website : String,
   Performance: String,
   Link: String,
