@@ -303,6 +303,7 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
     Website: newCollegeData.Website,
     Address: newCollegeData.Address,
     Description : newCollegeData.Description,
+    avatar : newCollegeData.avatar
 
   };
   // Update college profile
@@ -379,11 +380,13 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
     crop: "scale",
   });
 
-  const newCollegeData = req.body;
+  // const newCollegeData = req.body;
 
-  console.log(newCollegeData.avatar);
+  // console.log(avatar);
 
-  const college = await College.findByIdAndUpdate(  newCollegeData._id,
+
+  const college = await College.findByIdAndUpdate(  req.user.id,
+  
     {
       avatar: {
         public_id: myCloud.public_id,
