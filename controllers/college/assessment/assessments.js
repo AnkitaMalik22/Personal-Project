@@ -2,10 +2,8 @@ const Assessments = require("../../../models/college/assessment/assessments");
 const ErrorHandler = require("../../../utils/errorhandler");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
-const {Student} = require("../../../models/student/studentModel");
-const Section = require("../../../models/college/assessment/sections")
-
-
+const { Student } = require("../../../models/student/studentModel");
+const Section = require("../../../models/college/assessment/sections");
 
 // =========================================================================================================================================
 
@@ -14,62 +12,50 @@ const Section = require("../../../models/college/assessment/sections")
 // Create Assessment -- || College || Company || -- //
 
 const createAssessment = catchAsyncErrors(async (req, res, next) => {
-
-
   const { role, id } = req.user;
 
-  const {testSections} = req.body;
+  const college = await College.findById(id);
+  if (!college) {
+    return next(
+      new ErrorHandler(
+        "Reset Password Token is invalid or has been expired",
+        400
+      )
+    );
+  }
+
+  // const {testSections} = req.body;
+  const { topics } = req.body;
+
+  if (college.topics) {
+    college.topics.push(...topics);
+  } else {
+    college.topics = topics;
+  }
+
   const createdByCompany = role === "company";
-  
+
   if (role !== "college" && role !== "company") {
     return next(new ErrorHandler("Invalid user role", 400));
   }
 
+  // calculate the total sections duration == test duration
+  const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
 
-let assessment = await Assessments.create({
+  const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
+
+  let assessment = await Assessments.create({
     ...req.body,
-    college: id,
-    company : id,
-    createdByCompany
-
+    createdBy: id,
+    // college: id,
+    // company: id,
+    totalQuestionsCount :totalQuestionsCount,
+    totalTime: Duration,
+    createdByCompany,
   });
 
-// assessment created
-// now save the sections in Section table
-
-// console.log("A 1" , assessment)
-
-
-for(let test of testSections){
-console.log(test,"test")
-
-    const section = await Section.create({
-      Heading :test.name,
-      Description :test.description,
-      Type : test.type,
-      createdByCompany,
-      college :id,
-      comapny : id
-    })
-  
-
-    assessment.sections.push(section._id);
-
-    await section.save()
-
-    console.log(section)
-    await assessment.save();
-
-
-
-
-} 
-
-
-console.log("A 2" , assessment)
-
-
-
+  await college.save();
+  await assessment.save();
 
   res.status(201).json({
     success: true,
@@ -94,7 +80,7 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    assessments
+    assessments,
   });
 });
 
@@ -104,10 +90,12 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
   const collegeId = req.user.id;
-  console.log(collegeId , id);
+  console.log(collegeId, id);
 
-  const assessments = await College.findById(collegeId).populate('assessments');
-  const assessment = assessments.assessments.find((assessment) => assessment._id == id);
+  const assessments = await College.findById(collegeId).populate("assessments");
+  const assessment = assessments.assessments.find(
+    (assessment) => assessment._id == id
+  );
 
   if (!assessment) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
@@ -126,15 +114,21 @@ const updateAssessmentById = catchAsyncErrors(async (req, res, next) => {
   if (!a) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
-  if(a.createdByCompany){
+  if (a.createdByCompany) {
     if (a.company != req.user.id) {
-      return next(new ErrorHandler(`You are not authorized to update this assessment`, 401));
+      return next(
+        new ErrorHandler(
+          `You are not authorized to update this assessment`,
+          401
+        )
+      );
     }
   }
 
-
   if (a.college != req.user.id) {
-    return next(new ErrorHandler(`You are not authorized to update this assessment`, 401));
+    return next(
+      new ErrorHandler(`You are not authorized to update this assessment`, 401)
+    );
   }
 
   const assessment = await Assessments.findByIdAndUpdate(id, req.body, {
@@ -159,20 +153,24 @@ const deleteAssessmentById = catchAsyncErrors(async (req, res, next) => {
   if (!a) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
-  if(a.createdByCompany){
+  if (a.createdByCompany) {
     if (a.company != req.user.id) {
-      return next(new ErrorHandler(`You are not authorized to delete this assessment`, 401));
+      return next(
+        new ErrorHandler(
+          `You are not authorized to delete this assessment`,
+          401
+        )
+      );
     }
   }
 
-
   if (a.college != req.user.id) {
-    return next(new ErrorHandler(`You are not authorized to delete this assessment`, 401));
+    return next(
+      new ErrorHandler(`You are not authorized to delete this assessment`, 401)
+    );
   }
 
-
   const assessment = await Assessments.findByIdAndDelete(id);
-
 
   // if (!assessment) {
   //   return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
@@ -184,19 +182,19 @@ const deleteAssessmentById = catchAsyncErrors(async (req, res, next) => {
 // ===================================================| Start Assessment by ID |========================================================
 
 const startAssessment = catchAsyncErrors(async (req, res, next) => {
-  const { assessmentId ,studentId } = req.params;
+  const { assessmentId, studentId } = req.params;
 
   const assessment = await Assessments.findById(assessmentId);
-  
+
   const student = await Student.findById(studentId);
- 
+
   if (!assessment) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
   if (!student) {
     return next(new ErrorHandler(`Student not found with ID: ${id}`, 404));
   }
-  if(student.OnGoingAssessment.toString() === assessmentId){
+  if (student.OnGoingAssessment.toString() === assessmentId) {
     return next(new ErrorHandler(`Assessment already started`, 404));
   }
 
@@ -206,66 +204,62 @@ const startAssessment = catchAsyncErrors(async (req, res, next) => {
 
   res.json({
     success: true,
-    message : "Assessment Started",
-    data : {
+    message: "Assessment Started",
+    data: {
       assessment,
-      student
-    }
+      student,
+    },
   });
-}
-);
+});
 
 //  after the time is over client will send the request to end the assessment
 
 // ===================================================| End Assessment by ID |========================================================
 
-
 const endAssessment = catchAsyncErrors(async (req, res, next) => {
+  const { assessmentId, studentId } = req.params;
 
-const { assessmentId ,studentId } = req.params;
+  const assessment = await Assessments.findById(assessmentId);
+  const student = await Student.findById(studentId);
 
-const assessment = await Assessments.findById(assessmentId);
-const  student = await Student.findById(studentId);
-
-if (!assessment) {
-  return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
-}
-if (!student) {
-  return next(new ErrorHandler(`Student not found with ID: ${id}`, 404));
-}
-if(student.OnGoingAssessment.toString() !== assessmentId.toString()){
-
-  return next(new ErrorHandler(`Assessment not started`, 404));
-}
-
-student.OnGoingAssessment = null;
-
-await student.save();
-
-res.json({
-  success: true,
-  message : "Assessment Ended",
-  data : {
-    assessment,
-    student
+  if (!assessment) {
+    return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
+  if (!student) {
+    return next(new ErrorHandler(`Student not found with ID: ${id}`, 404));
+  }
+  if (student.OnGoingAssessment.toString() !== assessmentId.toString()) {
+    return next(new ErrorHandler(`Assessment not started`, 404));
+  }
+
+  student.OnGoingAssessment = null;
+
+  await student.save();
+
+  res.json({
+    success: true,
+    message: "Assessment Ended",
+    data: {
+      assessment,
+      student,
+    },
+  });
 });
-}
-);
 
+// ===================***********************
 
+// const selectTopic = catchAsyncErrors(async (req, res, next) => {
+//   const {sectionId } = req.params;
 
-  
+//  const section = await Section.findById(sectionId);
 
+//   if (!section) {
+//     return next(new ErrorHandler(`Section not found with ID: ${sectionId}`, 404));
+//   }
 
-
-
-
-
+//   college.sections.push(sect)
 
 // =========================================================================================================================================
-
-
 
 module.exports = {
   createAssessment,

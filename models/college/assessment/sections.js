@@ -1,15 +1,19 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+// SECTION === TOPIC 
+
 const sectionSchema = new Schema({
+
+  // ==== Will remove this later=====
+  // as section will be independent of assessment
+
   AssessmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Assessments',
   },
-  questions: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Questions',
-  }],
+  // =========================
+
   Time: {
     type: Number,
     default: 0,
@@ -22,6 +26,8 @@ const sectionSchema = new Schema({
     type: String,
     required: [true, 'Please enter section description'],
   },
+
+
   TotalQuestions: {
     type: Number,
     default: 0,
@@ -67,6 +73,21 @@ const sectionSchema = new Schema({
 
   }],
 
+
+// ---------------------- remove later --------------------
+
+//  The assessments where this topic is used
+assessments : [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Assessments',
+}],
+
+// the questions in this topic
+// initially added by 
+questions: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Questions',
+}],
     // if this is an college assessment -section
     college: {
       type: mongoose.Schema.Types.ObjectId,
@@ -85,9 +106,18 @@ const sectionSchema = new Schema({
       type: Boolean,
       default: false,
     },
-});
+    CreatedByAdmin :{
+      type: Boolean,
+      default: false,
+    },
+    // ---------------------------------------------
+  },
+);
 
-const Section = mongoose.model('Section', sectionSchema);
+// only the topics created by the admin will show to all colleges 
+// college's topic will be saved in college's table only.
+
+const Section = mongoose.model('Topics', sectionSchema);
 
 module.exports = Section;
 

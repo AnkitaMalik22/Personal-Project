@@ -7,8 +7,37 @@ const assessmentsSchema = new Schema({
     type: String,
     required: true,
   },
-  // Total time in minutes = All sections time
+  description: {
+    type: String,
+    required: true,
+  },
+  // Total time in minutes = All sections time //duration
   totalTime: {
+    type: Number,
+    default: 0,
+    // required: true,
+  },
+  totalAttempts: {
+    type: Number,
+    default: 0,
+    // required: true,
+  },
+
+  startDate: {
+    type: Date,
+    default: Date.now,
+    // required: true,
+  },
+  endDate: {
+    type: Date,
+    // required: true,
+  },
+  totalQuestionsCount: {
+    type: Number,
+    default: 0,
+    // required: true,
+  },
+  attemptCount: {
     type: Number,
     default: 0,
     // required: true,
@@ -56,8 +85,21 @@ const assessmentsSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Section',
   }],
-  testSections:[]
-});
+  topics:[],
+
+// ----------------------------------
+createdAt: {
+  type: Date,
+  default: Date.now,
+},
+createdBy:{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'College',
+  // ref : 'Company',
+  required: true,
+},
+  // -----------------------------------------
+},{timestamps: true});
 
 const Assessments = mongoose.model("Assessments", assessmentsSchema);
 

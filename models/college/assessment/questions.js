@@ -15,6 +15,7 @@ const questionsSchema = new Schema({
     type: Array,
     default: [],
   },
+  // For lengthy questions
   Answer: {
     type: String,
     default: '',
@@ -28,6 +29,10 @@ const questionsSchema = new Schema({
     type: String,
     default: '',
   },
+
+
+
+  
   QuestionBankID: Number,
   Status: String,
   TotalMarks: Number,
