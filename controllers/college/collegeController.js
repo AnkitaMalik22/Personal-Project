@@ -298,9 +298,12 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
   const newCollegeData = req.body;
   const data = {
+    CollegeName : newCollegeData.CollegeName,
     Phone: newCollegeData.Phone,
     Website: newCollegeData.Website,
     Address: newCollegeData.Address,
+    Description : newCollegeData.Description,
+
   };
   // Update college profile
   const updatedCollege = await College.findByIdAndUpdate(
@@ -377,6 +380,8 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
   });
 
   const newCollegeData = req.body;
+
+  console.log(newCollegeData.avatar);
 
   const college = await College.findByIdAndUpdate(  newCollegeData._id,
     {
