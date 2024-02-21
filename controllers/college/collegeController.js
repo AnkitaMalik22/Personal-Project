@@ -295,8 +295,9 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 // ================================================ UPDATE COLLEGE PROFILE ===========================================================
 // Update College Profile
 exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
-  const newCollegeData = req.body;
-  
+  // const newCollegeData = req.body;
+
+  const { _id, ...newCollegeData } = req.body;
 
   // Update college profile
   const updatedCollege = await College.findByIdAndUpdate(
@@ -318,38 +319,47 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
 // -------------------
 // exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
-//   // remove the avatar from  req.body and store in a new obj
+//   // Upload new avatar to Cloudinary
+//   const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+//     folder: "avatars",
+//     width: 150,
+//     crop: "scale",
+//   });
+
+//   // Remove the avatar from req.body and store the remaining fields
 //   const { avatar, ...rest } = req.body;
-//   const newBody = { ...rest };
-  
-//     const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-//       folder: "avatars",
-//       width: 150,
-//       crop: "scale",
-//     });
-  
-//     // Update college profile
+
+//   try {
+//     // Update college profile with new avatar
 //     const updatedCollege = await College.findByIdAndUpdate(
 //       req.user.id,
-//      {
-//      newBody,
-//       avatar: {
-//         public_id: myCloud.public_id,
-//         url: myCloud.secure_url,
+//       {
+//         // Spread the remaining fields from req.body
+//         ...rest,
+//         // Set avatar to the new uploaded avatar
+//         avatar: {
+//           public_id: myCloud.public_id,
+//           url: myCloud.secure_url,
+//         },
 //       },
-//      },
 //       {
 //         new: true,
 //         runValidators: true,
 //         useFindAndModify: false,
 //       }
 //     );
-  
+
+//     console.log(...rest, avatar);
 //     res.status(200).json({
 //       success: true,
 //       college: updatedCollege,
 //     });
-//   });
+//   } catch (error) {
+//     console.log(error)
+//     return next(new ErrorHandler(error.message, 500));
+//   }
+// });
+
   
 
 // --------------------------
