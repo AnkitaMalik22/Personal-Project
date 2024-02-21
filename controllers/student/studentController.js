@@ -125,7 +125,8 @@ await invite.save();
 
 const student = await Student.create({ ...req.body, CollegeId: CollegeId });
 
-college.students.push(student._id);
+// student not approved yet
+college.pendingStudents.push(student._id);
 
 await college.save();
 

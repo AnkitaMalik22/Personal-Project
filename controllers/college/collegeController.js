@@ -296,6 +296,7 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 // Update College Profile
 exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
   const newCollegeData = req.body;
+  
 
   // Update college profile
   const updatedCollege = await College.findByIdAndUpdate(
@@ -313,6 +314,45 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
     college: updatedCollege,
   });
 });
+
+
+// -------------------
+// exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
+//   // remove the avatar from  req.body and store in a new obj
+//   const { avatar, ...rest } = req.body;
+//   const newBody = { ...rest };
+  
+//     const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+//       folder: "avatars",
+//       width: 150,
+//       crop: "scale",
+//     });
+  
+//     // Update college profile
+//     const updatedCollege = await College.findByIdAndUpdate(
+//       req.user.id,
+//      {
+//      newBody,
+//       avatar: {
+//         public_id: myCloud.public_id,
+//         url: myCloud.secure_url,
+//       },
+//      },
+//       {
+//         new: true,
+//         runValidators: true,
+//         useFindAndModify: false,
+//       }
+//     );
+  
+//     res.status(200).json({
+//       success: true,
+//       college: updatedCollege,
+//     });
+//   });
+  
+
+// --------------------------
 
 
 // ================================================ Update Profile Picture ===========================================================
@@ -490,6 +530,43 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
 
 
 });
+
+
+// approve students
+
+exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
+  
+  const { students } = req.body;
+  const CollegeId = req.user.id;
+
+  const college = await College.findById(CollegeId);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  for (let i = 0; i < college.pendingStudents.length; i++) {
+    const student = await Student.findById(college.pendingStudents[i]);
+
+    if (students.includes(student.id)) {
+      student.college = CollegeId;
+      await student.save();
+    }
+  }
+
+  college.pendingStudents = college.pendingStudents.filter( id => !students.includes(id));
+  college.students = college.students.concat(students);
+  await college.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Students approved successfully",
+  });
+});
+
+
+ 
+
 
 // ------------------------------get students-----------------------------
 

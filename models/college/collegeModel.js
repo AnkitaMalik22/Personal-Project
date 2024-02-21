@@ -80,7 +80,13 @@ url:{
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
-  
+
+  // Students needs to be approved by college
+  pendingStudents: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+  }],
+  //  students approved by college
   students: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
@@ -89,6 +95,20 @@ url:{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Assessments',
   }],
+
+// ---- College's Own  ----
+
+// topic will be created and saved in redux and at the time of creating a test, it will be added to the test
+
+  topics: [],
+
+  // tests: [],
+
+// --------------------
+
+
+
+
 });
 
 collegeSchema.pre('save', async function (next) {
