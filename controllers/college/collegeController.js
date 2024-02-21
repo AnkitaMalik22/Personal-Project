@@ -294,22 +294,24 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 
 // ================================================ UPDATE COLLEGE PROFILE ===========================================================
 // Update College Profile
+
 exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
-  // const newCollegeData = req.body;
-
-  const { _id, ...newCollegeData } = req.body;
-
+  const newCollegeData = req.body;
+  const data = {
+    Phone: newCollegeData.Phone,
+    Website: newCollegeData.Website,
+    Address: newCollegeData.Address,
+  };
   // Update college profile
   const updatedCollege = await College.findByIdAndUpdate(
-    req.user.id,
-    newCollegeData,
+    newCollegeData._id,
+    { ...data },
     {
       new: true,
       runValidators: true,
       useFindAndModify: false,
     }
   );
-
   res.status(200).json({
     success: true,
     college: updatedCollege,
@@ -374,7 +376,9 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
     crop: "scale",
   });
 
-  const college = await College.findByIdAndUpdate(  req.user.id,
+  const newCollegeData = req.body;
+
+  const college = await College.findByIdAndUpdate(  newCollegeData._id,
     {
       avatar: {
         public_id: myCloud.public_id,
