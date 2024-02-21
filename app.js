@@ -44,12 +44,16 @@ const collegeRoutes = require("./routes/college/collegeRoutes.js");
 const assessmentsRoutes = require('./routes/college/assessmentsRoutes.js');
 const studentRoutes = require("./routes/student/studentRoutes.js");
 const companyRoutes = require("./routes/company/companyRoutes.js");
+const adminRoutes = require("./routes/admin/adminTestRoutes.js");
 
 // routes
 app.use("/api/college", collegeRoutes );
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student",studentRoutes );
 app.use("/api/company", companyRoutes);
+app.use("/api/admin", adminRoutes);
+
+
 app.get("/", (req, res) => {
   res.send("API is running");
 });
