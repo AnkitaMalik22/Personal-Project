@@ -27,7 +27,7 @@ const createTopic = async (req, res) => {
 const getTopicById = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const section = await Section.findById(topicId);
+    const section = await Section.findById(topicId).populate("questions");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
