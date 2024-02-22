@@ -130,7 +130,7 @@ const addQuestionsToTopic = async (req, res) => {
 
 const viewAllTopics = async (req, res) => {
   try {
-    const sections = await Section.find();
+    const sections = await Section.find().populate("questions");
     return res.status(200).json({
       message: "All topics",
       sections,
