@@ -118,11 +118,9 @@ exports.updateSection = catchAsyncErrors(async (req, res, next) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-     await Section.findByIdAndUpdate(id, req.body, {
+    await Section.findByIdAndUpdate(id, req.body, {
       new: true,
     });
-
-  
 
     res.json(section);
   } catch (error) {
@@ -140,7 +138,7 @@ exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
     const userId = req.user.id;
     const role = req.user.role;
 
- let section = await Section.findById(id);
+    let section = await Section.findById(id);
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
     }
@@ -151,8 +149,7 @@ exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
       if (section.college != userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-    }
-    else if (role === "company") {
+    } else if (role === "company") {
       if (section.company != userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
@@ -162,8 +159,6 @@ exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
 
     // Delete the section
     await Section.findByIdAndDelete(id);
-
-
 
     const assessment = await Assessment.findById(section.AssessmentId);
     assessment.sections.pull(id);
@@ -177,3 +172,260 @@ exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
 });
 
 // ADD QUESTION BANK ID TO SECTION
+
+// ----------------------------- CREATE TOPIC COLLGE-----------------------------
+
+exports.createTopicCollege = async (req, res) => {
+  try {
+    // const { Heading, Description, TotalQuestions, Time } = req.body;
+    const collegeId = req.user.id;
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ error: "College not found" });
+    }
+    const section = await Section.create({
+      ...req.body,
+      college: collegeId,
+      createdByCollege: true,
+    });
+
+    college.topics.push(section);
+
+    await college.save();
+
+    return res.status(201).json({
+      message: "Topic created successfully",
+      section,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to create topic",
+      error: error.message,
+    });
+  }
+};
+
+//----------------------------- GET ALL TOPICS ------------------------------------
+// TOPICS = ADMIN TOPICS + COLLEGE TOPICS
+// FILTER TOPICS BY Type
+
+exports.getTopics = async (req, res) => {
+  try {
+    const type = req.query.type;
+    const collegeId = req.user.id;
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ error: "College not found" });
+    }
+
+    let sections;
+    let topics;
+    let allTopics;
+
+    // we need to also save section type in the database
+
+    if (type === "mcq") {
+      sections = await Section.find({ CreatedByAdmin: true }).populate(
+        "questions"
+      );
+
+      topics = await Section.find({ college: collegeId }).populate("questions");
+      allTopics = [...sections, ...topics];
+      // remove the findAnswers, essay, video fields from the section
+
+      allTopics = allTopics.map((section) => {
+        const { findAnswers, essay, video, ...rest } = section._doc;
+        return rest;
+      });
+    } else if (type === "findAnswer") {
+      sections = await Section.find({ CreatedByAdmin: true }).populate(
+        "findAnswers"
+      );
+
+      topics = await Section.find({ college: collegeId }).populate(
+        "findAnswers"
+      );
+      allTopics = [...sections, ...topics];
+      // remove the findAnswers, essay, video fields from the section
+
+      allTopics = allTopics.map((section) => {
+        const { findAnswers, essay, video, ...rest } = section._doc;
+        return rest;
+      });
+    } else if (type === "essay") {
+      sections = await Section.find({ CreatedByAdmin: true }).populate("essay");
+
+      topics = await Section.find({ college: collegeId }).populate("essay");
+      allTopics = [...sections, ...topics];
+      // remove the findAnswers, essay, video fields from the section
+
+      allTopics = allTopics.map((section) => {
+        const { findAnswers, essay, video, ...rest } = section._doc;
+        return rest;
+      });
+    } else if (type === "video") {
+      sections = await Section.find({ CreatedByAdmin: true }).populate("video");
+
+      topics = await Section.find({ college: collegeId }).populate("video");
+      allTopics = [...sections, ...topics];
+      // remove the findAnswers, essay, video fields from the section
+
+      allTopics = allTopics.map((section) => {
+        const { findAnswers, essay, video, ...rest } = section._doc;
+        return rest;
+      });
+    } else {
+      sections = await Section.find({ CreatedByAdmin: true })
+        .populate("questions")
+        .populate("essay")
+        .populate("video")
+        .populate("findAnswers");
+      topics = await Section.find({ college: collegeId })
+        .populate("questions")
+        .populate("essay")
+        .populate("video")
+        .populate("findAnswers");
+
+      allTopics = [...sections, ...topics];
+    }
+
+    // const allTopics = [...sections, ...topics];
+
+    return res.status(200).json({
+      message: "Topics found",
+      topics: allTopics,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get topics",
+      error: error.message,
+    });
+  }
+};
+
+// Right Now We are updating from frontend but we need to update from backend
+
+exports.addQuestionsToTopicCollege = async (req, res) => {
+  try {
+    const { topicId, type } = req.params;
+    const collegeId = req.user.id;
+
+    // const { Title, Options, Answer, AnswerIndex, QuestionType, Status, TotalMarks } = req.body;
+    let section;
+
+    section = await Section.findById(topicId);
+    if (!section) {
+      return res.status(404).json({
+        message: "Topic not found",
+      });
+    }
+    if (section.collge != collegeId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // if (section.questions?.length >= section.TotalQuestions) {
+    //   return res.status(400).json({
+    //     message: "Maximum questions limit reached",
+    //   });
+    // }
+
+    if (type === "mcq") {
+      section = await Section.findById(topicId).populate("questions");
+    } else if (type === "findAnswer") {
+      section = await Section.findById(topicId).populate("findAnswers");
+    } else if (type === "essay") {
+      section = await Section.findById(topicId).populate("essay");
+    } else if (type === "video") {
+      section = await Section.findById(topicId).populate("video");
+    }
+
+    if (!section) {
+      return res.status(404).json({
+        message: "Topic not found",
+      });
+    }
+
+    if (section.questions?.length >= section.TotalQuestions) {
+      return res.status(400).json({
+        message: "Maximum questions limit reached",
+      });
+    }
+
+    const questions = req.body.questions;
+    let question;
+    for (let i = 0; i < questions.length; i++) {
+      if (type === "mcq") {
+        question = await Question.create(questions[i]);
+        section.questions.push(question._id);
+      } else if (type === "findAnswer") {
+        question = await findAnswer.create(questions[i]);
+        section.findAnswers.push(question._id);
+      } else if (type === "essay") {
+        question = await Essay.create(questions[i]);
+        section.essay.push(question._id);
+        console.log(section.essay);
+      } else if (type === "video") {
+        question = await Video.create(questions[i]);
+        section.video.push(question._id);
+      }
+
+      question.section = topicId;
+
+      await section.save();
+      await question.save();
+    }
+
+    // const question = new Question(req.body);
+
+    return res.status(201).json({
+      message: "Question added successfully",
+      questions,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to add question",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.addTopicstoAssessment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { topics } = req.body;
+    const assessment = await Assessment.findById
+    (id);
+    if (!assessment) {
+      return res.status(404).json({ error: "Assessment not found" });
+    }
+    const collegeId = req.user.id;
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ error: "College not found" });
+    }
+    if (assessment.college != collegeId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+  if (assessment.sections.length == 0){
+    assessment.sections = topics;
+  }
+  else{
+    assessment.sections.push(...topics);
+  }
+  await assessment.save();
+  return res.status(201).json({
+    message: "Topics added to assessment successfully",
+    assessment,
+  });
+}
+catch (error) {
+  return res.status(500).json({
+    message: "Unable to add topics to assessment",
+    error: error.message,
+  });
+}
+}
+
+// ------------------------

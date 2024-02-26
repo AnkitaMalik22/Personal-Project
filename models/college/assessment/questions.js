@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+// FOR MCQ ANSWERS
+
 const questionsSchema = new Schema({
   assessment: {
     type: mongoose.Schema.Types.ObjectId,
@@ -27,7 +29,7 @@ const questionsSchema = new Schema({
   },
   QuestionType: {
     type: String,
-    default: '',
+    default: 'mcq',
   },
 
 

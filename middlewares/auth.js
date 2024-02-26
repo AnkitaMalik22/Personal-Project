@@ -19,7 +19,7 @@ const isAuthenticatedUser = (model) => {
     const decodedData = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = await model.findById(decodedData.id);
-    // req.user = await model.findById('65d18ec3e1ce90d072446007');
+    // req.user = await model.findById('65d851843523422df95ab98b');
     // console.log(req.user)
 
     next();

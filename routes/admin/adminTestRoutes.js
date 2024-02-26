@@ -8,7 +8,7 @@ router.post('/create-topic', createTopic);
 
 router.put('/update-topic/:topicId',updateTopic);
 
-router.post('/add-questions/:topicId', addQuestionsToTopic);
+router.post('/add-questions/:topicId/:type', addQuestionsToTopic);
 
 router.get('/topic/:topicId', getTopicById);
 

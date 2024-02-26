@@ -1,5 +1,8 @@
 const Section = require("../../models/college/assessment/sections");
 const Question = require("../../models/college/assessment/questions");
+const findAnswer = require("../../models/college/assessment/findAnswer");
+const Essay = require("../../models/college/assessment/Essay");
+const Video = require("../../models/college/assessment/Video");
 
 //  ADMIN CAN CREATE TOPICS AND ADD QUESTIONS
 
@@ -10,7 +13,10 @@ const createTopic = async (req, res) => {
     // add user id later
 
     const { Heading, Description, TotalQuestions, Time } = req.body;
-    const section = new Section(req.body);
+    const section = new Section({
+      ...req.body,
+      CreatedByAdmin: true,
+    });
     await section.save();
     return res.status(201).json({
       message: "Topic created successfully",
@@ -27,7 +33,11 @@ const createTopic = async (req, res) => {
 const getTopicById = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const section = await Section.findById(topicId).populate("questions");
+    const section = await Section.findById(topicId)
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
@@ -83,11 +93,21 @@ const updateTopic = async (req, res) => {
 
 const addQuestionsToTopic = async (req, res) => {
   try {
-    const { topicId } = req.params;
+
+    const { topicId,type } = req.params;
 
     // const { Title, Options, Answer, AnswerIndex, QuestionType, Status, TotalMarks } = req.body;
+    let section;
 
-    const section = await Section.findById(topicId).populate("questions");
+    if (type === "mcq") {
+      section = await Section.findById(topicId).populate("questions");
+    } else if (type === "findAnswer") {
+      section = await Section.findById(topicId).populate("findAnswers");
+    } else if (type === "essay") {
+      section = await Section.findById(topicId).populate("essay");
+    } else if (type === "video") {
+      section = await Section.findById(topicId).populate("video");
+    }
 
     if (!section) {
       return res.status(404).json({
@@ -95,17 +115,32 @@ const addQuestionsToTopic = async (req, res) => {
       });
     }
 
-    if (section.questions.length >= section.TotalQuestions) {
+    if (section.questions?.length >= section.TotalQuestions) {
       return res.status(400).json({
         message: "Maximum questions limit reached",
       });
     }
 
     const questions = req.body.questions;
+    let question;
     for (let i = 0; i < questions.length; i++) {
-      const question = new Question(questions[i]);
+      if (type === "mcq") {
+        question = await Question.create(questions[i]);
+        section.questions.push(question._id);
+      } else if (type === "findAnswer") {
+         question =await findAnswer.create(questions[i]);
+         section.findAnswers.push(question._id);
+      } else if (type === "essay") {
+       question = await Essay.create(questions[i]);
+        section.essay.push(question._id);
+        console.log(section.essay);
+      } else if (type === "video") {
+    question = await Video.create(questions[i]);
+        section.video.push(question._id);
+      }
+
       question.section = topicId;
-      section.questions.push(question._id);
+
       await section.save();
       await question.save();
     }
@@ -130,7 +165,7 @@ const addQuestionsToTopic = async (req, res) => {
 
 const viewAllTopics = async (req, res) => {
   try {
-    const sections = await Section.find().populate("questions");
+    const sections = await Section.find().populate("questions").populate("findAnswers").populate("essay").populate("video");
     return res.status(200).json({
       message: "All topics",
       sections,
@@ -163,7 +198,7 @@ const viewAllTopicByAdmin = async (req, res) => {
 const viewAllQuestionsInTopic = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const section = await Section.findById(topicId).populate("questions");
+    const section = await Section.findById(topicId).populate("questions").populate("findAnswers").populate("essay").populate("video");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",

@@ -21,6 +21,7 @@ const sectionSchema = new Schema({
   Heading: {
     type: String,
     required: [true, 'Please enter section heading'],
+    unique: true,
   },
   Description: {
     type: String,
@@ -84,10 +85,32 @@ assessments : [{
 
 // the questions in this topic
 // initially added by 
+//----------------------  uestions types ------------------
 questions: [{
   type: mongoose.Schema.Types.ObjectId,
   ref: 'Questions',
 }],
+findAnswers: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'FindAnswer',
+}],
+essay :[
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Essay',
+  }
+],
+video :[
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Video',
+  }
+],
+
+// --------------------------------------------------------
+  
+
+
     // if this is an college assessment -section
     college: {
       type: mongoose.Schema.Types.ObjectId,
@@ -103,6 +126,10 @@ questions: [{
       ref: 'Job',
     },
     createdByCompany: {
+      type: Boolean,
+      default: false,
+    },
+    createdByCollege:{
       type: Boolean,
       default: false,
     },

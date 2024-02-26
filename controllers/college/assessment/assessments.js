@@ -27,11 +27,11 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   // const {testSections} = req.body;
   const { topics } = req.body;
 
-  if (college.topics) {
-    college.topics.push(...topics);
-  } else {
-    college.topics = topics;
-  }
+  // if (college.topics) {
+  //   college.topics.push(...topics);
+  // } else {
+  //   college.topics = topics;
+  // }
 
   const createdByCompany = role === "company";
 
@@ -67,17 +67,10 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
 // Get All Assessments -- // By College or Company //
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
-  const { role, id } = req.user;
-  let assessments;
+  const { id } = req.user;
+  let assessments = await Assessments.find({ createdBy: id });
 
-  if (role === "college") {
-    assessments = await Assessments.find({ college: id });
-  } else if (role === "company") {
-    assessments = await Assessments.find({ company: id });
-  } else {
-    return next(new ErrorHandler("Invalid user role", 400));
-  }
-
+ 
   res.status(200).json({
     success: true,
     assessments,

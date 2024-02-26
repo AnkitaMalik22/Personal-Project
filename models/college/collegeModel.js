@@ -100,7 +100,10 @@ url:{
 
 // topic will be created and saved in redux and at the time of creating a test, it will be added to the test
 
-  topics: [],
+  topics: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Sections',
+  }],
 
   // tests: [],
 

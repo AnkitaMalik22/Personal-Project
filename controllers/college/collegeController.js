@@ -385,6 +385,7 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) =>
   // console.log(avatar);
 
 
+  // const college = await College.findByIdAndUpdate(  req.body.id,
   const college = await College.findByIdAndUpdate(  req.user.id,
   
     {
@@ -593,10 +594,17 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 // ------------------------------get students-----------------------------
 
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
-  const students = await Student.find({ CollegeId: req.user.id });
+  const id = req.params.id;
+  const approvedStudents = await College.findById(id).populate({
+    path: "students",
+  });
+  const uploadedStudents = await UploadedStudents.find({ college_id: id });
+  const invitedStudents = await Invitation.find({ sender:id });
   res.status(200).json({
     success: true,
-    students: students,
+    approvedStudents: approvedStudents.students,
+    uploadedStudents,
+    invitedStudents,
   });
 });
 

@@ -26,6 +26,9 @@ const uploadedStudents = require("../../models/student/uploadedStudents");
 const { getAllStudents } = require("../../controllers/student/studentController");
 
 
+const {createTopicCollege,getTopics, addQuestionsToTopicCollege, addTopicstoAssessment} = require("../../controllers/college/assessment/sections")
+
+
 router.route("/register").post(registerCollege);
 router.route("/login").post(loginCollege);
 router.route("/me").get(isAuthenticatedCollege, getCollegeDetails);
@@ -44,11 +47,29 @@ router.post('/upload/students',isAuthenticatedCollege, uploadStudents);
 router.get('/upload/students/get',isAuthenticatedCollege, getUploadedStudents);
 
 // get all registered students
-router.get('/students',isAuthenticatedCollege, getStudents );
+router.get('/:id/students',isAuthenticatedCollege, getStudents );
 
 // invite students
 router.post('/invite/students',isAuthenticatedCollege, inviteStudents);
 
+
+
+// getAll assessment of a particular college
+
+router.get('/assessments/all',isAuthenticatedCollege,getAllAssessments);
+
+// college create topics 
+
+router.post('/topics/create',isAuthenticatedCollege,createTopicCollege);
+
+// college get all topics
+router.get('/topics/all',isAuthenticatedCollege,getTopics);
+
+//college add topics to assessment // currently doing using frontend
+router.post('/add-topics/:id', addTopicstoAssessment);
+
+//college add question to topic // currently doing using frontend
+router.post('/add-questions/:topicId/:type', addQuestionsToTopicCollege);
 
 
 // dashboard
