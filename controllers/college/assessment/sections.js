@@ -362,11 +362,11 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
       });
     }
 
-    if (section.questions?.length >= section.TotalQuestions) {
-      return res.status(400).json({
-        message: "Maximum questions limit reached",
-      });
-    }
+    // if (section.questions?.length >= section.TotalQuestions) {
+    //   return res.status(400).json({
+    //     message: "Maximum questions limit reached",
+    //   });
+    // }
 
     const questions = req.body.questions;
     let question;
