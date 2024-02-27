@@ -256,7 +256,7 @@ exports.getTopics = async (req, res) => {
       // remove the findAnswers, essay, video fields from the section
 
       allTopics = allTopics.map((section) => {
-        const { findAnswers, essay, video, ...rest } = section._doc;
+        const { questions, essay, video, ...rest } = section._doc;
         return rest;
       });
     } else if (type === "essay") {
@@ -267,7 +267,7 @@ exports.getTopics = async (req, res) => {
       // remove the findAnswers, essay, video fields from the section
 
       allTopics = allTopics.map((section) => {
-        const { findAnswers, essay, video, ...rest } = section._doc;
+        const { findAnswers, questions, video, ...rest } = section._doc;
         return rest;
       });
     } else if (type === "video") {
@@ -278,7 +278,7 @@ exports.getTopics = async (req, res) => {
       // remove the findAnswers, essay, video fields from the section
 
       allTopics = allTopics.map((section) => {
-        const { findAnswers, essay, video, ...rest } = section._doc;
+        const { findAnswers, essay, questions, ...rest } = section._doc;
         return rest;
       });
     } else {
