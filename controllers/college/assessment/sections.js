@@ -190,6 +190,7 @@ exports.createTopicCollege = async (req, res) => {
     }
     const section = await Section.create({
       ...req.body,
+      Type: "",
       college: collegeId,
       createdByCollege: true,
     });
@@ -370,7 +371,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
 
     const questions = req.body.questions;
     let question;
-    for (let i = 0; i < questions.length; i++) {
+    for (let i = 0; i < questions?.length; i++) {
       if (type === "mcq") {
         question = await Question.create(questions[i]);
         section.questions.push(question._id);
