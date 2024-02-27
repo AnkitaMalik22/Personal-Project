@@ -66,10 +66,10 @@ router.post('/topics/create',isAuthenticatedCollege,createTopicCollege);
 router.get('/topics/all',isAuthenticatedCollege,getTopics);
 
 //college add topics to assessment // currently doing using frontend
-router.post('/add-topics/:id', addTopicstoAssessment);
+router.post('/add-topics/:id',isAuthenticatedCollege, addTopicstoAssessment);
 
 //college add question to topic // currently doing using frontend
-router.post('/add-questions/:topicId/:type', addQuestionsToTopicCollege);
+router.post('/add-questions/:topicId/:type',isAuthenticatedCollege, addQuestionsToTopicCollege);
 
 
 // dashboard
