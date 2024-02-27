@@ -3,6 +3,10 @@ const Assessment = require("../../../models/college/assessment/assessments");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const Assessments = require("../../../models/college/assessment/assessments");
 const College = require("../../../models/college/collegeModel");
+const Question = require("../../../models/college/assessment/questions");
+const findAnswer = require("../../../models/college/assessment/findAnswer");
+const Essay = require("../../../models/college/assessment/Essay");
+const Video = require("../../../models/college/assessment/Video");
 
 // ===================================================| Create Section |===================================================================
 
@@ -179,6 +183,7 @@ exports.createTopicCollege = async (req, res) => {
   try {
     // const { Heading, Description, TotalQuestions, Time } = req.body;
     const collegeId = req.user.id;
+    console.log(collegeId, "collegeId")
     const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({ error: "College not found" });
@@ -211,6 +216,7 @@ exports.createTopicCollege = async (req, res) => {
 
 exports.getTopics = async (req, res) => {
   try {
+    console.log("called" , req.query.type)
     const type = req.query.type;
     const collegeId = req.user.id;
     const college = await College.findById(collegeId);
@@ -308,8 +314,11 @@ exports.getTopics = async (req, res) => {
 exports.addQuestionsToTopicCollege = async (req, res) => {
   try {
     const { topicId, type } = req.params;
+
+
     const collegeId = req.user.id;
 
+    // console.log(collegeId, "collegeId" ,topicId,type)
     // const { Title, Options, Answer, AnswerIndex, QuestionType, Status, TotalMarks } = req.body;
     let section;
 
@@ -319,9 +328,17 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
         message: "Topic not found",
       });
     }
-    if (section.collge != collegeId) {
+    let id = section.college.toString()
+
+    console.log(collegeId , id)
+
+    console.log(id === collegeId)
+
+
+    if (id != collegeId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+    
 
     // if (section.questions?.length >= section.TotalQuestions) {
     //   return res.status(400).json({
@@ -382,6 +399,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
       questions,
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       message: "Unable to add question",
       error: error.message,
