@@ -21,7 +21,6 @@ const sectionSchema = new Schema({
   Heading: {
     type: String,
     required: [true, 'Please enter section heading'],
-    unique: true,
   },
   Description: {
     type: String,
@@ -35,6 +34,7 @@ const sectionSchema = new Schema({
   },
   Type: {
     type: String,
+    default : '',
     // enum: ['mcq', 'lengthy'],
   },
   TotalStudentsAttempted: {
@@ -104,6 +104,12 @@ video :[
   {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Video',
+  }
+],
+compiler:[
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Compiler',
   }
 ],
 

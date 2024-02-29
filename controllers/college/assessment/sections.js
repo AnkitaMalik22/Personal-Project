@@ -7,6 +7,8 @@ const Question = require("../../../models/college/assessment/questions");
 const findAnswer = require("../../../models/college/assessment/findAnswer");
 const Essay = require("../../../models/college/assessment/Essay");
 const Video = require("../../../models/college/assessment/Video");
+const Compiler = require("../../../models/college/assessment/Compiler");
+const cloudinary = require("cloudinary");
 
 // ===================================================| Create Section |===================================================================
 
@@ -181,28 +183,49 @@ exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
 
 exports.createTopicCollege = async (req, res) => {
   try {
-    // const { Heading, Description, TotalQuestions, Time } = req.body;
+    const { Heading, Description, TotalQuestions, Time } = req.body;
     const collegeId = req.user.id;
     console.log(collegeId, "collegeId")
     const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({ error: "College not found" });
     }
-    const section = await Section.create({
-      ...req.body,
-      Type: "",
-      college: collegeId,
-      createdByCollege: true,
+    if (Heading === "" || Description === "" || TotalQuestions === "" || Time === "") {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const topics = await Section.find({ college: collegeId });
+
+    let duplicateTopic = false;
+
+    topics && topics.forEach((topic) => {
+      if (topic.Heading === req.body.Heading) {
+        duplicateTopic = true;
+      }
     });
 
-    college.topics.push(section);
+    if (duplicateTopic) {
+      return res.status(400).json({ error: "Topic already exists" });
+    }
 
-    await college.save();
+      const section = await Section.create({
+        ...req.body,
+        Type: "",
+        college: collegeId,
+        createdByCollege: true,
+      });
+  
+      college.topics.push(section);
+  
+      await college.save();
+  
+      return res.status(201).json({
+        message: "Topic created successfully",
+        section,
+      });
+    
 
-    return res.status(201).json({
-      message: "Topic created successfully",
-      section,
-    });
+    
   } catch (error) {
     return res.status(500).json({
       message: "Unable to create topic",
@@ -215,92 +238,136 @@ exports.createTopicCollege = async (req, res) => {
 // TOPICS = ADMIN TOPICS + COLLEGE TOPICS
 // FILTER TOPICS BY Type
 
+// exports.getTopics = async (req, res) => {
+//   try {
+//     console.log("called" , req.query.type)
+//     const type = req.query.type;
+//     const collegeId = req.user.id;
+//     const college = await College.findById(collegeId);
+//     if (!college) {
+//       return res.status(404).json({ error: "College not found" });
+//     }
+
+//     let sections;
+//     let topics;
+//     let allTopics;
+
+//     // we need to also save section type in the database
+
+//     if (type === "mcq") {
+//       sections = await Section.find({ CreatedByAdmin: true }).populate(
+//         "questions"
+//       );
+
+//       topics = await Section.find({ college: collegeId }).populate("questions");
+//       allTopics = [...sections, ...topics];
+//       // remove the findAnswers, essay, video fields from the section
+
+//       allTopics = allTopics.map((section) => {
+//         const { findAnswers, essay, video, ...rest } = section._doc;
+//         return rest;
+//       });
+//     } else if (type === "findAnswer") {
+//       sections = await Section.find({ CreatedByAdmin: true }).populate(
+//         "findAnswers"
+//       );
+
+//       topics = await Section.find({ college: collegeId }).populate(
+//         "findAnswers"
+//       );
+//       allTopics = [...sections, ...topics];
+//       // remove the findAnswers, essay, video fields from the section
+
+//       allTopics = allTopics.map((section) => {
+//         const { questions, essay, video, ...rest } = section._doc;
+//         return rest;
+//       });
+//     } else if (type === "essay") {
+//       sections = await Section.find({ CreatedByAdmin: true }).populate("essay");
+
+//       topics = await Section.find({ college: collegeId }).populate("essay");
+//       allTopics = [...sections, ...topics];
+//       // remove the findAnswers, essay, video fields from the section
+
+//       allTopics = allTopics.map((section) => {
+//         const { findAnswers, questions, video, ...rest } = section._doc;
+//         return rest;
+//       });
+//     } else if (type === "video") {
+//       sections = await Section.find({ CreatedByAdmin: true }).populate("video");
+
+//       topics = await Section.find({ college: collegeId }).populate("video");
+//       allTopics = [...sections, ...topics];
+//       // remove the findAnswers, essay, video fields from the section
+
+//       allTopics = allTopics.map((section) => {
+//         const { findAnswers, essay, questions, ...rest } = section._doc;
+//         return rest;
+//       });
+//     }
+//     else if (type === "compiler") {
+//       sections = await Section.find({ CreatedByAdmin: true }).populate("compiler");
+
+//       topics = await Section.find({ college: collegeId }).populate("compiler");
+//       allTopics = [...sections, ...topics];
+//       // remove the findAnswers, essay, video fields from the section
+
+//       allTopics = allTopics.map((section) => {
+//         const { findAnswers, essay, questions, video, ...rest } = section._doc;
+//         return rest;
+//       });
+//     } else {
+//       sections = await Section.find({ CreatedByAdmin: true })
+//         .populate("questions")
+//         .populate("essay")
+//         .populate("video")
+//         .populate("findAnswers")
+//         .populate("compiler");
+//       topics = await Section.find({ college: collegeId })
+//         .populate("questions")
+//         .populate("essay")
+//         .populate("video")
+//         .populate("findAnswers")
+//         .populate("compiler");
+
+//       allTopics = [...sections, ...topics];
+//     }
+
+//     // const allTopics = [...sections, ...topics];
+
+//     return res.status(200).json({
+//       message: "Topics found",
+//       topics: allTopics,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: "Unable to get topics",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
+// get only college topics
+
+
 exports.getTopics = async (req, res) => {
   try {
-    console.log("called" , req.query.type)
-    const type = req.query.type;
+
     const collegeId = req.user.id;
     const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({ error: "College not found" });
     }
 
-    let sections;
     let topics;
-    let allTopics;
 
-    // we need to also save section type in the database
-
-    if (type === "mcq") {
-      sections = await Section.find({ CreatedByAdmin: true }).populate(
-        "questions"
-      );
-
-      topics = await Section.find({ college: collegeId }).populate("questions");
-      allTopics = [...sections, ...topics];
-      // remove the findAnswers, essay, video fields from the section
-
-      allTopics = allTopics.map((section) => {
-        const { findAnswers, essay, video, ...rest } = section._doc;
-        return rest;
-      });
-    } else if (type === "findAnswer") {
-      sections = await Section.find({ CreatedByAdmin: true }).populate(
-        "findAnswers"
-      );
-
-      topics = await Section.find({ college: collegeId }).populate(
-        "findAnswers"
-      );
-      allTopics = [...sections, ...topics];
-      // remove the findAnswers, essay, video fields from the section
-
-      allTopics = allTopics.map((section) => {
-        const { questions, essay, video, ...rest } = section._doc;
-        return rest;
-      });
-    } else if (type === "essay") {
-      sections = await Section.find({ CreatedByAdmin: true }).populate("essay");
-
-      topics = await Section.find({ college: collegeId }).populate("essay");
-      allTopics = [...sections, ...topics];
-      // remove the findAnswers, essay, video fields from the section
-
-      allTopics = allTopics.map((section) => {
-        const { findAnswers, questions, video, ...rest } = section._doc;
-        return rest;
-      });
-    } else if (type === "video") {
-      sections = await Section.find({ CreatedByAdmin: true }).populate("video");
-
-      topics = await Section.find({ college: collegeId }).populate("video");
-      allTopics = [...sections, ...topics];
-      // remove the findAnswers, essay, video fields from the section
-
-      allTopics = allTopics.map((section) => {
-        const { findAnswers, essay, questions, ...rest } = section._doc;
-        return rest;
-      });
-    } else {
-      sections = await Section.find({ CreatedByAdmin: true })
-        .populate("questions")
-        .populate("essay")
-        .populate("video")
-        .populate("findAnswers");
-      topics = await Section.find({ college: collegeId })
-        .populate("questions")
-        .populate("essay")
-        .populate("video")
-        .populate("findAnswers");
-
-      allTopics = [...sections, ...topics];
-    }
-
-    // const allTopics = [...sections, ...topics];
+    topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
 
     return res.status(200).json({
       message: "Topics found",
-      topics: allTopics,
+      topics,
     });
   } catch (error) {
     return res.status(500).json({
@@ -310,7 +377,9 @@ exports.getTopics = async (req, res) => {
   }
 };
 
-// Right Now We are updating from frontend but we need to update from backend
+ 
+
+// ----------------------------- ADD QUESTIONS ------------------------------------
 
 exports.addQuestionsToTopicCollege = async (req, res) => {
   try {
@@ -324,6 +393,8 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     let section;
 
     section = await Section.findById(topicId);
+
+    console.log( topicId, type)
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
@@ -356,6 +427,9 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     } else if (type === "video") {
       section = await Section.findById(topicId).populate("video");
     }
+    else if (type === "compiler") {
+      section = await Section.findById(topicId).populate("compiler");
+    }
 
     if (!section) {
       return res.status(404).json({
@@ -383,8 +457,22 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
         section.essay.push(question._id);
         console.log(section.essay);
       } else if (type === "video") {
-        question = await Video.create(questions[i]);
+
+        const myCloud = await cloudinary.v2.uploader.upload_large(req.body.questions[i], {
+          folder: "videos",
+          resource_type : "video",
+        })
+        
+        question = await Video.create({
+          video: myCloud.secure_url,
+          public_id: myCloud.public_id,
+          ...req.body.questions[i],
+        });
         section.video.push(question._id);
+      }
+      else if (type === "compiler") {
+        question = await Compiler.create(questions[i]);
+        section.compiler.push(question._id);
       }
 
       question.section = topicId;
