@@ -15,17 +15,25 @@ const compilerSchema = new Schema({
         type: String,
         default: `printf('hello world')`
       },
+      verificationCode: {
+        type: String,
+        default: '',
+      },
       codeQuestion:{
          type:String,
        },
       codeLanguage: {
         type: String,
-        enum:['c','cpp','java','python','javascript'],
+        // enum:['c','cpp','java','python','javascript'],
       },
       parameters: {
-       type: String,
-       enum: ['int', 'boolean', 'string'],
+       type: [],
        },
+      returnType: {
+        type: String,
+        // enum: ['int', 'boolean', 'string'],
+      },
+      
        testcase:{
         type:[],
         },
