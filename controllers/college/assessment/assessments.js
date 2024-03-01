@@ -27,16 +27,21 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
  const assessments = await Assessments.find({ createdBy: id });
 
 if (assessments.length > 0) {
+  let assessmentExists = false;
   assessments.forEach((assessment) => {
     if (assessment.name === req.body.name) {
-      return next(
-        new ErrorHandler(
-          `Assessment with name ${req.body.name} already exists`,
-          400
-        )
-      );
+      assessmentExists = true;
     }
   });
+
+  if (assessmentExists) {
+    return next(
+      new ErrorHandler(
+        `Assessment with name ${req.body.name} already exists`,
+        400
+      )
+    );
+  }
 }
 
 
