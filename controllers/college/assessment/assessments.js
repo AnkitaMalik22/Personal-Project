@@ -24,6 +24,22 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
+ const assessments = await Assessments.find({ createdBy: id });
+
+if (assessments.length > 0) {
+  assessments.forEach((assessment) => {
+    if (assessment.name === req.body.name) {
+      return next(
+        new ErrorHandler(
+          `Assessment with name ${req.body.name} already exists`,
+          400
+        )
+      );
+    }
+  });
+}
+
+
   // const {testSections} = req.body;
   const { topics } = req.body;
 
@@ -43,6 +59,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
 
   const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
+  
 
   let assessment = await Assessments.create({
     ...req.body,
