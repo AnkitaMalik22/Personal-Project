@@ -30,7 +30,7 @@ const videoSchema = new Schema({
 //       ref: "FindAnswer"
 // }],
 
-
+Duration: String,
 video :String,
 videoFile :String,
 long:[],

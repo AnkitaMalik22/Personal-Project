@@ -11,6 +11,7 @@ const compilerSchema = new Schema({
         ref: 'Section',
       },
     //   ---------- req.body -------------
+    Duration : String,
       code: {
         type: String,
         default: `printf('hello world')`

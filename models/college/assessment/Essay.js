@@ -12,6 +12,7 @@ const essaySchema = new Schema({
       },
     //   ---------- req.body -------------
       Title: String,
+      Duration : String,
     //   ---------------------------------
       Answer: {
         type: String,

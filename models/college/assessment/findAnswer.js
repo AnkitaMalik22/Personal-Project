@@ -26,6 +26,7 @@ const findAnswerSchema = new Schema({
     //   ---------- req.body -------------
       Title: String,
       questions :[],
+      Duration : String,
     //   ---------------------------------
       Answer: {
         type: String,
