@@ -26,7 +26,9 @@ const uploadedStudents = require("../../models/student/uploadedStudents");
 const { getAllStudents } = require("../../controllers/student/studentController");
 
 
-const {createTopicCollege,getTopics, addQuestionsToTopicCollege, addTopicstoAssessment} = require("../../controllers/college/assessment/sections")
+const {createTopicCollege,getTopics, addQuestionsToTopicCollege, addTopicstoAssessment,uploadVideo} = require("../../controllers/college/assessment/sections")
+
+// const videoUpload = require("../../utils/upload.js");
 
 
 router.route("/register").post(registerCollege);
@@ -70,6 +72,10 @@ router.post('/add-topics/:id',isAuthenticatedCollege, addTopicstoAssessment);
 
 //college add question to topic // currently doing using frontend
 router.post('/add-questions/:topicId/:type',isAuthenticatedCollege, addQuestionsToTopicCollege);
+
+
+router.post('/upload/video',isAuthenticatedCollege,
+uploadVideo);
 
 
 // dashboard

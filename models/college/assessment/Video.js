@@ -11,17 +11,36 @@ const videoSchema = new Schema({
     ref: "Section",
   },
   // ---------- req.body -------------
-  Title: String,
-  questions: [],
-  Options: {
-    type: Array,
-    default: [],
-  },
-  AnswerIndex: {
-    type: Number,
-    default: -1,
-  },
-  VideoLink: String,
+ 
+
+
+
+// questions:[{
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Questions"
+// }],
+
+
+// essay :[{
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Essay"
+// }],
+// findAnswers:[{
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "FindAnswer"
+// }],
+
+
+video :String,
+videoFile :String,
+VideoLink: String,
+
+mcq: [],
+essay:[],
+findAnswer:[],
+shortAnswer:[],
+longAnswer:[],
+
   // ---------------------------------
   QuestionBankID: Number,
   Status: String,

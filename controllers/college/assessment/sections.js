@@ -8,7 +8,9 @@ const findAnswer = require("../../../models/college/assessment/findAnswer");
 const Essay = require("../../../models/college/assessment/Essay");
 const Video = require("../../../models/college/assessment/Video");
 const Compiler = require("../../../models/college/assessment/Compiler");
-const cloudinary = require("cloudinary");
+// const cloudinary = require("cloudinary");
+const cloudinary = require("cloudinary").v2;
+const path = require('path')
 
 // ===================================================| Create Section |===================================================================
 
@@ -381,6 +383,49 @@ exports.getTopics = async (req, res) => {
 
 // ----------------------------- ADD QUESTIONS ------------------------------------
 
+exports.uploadVideo = async (req, res) => {
+  try {
+    const file = req.files.video;
+
+    if (!file) {
+      return res.status(400).json({
+        message: "No video file uploaded",
+      });
+    }
+    // console.log(file, "file")
+
+    // {
+    //   name: 'big_buck_bunny_720p_1mb.mp4',
+    //   data: <Buffer 00 00 00 20 66 74 79 70 69 73 6f 6d 00 00 02 00 69 73 6f 6d 69 73 6f 32 61 76 63 31 6d 70 34 31 00 00 00 08 66 72 65 65 00 10 0b 4b 6d 64 61 74 01 02 ... 1055686 more bytes>,
+    //   size: 1055736,
+    //   encoding: '7bit',
+    //   tempFilePath: '',
+    //   truncated: false,
+    //   mimetype: 'video/mp4',
+    //   md5: 'd55bddf8d62910879ed9f605522149a8',
+    //   mv: [Function: mv]
+    // } file
+
+
+
+    const uploadResult = await cloudinary.uploader.upload(file.tempFilePath, {
+      folder: "videos",
+      resource_type: "video",
+    });
+
+    return res.status(201).json({
+      message: "Video uploaded successfully",
+      video: uploadResult.secure_url,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Unable to upload video",
+      error: error.message,
+    });
+  }
+}
+
 exports.addQuestionsToTopicCollege = async (req, res) => {
   try {
     const { topicId, type } = req.params;
@@ -458,14 +503,14 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
         console.log(section.essay);
       } else if (type === "video") {
 
-        const myCloud = await cloudinary.v2.uploader.upload_large(req.body.questions[i], {
-          folder: "videos",
-          resource_type : "video",
-        })
+        // const myCloud = await cloudinary.v2.uploader.upload_large(req.body.questions[i], {
+        //   folder: "videos",
+        //   resource_type : "video",
+        // })
         
         question = await Video.create({
-          video: myCloud.secure_url,
-          public_id: myCloud.public_id,
+          // video: myCloud.secure_url,
+          // public_id: myCloud.public_id,
           ...req.body.questions[i],
         });
         section.video.push(question._id);
