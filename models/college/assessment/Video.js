@@ -33,6 +33,9 @@ const videoSchema = new Schema({
 
 video :String,
 videoFile :String,
+long:[],
+short:[],
+questions:[],
 VideoLink: String,
 
 mcq: [],
