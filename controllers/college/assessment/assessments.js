@@ -63,7 +63,7 @@ if (assessments.length > 0) {
   // calculate the total sections duration == test duration
   const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
 
-  const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
+  // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
   
 
   let assessment = await Assessments.create({
@@ -71,8 +71,8 @@ if (assessments.length > 0) {
     createdBy: id,
     // college: id,
     // company: id,
-    totalQuestionsCount :totalQuestionsCount,
-    totalTime: Duration,
+    totalQuestionsCount : req.body.totalQuestions,
+    totalTime: req.body.totalDuration,
     createdByCompany,
   });
 
