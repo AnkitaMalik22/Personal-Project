@@ -87,6 +87,14 @@ const assessmentsSchema = new Schema({
   }],
   topics:[],
 
+  // -------------
+  studentResponses: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentResponse",
+    },
+  ],
+
 // ----------------------------------
 createdAt: {
   type: Date,

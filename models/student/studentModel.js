@@ -89,13 +89,13 @@ const studentSchema = new mongoose.Schema({
   },
   FirstName: {
     type: String,
-    required: [true, "Please Enter Your First Name"],
+    // required: [true, "Please Enter Your First Name"],
     maxLength: [30, "Name cannot exceed 30 characters"],
     minLength: [2, "Name should have more than 2 characters"],
   },
   LastName: {
     type: String,
-    required: [true, "Please Enter Your Last Name"],
+    // required: [true, "Please Enter Your Last Name"],
     maxLength: [30, "Name cannot exceed 30 characters"],
     minLength: [2, "Name should have more than 2 characters"],
   },
@@ -105,6 +105,34 @@ const studentSchema = new mongoose.Schema({
     minLength: [8, "Password should be greater than 8 characters"],
     select: false,
   },
+
+// ------ for dummy -------------
+// the tests student has taken
+studentTests: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assessments",
+    },
+
+  ],
+  // the responses student has given
+studentResponses: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentResponse",
+    },
+  ],
+
+studentMarks : [ {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StudentMarks",
+  },
+],
+
+
+// -----------------------------
+
+
   createdAt: {
     type: Date,
     default: Date.now,

@@ -54,12 +54,16 @@ const studentRoutes = require("./routes/student/studentRoutes.js");
 const companyRoutes = require("./routes/company/companyRoutes.js");
 const adminRoutes = require("./routes/admin/adminTestRoutes.js");
 
+const studentDummyRoutes = require("./routes/student/studentDummyRoutes.js");
+
 // routes
 app.use("/api/college", collegeRoutes );
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student",studentRoutes );
+app.use("/api/studentDummy", studentDummyRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
+
 
 
 app.get("/", (req, res) => {
