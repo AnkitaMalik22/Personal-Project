@@ -59,11 +59,11 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-    const { Email, FirstName, LastName, Password } = req.body;
+    const { Email, FirstName, LastName, Password ,Phone } = req.body;
 
 
     // Check if required fields are present
-    if (!Email || !FirstName || !LastName || !Password) {
+    if (!Email || !FirstName || !LastName || !Password || !Phone) {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
 
