@@ -66,6 +66,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
     if (!Email || !FirstName || !LastName || !Password || !Phone) {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
+   
 
     const avatar = {
       public_id: "avatars/wy3fbtukb75frndzgnxx",
@@ -253,6 +254,12 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   if (req.body.password !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
+  // it should contain atleast one uppercase, one lowercase, one number and one special character
+  const passwordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])");
+  if (!passwordRegex.test(req.body.password)) {
+    return next(new ErrorHandler("Password should contain atleast one uppercase, one lowercase, one number and one special character", 400));
+  }
+
 
   // Update college password and reset token
   college.Password = req.body.password;

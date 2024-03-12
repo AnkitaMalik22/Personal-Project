@@ -1,4 +1,4 @@
-const {Student} = require('../../models/student/studentModel');
+const { Student } = require('../../models/student/studentModel');
 const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
 const sendToken = require('../../utils/jwtToken');
 const ErrorHandler = require('../../utils/errorhandler');
@@ -13,7 +13,7 @@ const StudentResponse = require('../../models/student/studentResponse');
 // register dummy student
 
 exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
-    const { FirstName, LastName, Email, Password,CollegeId } = req.body;
+    const { FirstName, LastName, Email, Password, CollegeId } = req.body;
 
     const student = await Student.create({
         FirstName,
@@ -49,12 +49,12 @@ exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
     }
 
     sendToken(student, 200, res);
-}  );
+});
 
 
 exports.getStudentDetails = catchAsyncErrors(async (req, res, next) => {
     const student = await Student.findById(req.body.id).populate({
-        path : 'studentTests',
+        path: 'studentTests',
         // select : 'name'
     });
 
@@ -90,7 +90,7 @@ exports.addTest = catchAsyncErrors(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        message : 'Test added successfully'
+        message: 'Test added successfully'
 
     });
 });
@@ -104,46 +104,46 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
 
 
     // questions: [{
-//   type: mongoose.Schema.Types.ObjectId,
-//   ref: 'Questions',
-// }],
-// findAnswers: [{
-//   type: mongoose.Schema.Types.ObjectId,
-//   ref: 'FindAnswer',
-// }],
-// essay :[
-//   {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: 'Essay',
-//   }
-// ],
-// video :[
-//   {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: 'Video',
-//   }
-// ],
-// compiler:[
-//   {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: 'Compiler',
-//   }
-// ],
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Questions',
+    // }],
+    // findAnswers: [{
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'FindAnswer',
+    // }],
+    // essay :[
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Essay',
+    //   }
+    // ],
+    // video :[
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Video',
+    //   }
+    // ],
+    // compiler:[
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Compiler',
+    //   }
+    // ],
 
-   
 
-  
+
+
 
 
     res.status(200).json({
         success: true,
         testSections
-      
+
     });
 });
 
 exports.giveTest = catchAsyncErrors(async (req, res, next) => {
-    const { testId, answers } = req.body;
+    const { testId, } = req.body;
 
     // Retrieve student and assessment based on provided IDs
     const student = await Student.findById(req.body.id);
@@ -152,24 +152,24 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     if (!student || !assessment) {
         return next(new ErrorHandler('Student or Assessment not found', 404));
     }
-    // student.Assessments.length > 0 ? student.Assessments.push(testId) : student.Assessments = [testId];
-if(student.studentTests.length > 0){
-    if (!student.studentTests.includes(testId)) {
-        return next(new ErrorHandler('Test not started', 404));
-    }
-}else{
-    return next(new ErrorHandler('Test not started', 404));
-}
-   
+    student.studentTests.length > 0 ? student.studentTests.push(testId) : student.studentTests = [testId];
+    // if(student.studentTests.length > 0){
+    //     if (!student.studentTests.includes(testId)) {
+    //         return next(new ErrorHandler('Test not started', 404));
+    //     }
+    // }else{
+    //     return next(new ErrorHandler('Test not started', 404));
+    // }
 
-  const studentResponse = await StudentResponse.create({
-    studentId: req.body.id,
-    assessmentId: testId,
-    answers
+
+    const studentResponse = await StudentResponse.create({
+        studentId: req.body.id,
+        assessmentId: testId,
+        ...req.body
     });
- 
-        student.studentResponses.push(studentResponse._id);
-    
+
+    student.studentResponses.push(studentResponse._id);
+
 
     // Update assessment with student's responses
     assessment.studentResponses.push(studentResponse._id);
@@ -178,7 +178,30 @@ if(student.studentTests.length > 0){
     await student.save({ validateBeforeSave: false });
     await assessment.save({ validateBeforeSave: false });
 
-    console.log(studentResponse);
+
+
+    // evaluate the student response ---- working only for mcq
+    let mcqMarks = 0;
+    // console.log(studentResponse.topics , "studentResponse.topics.questions");
+    // console.log(studentResponse.topics[0], "studentResponse.topics.questions");
+
+    if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
+//    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
+        studentResponse.topics[0].questions.forEach(async (question) => {
+
+            console.log(question.AnswerIndex, question.StudentAnswerIndex, );
+
+            if (question.AnswerIndex === question.StudentAnswerIndex) {
+                mcqMarks += 1;
+            }
+        });
+    }
+
+    studentResponse.mcqMarks = mcqMarks;
+    studentResponse.marks += mcqMarks;
+    await studentResponse.save({ validateBeforeSave: false });
+
+    // console.log(studentResponse);
 
     res.status(200).json({
         success: true,
@@ -196,7 +219,12 @@ exports.getStudentResponse = catchAsyncErrors(async (req, res, next) => {
             studentId: req.body.id,
             assessmentId: req.body.testId
         }
-    )
+    ).populate("questions")
+        .populate("essay")
+        .populate("video")
+        .populate("findAnswers")
+        .populate("compiler");
+
 
 
     res.status(200).json({
@@ -227,6 +255,68 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
     res.status(200).json({
         success: true,
         students
+    });
+}
+);
+
+
+// ---------- evaluate student response ----------------
+
+exports.evaluateResponse = catchAsyncErrors(async (req, res, next) => {
+    const { responseId, marks } = req.body;
+
+    const studentResponse = await StudentResponse.findById(responseId);
+
+    if (!studentResponse) {
+        return next(new ErrorHandler('Student Response not found', 404));
+    }
+
+    let mcqMarks = 0;
+    studentResponse.questions.forEach(async (question) => {
+        // const ques = await question.findById(question.questionId);
+        // as for the topic question we wont have the questionId so we will have to find the question find()method
+
+        if (question.AnswerIndex === question.correctAnswerIndex) {
+            mcqMarks += 1;
+        }
+    });
+
+    let codingMarks = 0;
+    let totalTestCasesMatched
+
+    // studentResponse.compiler.forEach(async (compiler) => {
+    //     const ques = await Compiler.findById(compiler.questionId);
+    //   compiler.testcases.forEach(testcase => {
+    // // if the req.body.code gives the same output as the testcase outputs then increment the codingMarks
+    // //how to run the code and get the output of the code and compare it with the testcase output
+
+    //   });
+    // });
+
+
+    // let essayMarks = 0;
+    // studentResponse.essay.forEach(essay => {
+    //     const ques = await Essay.findById(essay.questionId);
+    //     essayMarks += req.body.essayMarks;
+
+    // }
+
+    // );
+
+    // let videoMarks = 0;
+    // studentResponse.video.forEach(video => {
+    //     const ques = await Video.findById(video.questionId);
+    //     videoMarks += req.body.videoMarks;
+
+
+
+    studentResponse.marks = marks;
+
+    await studentResponse.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+        success: true,
+        studentResponse
     });
 }
 );
