@@ -14,6 +14,7 @@ const StudentResponse = require('../../models/student/studentResponse');
 
 exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
     const { FirstName, LastName, Email, Password, CollegeId } = req.body;
+  console.log("dummy student")
 
     const student = await Student.create({
         FirstName,
@@ -22,6 +23,7 @@ exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
         Password,
         CollegeId,
     });
+    console.log(student);
 
     sendToken(student, 200, res);
 });
@@ -83,8 +85,16 @@ exports.addTest = catchAsyncErrors(async (req, res, next) => {
     const student = await Student.findById(req.body.id);
 
     const { testId } = req.body;
+    // if (!student) {
+    //     return next(new ErrorHandler('Student not found', 404));
+    // }
+
+    if (student.studentTests.includes(testId)) {
+        return next(new ErrorHandler('Test already added', 400));
+    }
 
     student.studentTests.push(testId);
+    
 
     await student.save({ validateBeforeSave: false });
 
@@ -100,8 +110,8 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
 
     const testSections = await Assessments.findById(testId).populate({
         path: 'topics',
+        select: 'name'
     });
-
 
     // questions: [{
     //   type: mongoose.Schema.Types.ObjectId,
@@ -152,7 +162,7 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     if (!student || !assessment) {
         return next(new ErrorHandler('Student or Assessment not found', 404));
     }
-    student.studentTests.length > 0 ? student.studentTests.push(testId) : student.studentTests = [testId];
+    // student.studentTests.length > 0 ? student.studentTests.push(testId) : student.studentTests = [testId];
     // if(student.studentTests.length > 0){
     //     if (!student.studentTests.includes(testId)) {
     //         return next(new ErrorHandler('Test not started', 404));
@@ -160,6 +170,14 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     // }else{
     //     return next(new ErrorHandler('Test not started', 404));
     // }
+
+    if (!student.studentTests.includes(testId)) {
+        return next(new ErrorHandler('Test not started', 404));
+    }
+
+    if(assessment.studentResponses.includes(student._id)){
+        return next(new ErrorHandler('Test already submitted', 404));
+    }
 
 
     const studentResponse = await StudentResponse.create({

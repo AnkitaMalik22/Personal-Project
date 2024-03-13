@@ -155,7 +155,8 @@ studentMarks : [ {
     ref: "College",
   },
 // ----
-registrationLink: { type: String,unique: true },
+// registrationLink: { type: String, unique: true, default: "" },
+registrationLink: { type: String, default: ""},
 registeredAt: { type: Date },
 confirmationToken: { type: String },
 emailConfirmed: { type: Boolean, default: false },

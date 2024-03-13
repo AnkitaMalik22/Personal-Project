@@ -187,4 +187,5 @@ const studentResponseSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('StudentResponse', studentResponseSchema);
+const studentResponse = mongoose.model('StudentResponse', studentResponseSchema);
+module.exports = studentResponse;

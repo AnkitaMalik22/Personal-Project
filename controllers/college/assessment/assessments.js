@@ -107,10 +107,13 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
   const collegeId = req.user.id;
   console.log(collegeId, id);
 
-  const assessments = await College.findById(collegeId).populate("assessments");
-  const assessment = assessments.assessments.find(
-    (assessment) => assessment._id == id
-  );
+  // const assessments = await College.findById(collegeId).populate("assessments");
+  // const assessment = assessments.assessments.find(
+  //   (assessment) => assessment._id == id
+  // );
+
+
+  const assessment = await Assessments.findById(id);
 
   if (!assessment) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
