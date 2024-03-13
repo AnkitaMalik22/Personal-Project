@@ -11,6 +11,10 @@ const compilerSchema = new Schema({
         ref: 'Section',
       },
     //   ---------- req.body -------------
+    id:{
+      type:String,
+      // required:true
+  },
     Duration : String,
       code: {
         type: String,

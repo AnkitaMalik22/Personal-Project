@@ -24,6 +24,10 @@ const findAnswerSchema = new Schema({
         ref: 'Section',
       },
     //   ---------- req.body -------------
+    id:{
+      type:String,
+      // required:true
+  },
       Title: String,
       questions :[],
       Duration : String,

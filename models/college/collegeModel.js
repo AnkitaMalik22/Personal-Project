@@ -19,7 +19,7 @@ url:{
 }     },
   CollegeName : {
     type: String,
-    required: [true, 'Please Enter Your College Name'],
+    // required: [true, 'Please Enter Your College Name'],
     unique: true,
   },
   Email: {
@@ -29,19 +29,19 @@ url:{
   },
   FirstName: {
     type: String,
-    required: [true, 'Please Enter Your First Name'],
+    // required: [true, 'Please Enter Your First Name'],
     maxLength: [30, 'Name cannot exceed 30 characters'],
     minLength: [2, 'Name should have more than 2 characters'],
   },
   LastName: {
     type: String,
-    required: [true, 'Please Enter Your Last Name'],
+    // required: [true, 'Please Enter Your Last Name'],
     maxLength: [30, 'Name cannot exceed 30 characters'],
     minLength: [2, 'Name should have more than 2 characters'],
   },
   Password: {
     type: String,
-    required: [true, 'Please Enter Your Password'],
+    // required: [true, 'Please Enter Your Password'],
     minLength: [8, 'Password should be greater than 8 characters'],
     select: false,
   },

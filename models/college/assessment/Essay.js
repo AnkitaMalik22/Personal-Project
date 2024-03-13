@@ -11,6 +11,10 @@ const essaySchema = new Schema({
         ref: 'Section',
       },
     //   ---------- req.body -------------
+    id:{
+      type:String,
+      // required:true
+  },
       Title: String,
       Duration : String,
     //   ---------------------------------

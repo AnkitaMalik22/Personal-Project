@@ -29,7 +29,10 @@ const videoSchema = new Schema({
 //       type: mongoose.Schema.Types.ObjectId,
 //       ref: "FindAnswer"
 // }],
-
+id:{
+  type:String,
+  // required:true
+},
 Duration: String,
 video :String,
 videoFile :String,

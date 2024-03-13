@@ -59,11 +59,11 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-    const { Email, FirstName, LastName, Password ,Phone } = req.body;
+    const { Email, FirstName, LastName, Password ,Phone ,CollegeName} = req.body;
 
 
     // Check if required fields are present
-    if (!Email || !FirstName || !LastName || !Password || !Phone) {
+    if (!Email || !FirstName || !LastName || !Password || !Phone || !CollegeName) {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
    
@@ -254,6 +254,11 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   if (req.body.password !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
+// check if old password is same as new
+if (req.body.password === college.Password) {
+  return next(new ErrorHandler("Password cannot be same as old password", 400));
+}
+
   // it should contain atleast one uppercase, one lowercase, one number and one special character
   const passwordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])");
   if (!passwordRegex.test(req.body.password)) {

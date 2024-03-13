@@ -12,6 +12,10 @@ const questionsSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Section',
   },
+  id:{
+    type:String,
+    // required:true
+},
   Duration : String,
   Title: String,
   Options: {
