@@ -120,7 +120,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     // Iterate over each student response and add it to the respective student
     const populatedStudents = allStudents.map(student => {
         const response = testSections.studentResponses.find(response => response.studentId.toString() === student._id.toString());
-    //    console.log(response, "response");
+       console.log(response._id, "response");
        
         if (response) {
             // Add the response to the student object
@@ -258,6 +258,24 @@ exports.getStudentResponseById = catchAsyncErrors(async (req, res, next) => {
     });
 }
 );
+
+// response by studentId and testId
+exports.getStudentResponseByStudentIdAndTestId = catchAsyncErrors(async (req, res, next) => {
+    const studentResponse = await StudentResponse.find(
+        {
+            studentId: req.query.studentId,
+            assessmentId: req.query.testId
+        }
+    );
+
+    res.status(200).json({
+        success: true,
+        studentResponse
+    });
+}
+);
+
+
 
 
 exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
