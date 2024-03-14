@@ -196,17 +196,17 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     // console.log(studentResponse.topics , "studentResponse.topics.questions");
     // console.log(studentResponse.topics[0], "studentResponse.topics.questions");
 
-    // if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
-    //     //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
-    //             studentResponse.topics[0].questions.forEach(async (question) => {
+    if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
+        //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
+                studentResponse.topics[0].questions.forEach(async (question) => {
         
-    //                 console.log(question.AnswerIndex, question.StudentAnswerIndex, );
+                    console.log(question.AnswerIndex, question.StudentAnswerIndex, );
         
-    //                 if (question.AnswerIndex === question.StudentAnswerIndex) {
-    //                     mcqMarks += 1;
-    //                 }
-    //             });
-    //         }
+                    if (question.AnswerIndex === question.StudentAnswerIndex) {
+                        mcqMarks += 1;
+                    }
+                });
+            }
         // studentResponse?.topics?.forEach(topic => {
         //     // [0].questions.forEach(async (question) => {
 
@@ -228,27 +228,27 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     
 
     let codingMarks = 0;
-//     if (studentResponse.topics[0] && studentResponse.topics[0].compiler) {
+    if (studentResponse.topics[0] && studentResponse.topics[0].compiler) {
 
-//    studentResponse.topics[0].compiler.testcase.forEach(test => {
-//         if (test.studentOutput === test.expectedOutput) {
-//             test.passed = true;
-//             // if all the testcases are passed then increment the codingMarks
-//             if (test.passed) {
-//                 codingMarks += 1;
-//             }else{
-//                 codingMarks += 0;
-//             }
-//         }
-//     });
+   studentResponse.topics[0].compiler.testcase.forEach(test => {
+        if (test.studentOutput === test.expectedOutput) {
+            test.passed = true;
+            // if all the testcases are passed then increment the codingMarks
+            if (test.passed) {
+                codingMarks += 1;
+            }else{
+                codingMarks += 0;
+            }
+        }
+    });
 
-//     }
+    }
 
 
  
     
     studentResponse.marks = mcqMarks + codingMarks;
-    studentResponse.percentage = (mcqMarks + codingMarks) / (studentResponse.forEach(topic => topic.questions.length + topic.compiler.testcase.length) * 100);
+    // studentResponse.percentage = (mcqMarks + codingMarks) / (studentResponse.forEach(topic => topic.questions.length + topic.compiler.testcase.length) * 100);
     studentResponse.mcqMarks = mcqMarks;
     studentResponse.codingMarks = codingMarks;
 
