@@ -11,7 +11,7 @@ router.route('/me/:id').get(getStudentDetails);
 router.route('/all/:id').get(getAllStudents);
 router.route('/add/test').post(addTest);
 // router.route('/add/marks').post(addMarks);
-router.route('/get/test-details').get(getTestDetails);
+router.route('/get/test-details/:id').get(getTestDetails);
 router.route('/answer/test').post(giveTest);
 router.route('/response/details').get(getStudentResponse);
 router.route('/response/:id').get(getStudentResponseById);

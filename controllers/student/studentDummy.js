@@ -107,10 +107,10 @@ exports.addTest = catchAsyncErrors(async (req, res, next) => {
 });
 
 exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
-    const { testId } = req.body;
+    // const { testId } = req.params;
 
     // Find the assessment
-    const testSections = await Assessments.findById(testId).populate({
+    const testSections = await Assessments.findById(req.params.id).populate({
         path: 'studentResponses'
     });
     
