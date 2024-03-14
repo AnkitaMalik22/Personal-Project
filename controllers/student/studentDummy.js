@@ -10,6 +10,7 @@ const StudentResponse = require('../../models/student/studentResponse');
 
 
 
+
 // register dummy student
 
 exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
@@ -108,48 +109,40 @@ exports.addTest = catchAsyncErrors(async (req, res, next) => {
 exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     const { testId } = req.body;
 
+    // Find the assessment
     const testSections = await Assessments.findById(testId).populate({
-        path: 'topics',
-        select: 'name'
+        path: 'studentResponses'
+    });
+    
+    // Fetch all students
+    const allStudents = await Student.find();
+    
+    // Iterate over each student response and add it to the respective student
+    const populatedStudents = allStudents.map(student => {
+        const response = testSections.studentResponses.find(response => response.studentId.toString() === student._id.toString());
+    //    console.log(response, "response");
+       
+        if (response) {
+            // Add the response to the student object
+            student.response = response;
+        } else {
+            // If no response found, set it to null or an empty object
+            student.response = null; // or {}
+        }
+     
+        return student;
     });
 
-    // questions: [{
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'Questions',
-    // }],
-    // findAnswers: [{
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'FindAnswer',
-    // }],
-    // essay :[
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Essay',
-    //   }
-    // ],
-    // video :[
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Video',
-    //   }
-    // ],
-    // compiler:[
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Compiler',
-    //   }
-    // ],
-
-
-
-
-
-
+//   populatedStudents.forEach(student => {
+//     console.log(student.response, "student.response");
+//     }
+//     );
+    
     res.status(200).json({
         success: true,
-        testSections
-
+        students: populatedStudents
     });
+    
 });
 
 exports.giveTest = catchAsyncErrors(async (req, res, next) => {
