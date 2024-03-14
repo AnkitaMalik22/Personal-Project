@@ -196,17 +196,17 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     // console.log(studentResponse.topics , "studentResponse.topics.questions");
     // console.log(studentResponse.topics[0], "studentResponse.topics.questions");
 
-    if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
-        //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
-                studentResponse.topics[0].questions.forEach(async (question) => {
+    // if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
+    //     //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
+    //             studentResponse.topics[0].questions.forEach(async (question) => {
         
-                    console.log(question.AnswerIndex, question.StudentAnswerIndex, );
+    //                 console.log(question.AnswerIndex, question.StudentAnswerIndex, );
         
-                    if (question.AnswerIndex === question.StudentAnswerIndex) {
-                        mcqMarks += 1;
-                    }
-                });
-            }
+    //                 if (question.AnswerIndex === question.StudentAnswerIndex) {
+    //                     mcqMarks += 1;
+    //                 }
+    //             });
+    //         }
         // studentResponse?.topics?.forEach(topic => {
         //     // [0].questions.forEach(async (question) => {
 
