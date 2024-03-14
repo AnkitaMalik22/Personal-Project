@@ -110,35 +110,35 @@ const {type}= req.query;
 
   let question = [];
   if (type === 'mcq') {
-    await Questions.findByIdAndUpdate(id, req.body, {
+  question=  await Questions.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else if (type === 'findAnswer') {
-    await findAnswer.findByIdAndUpdate(id, req.body, {
+    question=   await findAnswer.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else if (type === 'code') {
-    await Compiler.findByIdAndUpdate(id, req.body, {
+    question=   await Compiler.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else if (type === 'video') {
-    await Video.findByIdAndUpdate(id, req.body, {
+    question=   await Video.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else {
-    await Essay.findByIdAndUpdate(id, req.body, {
+    question=  await Essay.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   }
 
-  question = await Questions.findById(id);
+  // question = await Questions.findById(id);
 
-  if (!question) {
-    return res.status(404).json({
-      success: false,
-      message: "Question not found",
-    });
-  }
+  // if (!question) {
+  //   return res.status(404).json({
+  //     success: false,
+  //     message: "Question not found",
+  //   });
+  // }
 
 
   // Only Authorized Company/College can update questions

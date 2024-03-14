@@ -227,7 +227,7 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
             
     
 
-//     let codingMarks = 0;
+    let codingMarks = 0;
 //     if (studentResponse.topics[0] && studentResponse.topics[0].compiler) {
 
 //    studentResponse.topics[0].compiler.testcase.forEach(test => {
