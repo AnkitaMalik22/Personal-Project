@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 const assessmentsSchema = new Schema({
 
+
   name: {
     type: String,
     required: true,
@@ -22,6 +23,26 @@ const assessmentsSchema = new Schema({
     default: 0,
     // required: true,
   },
+
+  duration_from: {
+    // type: Date,
+    type: String,
+    // required: true,
+  },
+  duration_to: {
+    // type: Date,
+    type: String,
+    // required: true,
+  },
+
+  isNegativeMarking: {
+    type: Boolean,
+    default: false,
+    // required: true,
+  },
+  
+
+
 
   startDate: {
     type: Date,

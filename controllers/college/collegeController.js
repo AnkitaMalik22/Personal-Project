@@ -17,7 +17,9 @@ const axios = require("axios");
 // =================================================== REGISTER COLLEGE ===========================================================
 
 exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
+  console.log("register college")
   if (req.body.googleAccessToken) {
+    console.log("googleAccessToken")
     try {
       const { googleAccessToken } = req.body;
 

@@ -146,7 +146,13 @@ const studentResponseSchema = new mongoose.Schema({
                     },
 
                     testcase: {
-                        type: [],
+                        type : [],
+                        // input : "",
+                        // expectedOutput :"" ,
+                        // studentOutput : "",
+                        // passed : false,
+
+
                     },
                     output: {
                         type: [],
@@ -160,6 +166,10 @@ const studentResponseSchema = new mongoose.Schema({
 
         }
     ],
+    percentage: {
+        type: Number,
+        default: 0,
+    },
 
     mcqMarks: {
         type: Number,

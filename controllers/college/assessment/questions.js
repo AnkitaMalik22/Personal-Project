@@ -1,5 +1,9 @@
 // Import necessary models and modules
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
+const Compiler = require("../../../models/college/assessment/Compiler");
+const Essay = require("../../../models/college/assessment/Essay");
+const Video = require("../../../models/college/assessment/Video");
+const findAnswer = require("../../../models/college/assessment/findAnswer");
 const Questions = require("../../../models/college/assessment/questions");
 const Section = require("../../../models/college/assessment/sections");
 
@@ -99,10 +103,36 @@ exports.getQuestionById = catchAsyncErrors(async (req, res, next) => {
 
 // ===============================================| Update Question by ID |===================================================================
 // Controller to update question by ID
-exports.updateQuestionById = catchAsyncErrors(async (req, res, next) => {
+exports.updateQuestionById = catchAsyncErrors(async (req, res) => {
   const { id } = req.params;
-  const userId = req.user.id;
-  let question = await Questions.findById(id);
+  // const userId = req.user.id;
+const {type}= req.query;
+
+  let question = [];
+  if (type === 'mcq') {
+    await Questions.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+  } else if (type === 'findAnswer') {
+    await findAnswer.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+  } else if (type === 'code') {
+    await Compiler.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+  } else if (type === 'video') {
+    await Video.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+  } else {
+    await Essay.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+  }
+
+  question = await Questions.findById(id);
+
   if (!question) {
     return res.status(404).json({
       success: false,
@@ -110,26 +140,32 @@ exports.updateQuestionById = catchAsyncErrors(async (req, res, next) => {
     });
   }
 
+
   // Only Authorized Company/College can update questions
 
-  if (question.createdByCompany === true) {
-    if (req.body.company !== userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }else{
-      await Questions.findByIdAndUpdate(id, req.body, {
-        new: true,
-      });
-    }
-  } else {
-    if (question.college !== userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    else{
-      await Questions.findByIdAndUpdate(id, req.body, {
-        new: true,
-      });
-    }
-  }
+  // if(question.createdBy != req.user.id){
+  //   return res.status(401).json({ error: "Unauthorized" });
+  // }
+
+
+  // if (question.createdByCompany === true) {
+  //   if (req.body.company !== userId) {
+  //     return res.status(401).json({ error: "Unauthorized" });
+  //   }else{
+  //     await Questions.findByIdAndUpdate(id, req.body, {
+  //       new: true,
+  //     });
+  //   }
+  // } else {
+  //   if (question.college !== userId) {
+  //     return res.status(401).json({ error: "Unauthorized" });
+  //   }
+  //   else{
+  //     await Questions.findByIdAndUpdate(id, req.body, {
+  //       new: true,
+  //     });
+  //   }
+  // }
   res.status(200).json({
     success: true,
     question,

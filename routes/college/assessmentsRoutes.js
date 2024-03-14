@@ -39,7 +39,7 @@ router.delete('/sections/:id',isAuthenticatedCollege || isAuthenticatedCompany,a
 router.post('/questions/create/:sectionId', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), createQuestion);
 router.get('/questions/:sectionId', isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, getAllQuestions);
 router.get('/question/:id',isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, getQuestionById);
-router.put('/question/:id',  isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), updateQuestionById);
+router.put('/question/:id',   updateQuestionById);
 router.delete('/questions/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), deleteQuestionById);
 
 // Answers Routes FOR COLLEGE && COMPANY 

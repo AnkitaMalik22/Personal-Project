@@ -208,8 +208,25 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
         });
     }
 
+    let codingMarks = 0;
+
+    studentResponse.compiler.testcase.forEach(test => {
+        if (test.studentOutput === test.expectedOutput) {
+            test.passed = true;
+        }
+    });
+
+    studentResponse.compiler.testcase.forEach(test => {
+        if (test.passed) {
+            codingMarks += 1;
+        }
+    });
+    
+    studentResponse.marks = mcqMarks + codingMarks;
+    studentResponse.percentage = (mcqMarks + codingMarks) / (studentResponse.forEach(topic => topic.questions.length + topic.compiler.testcase.length) * 100);
     studentResponse.mcqMarks = mcqMarks;
-    studentResponse.marks += mcqMarks;
+    studentResponse.codingMarks = codingMarks;
+
     await studentResponse.save({ validateBeforeSave: false });
 
     // console.log(studentResponse);
@@ -313,7 +330,22 @@ exports.evaluateResponse = catchAsyncErrors(async (req, res, next) => {
     });
 
     let codingMarks = 0;
-    let totalTestCasesMatched
+    let totalTestCasesMatched;
+
+    studentResponse.compiler.testcase.forEach(test => {
+        if (test.studentOutput === test.expectedOutput) {
+            test.passed = true;
+        }
+    });
+
+    studentResponse.compiler.testcase.forEach(test => {
+        if (test.passed) {
+            codingMarks += 1;
+        }
+    });
+    
+
+
 
     // studentResponse.compiler.forEach(async (compiler) => {
     //     const ques = await Compiler.findById(compiler.questionId);
@@ -343,6 +375,7 @@ exports.evaluateResponse = catchAsyncErrors(async (req, res, next) => {
 
     studentResponse.marks = marks;
 
+
     await studentResponse.save({ validateBeforeSave: false });
 
     res.status(200).json({
@@ -351,6 +384,33 @@ exports.evaluateResponse = catchAsyncErrors(async (req, res, next) => {
     });
 }
 );
+
+
+
+// to add marks to the student response by the teacher
+
+exports.updateStudentResponse = catchAsyncErrors(async (req, res, next) => {
+    const { responseId } = req.params;
+    const studentResponse = await StudentResponse
+        .findById
+        (responseId);
+
+    if (!studentResponse) {
+        return next(new ErrorHandler('Student Response not found', 404));
+    }
+
+    // update the student response
+    studentResponse = req.body;
+    await studentResponse.save({ validateBeforeSave: false });
+
+
+    res.status(200).json({
+        success: true,
+        studentResponse
+    });
+}
+);
+
 
 
 
