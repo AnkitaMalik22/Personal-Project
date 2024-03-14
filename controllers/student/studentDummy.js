@@ -198,29 +198,47 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
 
     if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
 //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
-        studentResponse.topics[0].questions.forEach(async (question) => {
+        studentResponse.topics.forEach(topic => {
+            // [0].questions.forEach(async (question) => {
 
-            console.log(question.AnswerIndex, question.StudentAnswerIndex, );
-
-            if (question.AnswerIndex === question.StudentAnswerIndex) {
-                mcqMarks += 1;
+            //     console.log(question.AnswerIndex, question.StudentAnswerIndex, );
+    
+            //     if (question.AnswerIndex === question.StudentAnswerIndex) {
+            //         mcqMarks += 1;
+            //     }
+            // });
+            if(topic.Type === 'mcq'){
+                topic.questions.forEach(question => {
+                    if (question.AnswerIndex === question.StudentAnswerIndex) {
+                        mcqMarks += 1;
+                    }
+                });
             }
-        });
+        })
+            
     }
 
     let codingMarks = 0;
 
-    studentResponse.compiler.testcase.forEach(test => {
-        if (test.studentOutput === test.expectedOutput) {
-            test.passed = true;
-        }
-    });
+   studentResponse.topics.forEach(topic => {
 
-    studentResponse.compiler.testcase.forEach(test => {
-        if (test.passed) {
-            codingMarks += 1;
-        }
-    });
+         if(topic.Type === 'compiler'){
+              topic.compiler.testcase.forEach(test => {
+                if (test.studentOutput === test.expectedOutput) {
+                     test.passed = true;
+                }
+              });
+    
+              topic.compiler.testcase.forEach(test => {
+                if (test.passed) {
+                     codingMarks += 1;
+                }
+              });
+         }
+        });
+
+
+ 
     
     studentResponse.marks = mcqMarks + codingMarks;
     studentResponse.percentage = (mcqMarks + codingMarks) / (studentResponse.forEach(topic => topic.questions.length + topic.compiler.testcase.length) * 100);

@@ -13,6 +13,9 @@ const studentResponseSchema = new mongoose.Schema({
     },
     topics: [
         {
+            Type : String,
+            Heading : String,
+            Description : String,
 
             questions: [
                 {
