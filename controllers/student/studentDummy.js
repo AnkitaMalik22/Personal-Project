@@ -219,6 +219,7 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     }
 
     let codingMarks = 0;
+    if (studentResponse.topics[0] && studentResponse.topics[0].compiler) {
 
    studentResponse.topics.forEach(topic => {
 
@@ -236,6 +237,8 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
               });
          }
         });
+
+    }
 
 
  
