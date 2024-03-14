@@ -198,7 +198,8 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
 
     if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
 //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
-        studentResponse.topics.forEach(topic => {
+console.log(studentResponse.topics, "studentResponse.topics[0].questions");
+        studentResponse?.topics?.forEach(topic => {
             // [0].questions.forEach(async (question) => {
 
             //     console.log(question.AnswerIndex, question.StudentAnswerIndex, );
@@ -207,8 +208,8 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
             //         mcqMarks += 1;
             //     }
             // });
-            if(topic.Type === 'mcq'){
-                topic.questions.forEach(question => {
+            if(topic?.Type === 'mcq'){
+                topic?.questions?.forEach(question => {
                     if (question.AnswerIndex === question.StudentAnswerIndex) {
                         mcqMarks += 1;
                     }
@@ -221,16 +222,18 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     let codingMarks = 0;
     if (studentResponse.topics[0] && studentResponse.topics[0].compiler) {
 
-   studentResponse.topics.forEach(topic => {
+   studentResponse?.topics?.forEach(topic => {
 
          if(topic.Type === 'compiler'){
-              topic.compiler.testcase.forEach(test => {
+            console.log(studentResponse.topics, "compiler testcases");
+
+              topic?.compiler?.testcase?.forEach(test => {
                 if (test.studentOutput === test.expectedOutput) {
                      test.passed = true;
                 }
               });
     
-              topic.compiler.testcase.forEach(test => {
+              topic?.compiler?.testcase?.forEach(test => {
                 if (test.passed) {
                      codingMarks += 1;
                 }
