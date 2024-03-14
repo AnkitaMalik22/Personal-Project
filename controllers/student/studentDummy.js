@@ -258,7 +258,7 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        response: assessment.studentResponses
+        response: studentResponse
     });
 });
 
