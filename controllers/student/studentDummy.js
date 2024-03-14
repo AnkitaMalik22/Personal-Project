@@ -254,8 +254,10 @@ exports.getStudentResponse = catchAsyncErrors(async (req, res, next) => {
 
 // repsonse of a student by response id
 exports.getStudentResponseById = catchAsyncErrors(async (req, res, next) => {
+    console.log(req.params.id);
     const studentResponse = await StudentResponse.findById(req
         .params.id);
+        console.log(studentResponse);
 
     res.status(200).json({
         success: true,
