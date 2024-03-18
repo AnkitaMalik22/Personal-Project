@@ -85,9 +85,43 @@ const studentResponseSchema = new mongoose.Schema({
                     Duration: String,
                     video: String,
                     videoFile: String,
-                    long: [],
-                    short: [],
-                    questions: [],
+                    long: [{
+                        Title: String,
+                        studentAnswer: String,
+                        Duration: String,
+                    }],
+                    short: [{
+                        Title: String,
+                        studentAnswer: String,
+                        Duration: String,
+                    }],
+                    questions: [
+                        {
+                            Title: String,
+                            Options: {
+                                type: Array,
+                                default: [],
+                            },
+                            // For lengthy questions
+                            Answer: {
+                                type: String,
+                                default: '',
+                            },
+        
+                            AnswerIndex: {
+                                type: Number,
+                                default: -1,
+                            },
+                            QuestionType: {
+                                type: String,
+                                default: 'mcq',
+                            },             // for MCQ
+                            StudentAnswerIndex: {
+                                type: Number,
+                                // required: [true, 'Please enter student answer index']
+                            },
+                        }
+                    ],
                     VideoLink: String,
 
                     mcq: [],
@@ -104,7 +138,10 @@ const studentResponseSchema = new mongoose.Schema({
             findAnswers: [
                 {
                     Title: String,
-                    questions: [],
+                    questions: [{
+                       question: String,
+                       studentAnswer : String,
+                    }],
                     Duration: String,
 
                     Answer: {
@@ -149,7 +186,12 @@ const studentResponseSchema = new mongoose.Schema({
                     },
 
                     testcase: {
-                        type : [],
+                        type : [{
+                            input : String,
+                            expectedOutput : String,
+                            studentOutput : String,
+                            passed : Boolean,
+                        }],
                         // input : "",
                         // expectedOutput :"" ,
                         // studentOutput : "",
@@ -195,6 +237,10 @@ const studentResponseSchema = new mongoose.Schema({
         default: 0,
     },
     marks: {
+        type: Number,
+        default: 0,
+    },
+    totalMarks: {
         type: Number,
         default: 0,
     },

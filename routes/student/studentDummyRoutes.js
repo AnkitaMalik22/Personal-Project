@@ -1,7 +1,7 @@
 const router = require('express').Router();
 
 
-const {registerStudent,loginStudent,getStudentDetails,getAllStudents,addTest,getTestDetails,giveTest, getStudentResponse, getStudentResponseById, getStudentResponseByStudentIdAndTestId} = require('../../controllers/student/studentDummy');
+const {registerStudent,loginStudent,getStudentDetails,getAllStudents,addTest,getTestDetails,giveTest, getStudentResponse, getStudentResponseById, getStudentResponseByStudentIdAndTestId, testPerformance} = require('../../controllers/student/studentDummy');
 
 
 router.route('/register').post(registerStudent);
@@ -17,7 +17,7 @@ router.route('/response/details').get(getStudentResponse);
 router.route('/response/:id').get(getStudentResponseById);
 router.route('/students/:id').get(getAllStudents);
 router.route('/test/student').get(getStudentResponseByStudentIdAndTestId);
-
+router.route('/test/get-performace/:id').get(testPerformance);
 
 
 

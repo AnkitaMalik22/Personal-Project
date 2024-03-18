@@ -14,8 +14,9 @@ const StudentResponse = require('../../models/student/studentResponse');
 // register dummy student
 
 exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
-    const { FirstName, LastName, Email, Password, CollegeId } = req.body;
-  console.log("dummy student")
+    const { FirstName, LastName, Email, Password, CollegeId,registrationLink } = req.body;
+
+    console.log("dummy student")
 
     const student = await Student.create({
         FirstName,
@@ -23,10 +24,12 @@ exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
         Email,
         Password,
         CollegeId,
+        registrationLink
     });
     console.log(student);
 
     sendToken(student, 200, res);
+
 });
 
 exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
@@ -113,6 +116,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     const testSections = await Assessments.findById(req.params.id).populate({
         path: 'studentResponses'
     });
+    console.log (testSections, "testSections");
     
     // Fetch all students
     const allStudents = await Student.find();
@@ -120,7 +124,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     // Iterate over each student response and add it to the respective student
     const populatedStudents = allStudents.map(student => {
         const response = testSections.studentResponses.find(response => response.studentId.toString() === student._id.toString());
-       console.log(response._id, "response");
+    //    console.log(response._id, "response");
        
         if (response) {
             // Add the response to the student object
@@ -146,7 +150,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
 });
 
 exports.giveTest = catchAsyncErrors(async (req, res, next) => {
-    const { testId, } = req.body;
+    const { testId, topics } = req.body;
 
     // Retrieve student and assessment based on provided IDs
     const student = await Student.findById(req.body.id);
@@ -155,23 +159,14 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     if (!student || !assessment) {
         return next(new ErrorHandler('Student or Assessment not found', 404));
     }
-    // student.studentTests.length > 0 ? student.studentTests.push(testId) : student.studentTests = [testId];
-    // if(student.studentTests.length > 0){
-    //     if (!student.studentTests.includes(testId)) {
-    //         return next(new ErrorHandler('Test not started', 404));
-    //     }
-    // }else{
-    //     return next(new ErrorHandler('Test not started', 404));
-    // }
 
     if (!student.studentTests.includes(testId)) {
         return next(new ErrorHandler('Test not started', 404));
     }
 
-    if(assessment.studentResponses.includes(student._id)){
+    if (assessment.studentResponses.includes(student._id)) {
         return next(new ErrorHandler('Test already submitted', 404));
     }
-
 
     const studentResponse = await StudentResponse.create({
         studentId: req.body.id,
@@ -179,89 +174,80 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
         ...req.body
     });
 
-    student.studentResponses.push(studentResponse._id);
-
-
-    // Update assessment with student's responses
-    assessment.studentResponses.push(studentResponse._id);
-
-    // Save changes to student and assessment
-    await student.save({ validateBeforeSave: false });
-    await assessment.save({ validateBeforeSave: false });
-
-
-
-    // evaluate the student response ---- working only for mcq
     let mcqMarks = 0;
-    // console.log(studentResponse.topics , "studentResponse.topics.questions");
-    // console.log(studentResponse.topics[0], "studentResponse.topics.questions");
-
-    // if (studentResponse.topics[0] && studentResponse.topics[0].questions) {
-    //     //    console.log(studentResponse.topics[0].questions[0], "studentResponse.topics[0].questions");
-    //             studentResponse.topics[0].questions.forEach(async (question) => {
-        
-    //                 console.log(question.AnswerIndex, question.StudentAnswerIndex, );
-        
-    //                 if (question.AnswerIndex === question.StudentAnswerIndex) {
-    //                     mcqMarks += 1;
-    //                 }
-    //             });
-    //         }
-        // studentResponse?.topics?.forEach(topic => {
-        //     // [0].questions.forEach(async (question) => {
-
-        //     //     console.log(question.AnswerIndex, question.StudentAnswerIndex, );
-    
-        //     //     if (question.AnswerIndex === question.StudentAnswerIndex) {
-        //     //         mcqMarks += 1;
-        //     //     }
-        //     // });
-        //     if(topic?.Type === 'mcq'){
-        //         topic?.questions?.forEach(question => {
-        //             if (question.AnswerIndex === question.StudentAnswerIndex) {
-        //                 mcqMarks += 1;
-        //             }
-        //         });
-        //     }
-        // })
-            
-    
-
     let codingMarks = 0;
-//     if (studentResponse.topics[0] && studentResponse.topics[0].compiler) {
+    let totalMCQandCodingQuestions = 0;
 
-//    studentResponse.topics[0].compiler.testcase.forEach(test => {
-//         if (test.studentOutput === test.expectedOutput) {
-//             test.passed = true;
-//             // if all the testcases are passed then increment the codingMarks
-//             if (test.passed) {
-//                 codingMarks += 1;
-//             }else{
-//                 codingMarks += 0;
-//             }
-//         }
-//     });
+    for (const topic of topics) {
+        if (topic?.Type === 'mcq') {
+            totalMCQandCodingQuestions += topic?.questions?.length;
+            for (const question of topic?.questions) {
+                if (question.AnswerIndex === question.StudentAnswerIndex) {
+                    mcqMarks += 1;
+                }
+            }
+        }
 
-//     }
+    //     if (topic?.Type === 'compiler') {
+    //         totalMCQandCodingQuestions += topic?.compiler?.length;
+    //         const testcase = topic?.compiler?.testcase;
+    //         if (testcase && Array.isArray(testcase)) {
+    //             for (const test of testcase) {
+    //                 if (test.studentOutput === test.expectedOutput) {
+    //                     test.passed = true;
+    //                 } else {
+    //                     test.passed = false;
+    //                 }
+    //             }
+    //             const allTestCasesPassed = testcase.every(test => test.passed);
+    //             if (allTestCasesPassed) {
+    //                 codingMarks += 1;
+    //             }
+    //         }
+    //     }
+    // }
+    if (topic?.Type === 'compiler') {
+        totalMCQandCodingQuestions += topic?.compiler?.length;
+        for (const compiler of topic.compiler) {
+            const testcase = compiler.testcase;
+            if (testcase && Array.isArray(testcase)) {
+                for (const test of testcase) {
+                    if (test.studentOutput === test.expectedOutput) {
+                        test.passed = true;
+                    } else {
+                        test.passed = false;
+                    }
+                }
+                const allTestCasesPassed = testcase.every(test => test.passed);
+                if (allTestCasesPassed) {
+                    codingMarks += 1;
+                }
+            }
+        }
+    }
 
-
- 
+}
     
+
     studentResponse.marks = mcqMarks + codingMarks;
-    // studentResponse.percentage = (mcqMarks + codingMarks) / (studentResponse.forEach(topic => topic.questions.length + topic.compiler.testcase.length) * 100);
+    const percentage = ((mcqMarks + codingMarks) / totalMCQandCodingQuestions) * 100;
+    studentResponse.percentage = percentage;
     studentResponse.mcqMarks = mcqMarks;
     studentResponse.codingMarks = codingMarks;
+    studentResponse.totalMarks = totalMCQandCodingQuestions;
 
+    student.studentResponses.push(studentResponse._id);
+    assessment.studentResponses.push(studentResponse._id);
+
+    await student.save({ validateBeforeSave: false });
+    await assessment.save({ validateBeforeSave: false });
     await studentResponse.save({ validateBeforeSave: false });
-
-    // console.log(studentResponse);
 
     res.status(200).json({
         success: true,
         response: studentResponse
     });
 });
-
 
 
 // repsonse of a student by test id
@@ -435,6 +421,42 @@ exports.updateStudentResponse = catchAsyncErrors(async (req, res, next) => {
     });
 }
 );
+
+
+// test overall performance of all students
+
+exports.testPerformance = catchAsyncErrors(async (req, res, next) => {
+    const studentResponses = await StudentResponse.find({
+        assessmentId: req.body.testId
+    });
+
+    // Calculate the overall performance percentage
+    let totalPercentage = 0;
+    studentResponses.forEach(studentResponse => {
+        totalPercentage += studentResponse.percentage;
+    });
+    const overallPerformance = totalPercentage / studentResponses.length;
+
+    res.status(200).json({
+        success: true,
+        overallPerformance: overallPerformance
+    });
+});
+
+
+// exports.selectStudent = catchAsyncErrors(async (req, res, next) => {
+
+//     const student = await Student.findById(req.params.id);
+
+//     if (!student) {
+//         return next(new ErrorHandler('Student not found', 404));
+//     }
+
+//     res.status(200).json({
+//         success: true,
+//         student
+//     });
+// }
 
 
 
