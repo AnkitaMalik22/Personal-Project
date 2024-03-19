@@ -530,7 +530,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
 
     return res.status(201).json({
       message: "Question added successfully",
-      questions:[question],
+      questions,
     });
   } catch (error) {
     console.log(error)

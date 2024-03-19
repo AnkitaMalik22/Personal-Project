@@ -128,6 +128,7 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
   if(req.body.googleAccessToken){
 
     const {googleAccessToken,ip} = req.body;
+
   
           axios
               .get("https://www.googleapis.com/oauth2/v3/userinfo", {
@@ -225,6 +226,7 @@ exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
 // logout a user 
 
 exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
+  console.log("req.user.id",req.user.id)
   const college = await College.findById(req.user.id);
 
   if (!college) {
@@ -260,6 +262,32 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
 );
 
 
+// ===================================================   REMOVE LOGGEDOUT USERS ===========================================================
+
+
+exports.removeLoggedOutUsers = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+    
+  }
+
+  const token = req.params.token;
+
+  // college.loginActivity = college.loginActivity.filter((login) => login.token_deleted === false);
+  college.loginActivity = college.loginActivity.filter((login) => login.token_id !== token);
+
+  await college.save({ validateBeforeSave: false });
+
+  const loggedInUsers = college.loginActivity;
+
+
+  res.status(200).json({
+    success: true,
+    loggedInUsers,
+  });
+});
 
 
 // ====================================================== LOGOUT COLLEGE ===========================================================

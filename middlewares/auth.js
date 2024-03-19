@@ -110,8 +110,20 @@ const isAuthenticatedUser = (model) => {
       return next(new ErrorHander("Please Login to access this resource", 401));
     }
 
-    const isBlacklisted = await BlacklistToken.findOne({ token });
-    // console.log(isBlacklisted , token ,"isBlacklisted");
+    const allBlacklistedTokens = await BlacklistToken.find();
+    // console.log(allBlacklistedTokens);
+
+    // console.log("Token value:", token);
+    // const isBlacklisted = await BlacklistToken.findOne({ token : token});
+    // console.log(isBlacklisted); //  null
+    let isBlacklisted = false;
+
+    allBlacklistedTokens.forEach((blacklistedToken) => {
+      // console.log(blacklistedToken.token === token ," blaclisted token");
+      if (blacklistedToken.token === token) {
+      isBlacklisted = true;
+      }
+    });
 
     if (isBlacklisted) {
       return next(new ErrorHander("Token is blacklisted. Please login again", 401));

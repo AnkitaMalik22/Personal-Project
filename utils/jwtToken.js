@@ -120,46 +120,70 @@ const sendToken = async (user, statusCode, res, ip, device) => {
   // Remove the token from the blacklist
   await BlacklistToken.deleteOne({ token });
 
-  // Update the login activity to mark the token as not deleted
-  if (user.loginActivity.length > 0) {
-    let tokenExists = false;
-    for (let i = 0; i < user.loginActivity.length; i++) {
-      console.log(user.loginActivity[i].token_id === token  );
-      if (user.loginActivity[i].token_id === token) {
-        tokenExists = true;
-        user.loginActivity[i].token_deleted = false;
-        user.loginActivity[i].logged_in_at = Date.now();
+  // // Update the login activity to mark the token as not deleted
+  // if (user.loginActivity.length > 0) {
+  //   let tokenExists = false;
+  //   for (let i = 0; i < user.loginActivity.length; i++) {
+  //     console.log(user.loginActivity[i].token_id === token);
+  //     if (user.loginActivity[i].token_id === token) {
+  //       tokenExists = true;
+  //       user.loginActivity[i].token_deleted = false;
+  //       user.loginActivity[i].logged_in_at = Date.now();
 
-        // console.log(user.loginActivity[i])
-        
-        break;
-      }
-    }
+  //       // console.log(user.loginActivity[i])
 
-    // If token does not exist in login activity, add it
-    if (!tokenExists) {
-      console.log('Token does not exist')
-      user.loginActivity.push({
-        ip,
-        logged_in_at: Date.now(),
-        device,
-        token_id: token,
-        token_secret: process.env.JWT_SECRET,
-        token_deleted: false,
-      });
-      // console.log(user.loginActivity)
-    }
-  } else {
-    console.log('Token does not exist')
-    user.loginActivity.push({
-      ip,
-      logged_in_at: Date.now(),
-      device,
-      token_id: token,
-      token_secret: process.env.JWT_SECRET,
-      token_deleted: false,
-    });
-  }
+  //       break;
+  //     }
+  //   }
+
+  //   // If token does not exist in login activity, add it
+  //   if (!tokenExists) {
+  //     console.log('Token does not exist');
+  //     user.loginActivity.push({
+  //       ip,
+  //       logged_in_at: Date.now(),
+  //       device,
+  //       token_id: token,
+  //       // token_secret: process.env.JWT_SECRET,
+  //       token_deleted: false,
+  //     });
+  //     // console.log(user.loginActivity)
+  //   }
+  // } else {
+  //   console.log('Token does not exist');
+  //   user.loginActivity.push({
+  //     ip,
+  //     logged_in_at: Date.now(),
+  //     device,
+  //     token_id: token,
+  //     // token_secret: process.env.JWT_SECRET,
+  //     token_deleted: false,
+  //   });
+  // }
+
+  // Check if login activity already contains the token
+// const existingLogin = user.loginActivity.find(activity => activity.token_id === token);
+const existingLogin = user.loginActivity.find(activity => activity.ip === ip);
+
+if (existingLogin) {
+  console.log('Token already exists');
+  // Token already exists, update the existing entry
+  existingLogin.token_deleted = false;
+  existingLogin.device = device;
+  existingLogin.token_id = token;
+  existingLogin.logged_in_at = Date.now();
+} else {
+  console.log('Token does not exist');
+  // Token doesn't exist, add a new entry
+  user.loginActivity.push({
+    ip,
+    logged_in_at: Date.now(),
+    device,
+    token_id: token,
+    token_deleted: false,
+  });
+}
+
 
   // Update the user document in the database
   await College.findByIdAndUpdate(
