@@ -109,7 +109,15 @@ url:{
 
 // --------------------
 
-
+loginActivity: [{
+  ip: String,
+  logged_in_at: Date,
+  logged_out_at: Date,
+  device: String,
+  token_id: String,
+  token_secret: String,
+  token_deleted: Boolean,
+}],
 
 
 });

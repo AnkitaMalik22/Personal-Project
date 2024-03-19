@@ -19,7 +19,9 @@ const {
   uploadStudents,
   getStudents,
   inviteStudents,
-  getUploadedStudents
+  getUploadedStudents,
+  logoutAUser,
+  getAllLoggedInUsers
 } = require("../../controllers/college/collegeController");
 const { getAllAssessments } = require("../../controllers/college/assessment/assessments");
 const uploadedStudents = require("../../models/student/uploadedStudents");
@@ -37,7 +39,9 @@ router.route("/me").get(isAuthenticatedCollege, getCollegeDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update").put(isAuthenticatedCollege, updatePassword);
-router.route("/logout").get(logout);
+router.route("/logout").get(isAuthenticatedCollege,logout);
+router.route("/logout/user/:token").post(isAuthenticatedCollege,logoutAUser);
+router.route("/loggedin/users").get(isAuthenticatedCollege,getAllLoggedInUsers);
 router.route("/update").put(isAuthenticatedCollege, updateProfile);
 router.route ("/update/avatar").put(isAuthenticatedCollege, updateProfilePictureCollege);
 

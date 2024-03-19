@@ -9,6 +9,7 @@ const {Student} = require("../../models/student/studentModel");
 const Job = require("../../models/company/jobModel");
 const Invitation = require("../../models/student/inviteModel");
 const UploadedStudents = require("../../models/student/uploadedStudents");
+const BlacklistToken = require("../../models/college/blacklistToken");
 const cloudinary = require("cloudinary");
 const axios = require("axios");
 
@@ -21,7 +22,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
   if (req.body.googleAccessToken) {
     console.log("googleAccessToken")
     try {
-      const { googleAccessToken } = req.body;
+      const { googleAccessToken ,ip} = req.body;
 
       const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
         headers: {
@@ -47,21 +48,38 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
+      // const ip =  (req.headers['x-forwarded-for'] || '')   
+      // .split(',').pop().trim() ||
+      // req.connection.remoteAddress||                    
+      // req.socket.remoteAddress ||  
+      // req.connection.socket.remoteAddress;
+      console.log("ip = ", ip);
+      const device = req.headers['user-agent'];
+      console.log(device);
+
 
       const college = await College.create({
         FirstName,
         LastName,
         Email,
-        avatar
+        avatar,
+
+
       });
 
-      sendToken(college, 200, res);
+      // var ip = (req.headers['x-forwarded-for'] || '')   
+      // .split(',').pop().trim() ||
+      // req.connection.remoteAddress||                    
+      // req.socket.remoteAddress ||  
+      // req.connection.socket.remoteAddress;
+    
+      sendToken(college, 200, res,ip , device);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-    const { Email, FirstName, LastName, Password ,Phone ,CollegeName} = req.body;
+    const { Email, FirstName, LastName, Password ,Phone ,CollegeName ,ip} = req.body;
 
 
     // Check if required fields are present
@@ -75,16 +93,28 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png"
     };
 
+    // const ip =  (req.headers['x-forwarded-for'] || '')   
+    // .split(',').pop().trim() ||
+    // req.connection.remoteAddress||                    
+    // req.socket.remoteAddress ||  
+    // req.connection.socket.remoteAddress;
+    console.log("ip = ", ip);
+    // console.log("req ip = ",req.ip)
+    const device = req.headers['user-agent'];
+    console.log(device);
+
+
     // Create a new college
     const college = await College.create({
       ...req.body,avatar
+
     });
 
     // Log college details
     // console.log(college);
 
     // Send JWT token in response
-    sendToken(college, 201, res);
+    sendToken(college, 201, res,ip , device);
   }
 });
 
@@ -97,7 +127,7 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
 
   if(req.body.googleAccessToken){
 
-    const {googleAccessToken} = req.body;
+    const {googleAccessToken,ip} = req.body;
   
           axios
               .get("https://www.googleapis.com/oauth2/v3/userinfo", {
@@ -114,8 +144,13 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
                   if (!college) 
                   return res.status(404).json({message: "User don't exist!"})
   
-                 
-                  sendToken(college, 200, res);
+                  // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                  console.log(ip);
+                  const device = req.headers['user-agent'];
+                  console.log(device);
+
+
+                  sendToken(college, 200, res,ip , device);
               })
   
               .catch(err => {
@@ -128,7 +163,7 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
   }else{
 
 
-  const { Email, Password } = req.body;
+  const { Email, Password ,ip} = req.body;
 
 
   // Check if email and password are provided
@@ -156,11 +191,76 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Invalid email or password", 401));
   }
 
+  // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  console.log(ip);
+  const device = req.headers['user-agent'];
+  console.log(device);
+
+
+
   // Send JWT token in response
-  sendToken(college, 200, res);
+  sendToken(college, 200, res,ip , device);
 
   }
 });
+
+// =================================================== ALL LOGGED IN USERS -- SAME USERID  ===========================================================
+
+
+exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const loggedInUsers = college.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    loggedInUsers,
+  });
+});
+
+// logout a user 
+
+exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const token = req.params.token;
+
+  college.loginActivity.forEach((login) => {
+    console.log(login.token_id === token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+    }
+  });
+
+  const blacklist_token = await BlacklistToken.create({
+    token: token
+  });
+
+
+
+  console.log("Token blacklisted",blacklist_token);
+
+  await college.save({ validateBeforeSave: false });
+  const loggedInUsers = college.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    message: "Logged Out",
+    loggedInUsers 
+  });
+}
+);
+
+
+
 
 // ====================================================== LOGOUT COLLEGE ===========================================================
 // Logout College
@@ -169,6 +269,27 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
     expires: new Date(Date.now()),
     httpOnly: true,
   });
+
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const token = req.header("auth-token");
+
+  college.loginActivity.forEach((login) => {
+    console.log(login.token_id === token, login.token_id, token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+
+    }
+  });
+
+  console.log(college.loginActivity);
+
+  await college.save({ validateBeforeSave: false });
+
 
   res.status(200).json({
     success: true,
@@ -179,14 +300,16 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 // ==================================================== GET COLLEGE PROFILE ===========================================================
 // Get College Details
 exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const college = await College.findById(req.user.id);
 
-  // console.log("user = ", req.user)
-  const college = await College.findById(req.user.id);
-
-  res.status(200).json({
-    success: true,
-    college,
-  });
+    return res.status(200).json({
+      success: true,
+      college,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ====================================================== FORGOT PASSWORD ===========================================================
@@ -257,7 +380,9 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
 // check if old password is same as new
-if (req.body.password === college.Password) {
+
+const isSame = await college.comparePassword(req.body.password);
+if (isSame) {
   return next(new ErrorHandler("Password cannot be same as old password", 400));
 }
 

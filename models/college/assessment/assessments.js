@@ -24,6 +24,12 @@ const assessmentsSchema = new Schema({
     // required: true,
   },
 
+  totalMarks  : {
+    type: Number,
+    default: 0,
+    // required: true,
+  },
+
   duration_from: {
     // type: Date,
     type: String,
