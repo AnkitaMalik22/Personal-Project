@@ -119,6 +119,19 @@ loginActivity: [{
   token_deleted: Boolean,
 }],
 
+otp : {
+  type: String,
+  default: null,
+},
+otpExpires: {
+  type: Date,
+  default: null,
+},
+otpVerified: {
+  type: Boolean,
+  default: false,
+},
+
 
 });
 

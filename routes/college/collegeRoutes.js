@@ -22,7 +22,10 @@ const {
   getUploadedStudents,
   logoutAUser,
   getAllLoggedInUsers,
-  removeLoggedOutUsers
+  removeLoggedOutUsers,
+  sendOtp,
+  verifyOtp,
+  checkExampleOtp
 } = require("../../controllers/college/collegeController");
 const { getAllAssessments } = require("../../controllers/college/assessment/assessments");
 const uploadedStudents = require("../../models/student/uploadedStudents");
@@ -46,6 +49,13 @@ router.route("/remove/logout/user/:token").post(isAuthenticatedCollege,removeLog
 router.route("/loggedin/users").get(isAuthenticatedCollege,getAllLoggedInUsers);
 router.route("/update").put(isAuthenticatedCollege, updateProfile);
 router.route ("/update/avatar").put(isAuthenticatedCollege, updateProfilePictureCollege);
+
+
+// 2FA - PHONE NUMBER VERIFICATION - OTP SMS
+
+router.route('/otp/example').post(checkExampleOtp);
+router.route("/otp/send").post(isAuthenticatedCollege, sendOtp);
+router.route("/otp/verify").post(isAuthenticatedCollege, verifyOtp);
 
 
 // upload students
