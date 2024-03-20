@@ -403,13 +403,21 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },
 
-  });
+  }).select("+Password");
 
   if (!college) {
     return next(
       new ErrorHandler("Reset Password Token is invalid or has been expired", 400)
     );
   }
+
+  const isSame= await college.comparePassword(req.body.password);
+
+  if (isSame) {
+    return next(new ErrorHandler("Password cannot be same as old password", 400));
+  }
+
+
 
 
 
