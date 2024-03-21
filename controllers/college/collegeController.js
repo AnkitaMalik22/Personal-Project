@@ -12,25 +12,64 @@ const UploadedStudents = require("../../models/student/uploadedStudents");
 const BlacklistToken = require("../../models/college/blacklistToken");
 const cloudinary = require("cloudinary");
 const axios = require("axios");
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
 
 // ================================================================================================================================
+
+exports.generateQr = catchAsyncErrors(async (req, res, next) => {
+  let secret = speakeasy.generateSecret({
+    name: "WeAreDevs",
+  });
+  // console.log(secret);
+  let qr;
+  qrcode.toDataURL(secret.otpauth_url, function (err, data) {
+    return res.status(400).json({ success: true, qr: data, secret: secret });
+  });
+});
+
+exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id);
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  let verified = speakeasy.totp.verify({
+    secret: req.body.secret,
+    encoding: "ascii",
+    token: req.body.token,
+  });
+
+  college.qrVerify = true;
+  await college.save({ validateBeforeSave: false });
+
+  return res.status(400).json({ verified: verified });
+});
 
 // =================================================== REGISTER COLLEGE ===========================================================
 
 exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
-  console.log("register college")
+  console.log("register college");
   if (req.body.googleAccessToken) {
-    console.log("googleAccessToken")
+    console.log("googleAccessToken");
     try {
       const { googleAccessToken, ip } = req.body;
 
-      const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
-        headers: {
-          "Authorization": `Bearer ${googleAccessToken}`
+      const response = await axios.get(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+          },
         }
-      });
+      );
 
-      const { given_name: FirstName, family_name: LastName, email: Email, picture: profilePicture } = response.data;
+      const {
+        given_name: FirstName,
+        family_name: LastName,
+        email: Email,
+        picture: profilePicture,
+      } = response.data;
 
       const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
         folder: "avatars",
@@ -48,29 +87,26 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
-      // const ip =  (req.headers['x-forwarded-for'] || '')   
+      // const ip =  (req.headers['x-forwarded-for'] || '')
       // .split(',').pop().trim() ||
-      // req.connection.remoteAddress||                    
-      // req.socket.remoteAddress ||  
+      // req.connection.remoteAddress||
+      // req.socket.remoteAddress ||
       // req.connection.socket.remoteAddress;
       console.log("ip = ", ip);
-      const device = req.headers['user-agent'];
+      const device = req.headers["user-agent"];
       console.log(device);
-
 
       const college = await College.create({
         FirstName,
         LastName,
         Email,
         avatar,
-
-
       });
 
-      // var ip = (req.headers['x-forwarded-for'] || '')   
+      // var ip = (req.headers['x-forwarded-for'] || '')
       // .split(',').pop().trim() ||
-      // req.connection.remoteAddress||                    
-      // req.socket.remoteAddress ||  
+      // req.connection.remoteAddress||
+      // req.socket.remoteAddress ||
       // req.connection.socket.remoteAddress;
 
       sendToken(college, 200, res, ip, device);
@@ -79,35 +115,40 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-    const { Email, FirstName, LastName, Password, Phone, CollegeName, ip } = req.body;
-
+    const { Email, FirstName, LastName, Password, Phone, CollegeName, ip } =
+      req.body;
 
     // Check if required fields are present
-    if (!Email || !FirstName || !LastName || !Password || !Phone || !CollegeName) {
+    if (
+      !Email ||
+      !FirstName ||
+      !LastName ||
+      !Password ||
+      !Phone ||
+      !CollegeName
+    ) {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
 
-
     const avatar = {
       public_id: "avatars/wy3fbtukb75frndzgnxx",
-      url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png"
+      url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png",
     };
 
-    // const ip =  (req.headers['x-forwarded-for'] || '')   
+    // const ip =  (req.headers['x-forwarded-for'] || '')
     // .split(',').pop().trim() ||
-    // req.connection.remoteAddress||                    
-    // req.socket.remoteAddress ||  
+    // req.connection.remoteAddress||
+    // req.socket.remoteAddress ||
     // req.connection.socket.remoteAddress;
     console.log("ip = ", ip);
     // console.log("req ip = ",req.ip)
-    const device = req.headers['user-agent'];
+    const device = req.headers["user-agent"];
     console.log(device);
-
 
     // Create a new college
     const college = await College.create({
-      ...req.body, avatar
-
+      ...req.body,
+      avatar,
     });
 
     // Log college details
@@ -118,54 +159,39 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
 // =================================================== LOGIN COLLEGE ===========================================================
 // Login College
 exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
-
-
-
   if (req.body.googleAccessToken) {
-
     const { googleAccessToken, ip } = req.body;
-
 
     axios
       .get("https://www.googleapis.com/oauth2/v3/userinfo", {
         headers: {
-          "Authorization": `Bearer ${googleAccessToken}`
-        }
+          Authorization: `Bearer ${googleAccessToken}`,
+        },
       })
-      .then(async response => {
-
+      .then(async (response) => {
         const Email = response.data.email;
 
-        const college = await College.findOne({ Email })
+        const college = await College.findOne({ Email });
 
         if (!college)
-          return res.status(404).json({ message: "User don't exist!" })
+          return res.status(404).json({ message: "User don't exist!" });
 
         // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         console.log(ip);
-        const device = req.headers['user-agent'];
+        const device = req.headers["user-agent"];
         console.log(device);
-
 
         sendToken(college, 200, res, ip, device);
       })
 
-      .catch(err => {
-        res
-          .status(400)
-          .json({ message: "Invalid access token!" })
-      })
-
-
+      .catch((err) => {
+        res.status(400).json({ message: "Invalid access token!" });
+      });
   } else {
-
-
     const { Email, Password, ip } = req.body;
-
 
     // Check if email and password are provided
     if (!Email || !Password) {
@@ -194,19 +220,15 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
 
     // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     console.log(ip);
-    const device = req.headers['user-agent'];
+    const device = req.headers["user-agent"];
     console.log(device);
-
-
 
     // Send JWT token in response
     sendToken(college, 200, res, ip, device);
-
   }
 });
 
 // =================================================== ALL LOGGED IN USERS -- SAME USERID  ===========================================================
-
 
 exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
   const college = await College.findById(req.user.id);
@@ -223,10 +245,10 @@ exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-// logout a user 
+// logout a user
 
 exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
-  console.log("req.user.id", req.user.id)
+  console.log("req.user.id", req.user.id);
   const college = await College.findById(req.user.id);
 
   if (!college) {
@@ -243,10 +265,8 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
   });
 
   const blacklist_token = await BlacklistToken.create({
-    token: token
+    token: token,
   });
-
-
 
   console.log("Token blacklisted", blacklist_token);
 
@@ -256,39 +276,35 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Logged Out",
-    loggedInUsers
+    loggedInUsers,
   });
-}
-);
-
+});
 
 // ===================================================   REMOVE LOGGEDOUT USERS ===========================================================
-
 
 exports.removeLoggedOutUsers = catchAsyncErrors(async (req, res, next) => {
   const college = await College.findById(req.user.id);
 
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
-
   }
 
   const token = req.params.token;
 
   // college.loginActivity = college.loginActivity.filter((login) => login.token_deleted === false);
-  college.loginActivity = college.loginActivity.filter((login) => login.token_id !== token);
+  college.loginActivity = college.loginActivity.filter(
+    (login) => login.token_id !== token
+  );
 
   await college.save({ validateBeforeSave: false });
 
   const loggedInUsers = college.loginActivity;
-
 
   res.status(200).json({
     success: true,
     loggedInUsers,
   });
 });
-
 
 // ====================================================== LOGOUT COLLEGE ===========================================================
 // Logout College
@@ -310,14 +326,12 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
     console.log(login.token_id === token, login.token_id, token);
     if (login.token_id === token) {
       login.token_deleted = true;
-
     }
   });
 
   console.log(college.loginActivity);
 
   await college.save({ validateBeforeSave: false });
-
 
   res.status(200).json({
     success: true,
@@ -357,8 +371,6 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/password/reset/${resetToken}`;
   const resetPasswordUrl = `https://skillaccessclient.netlify.app/password/reset/${resetToken}`;
 
-
-
   const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
 
   try {
@@ -386,11 +398,11 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
 // ============================================================ RESET PASSWORD ===========================================================
 // Reset Password
 exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
-  console.log(req.body, "reset password body")
+  console.log(req.body, "reset password body");
 
   const ip = req.body.ip;
   console.log(ip);
-  const device = req.headers['user-agent'];
+  const device = req.headers["user-agent"];
   console.log(device);
 
   // Creating token hash
@@ -402,16 +414,16 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   const college = await College.findOne({
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },
-
   });
 
   if (!college) {
     return next(
-      new ErrorHandler("Reset Password Token is invalid or has been expired", 400)
+      new ErrorHandler(
+        "Reset Password Token is invalid or has been expired",
+        400
+      )
     );
   }
-
-
 
   // Check if passwords match
   if (req.body.password !== req.body.confirmPassword) {
@@ -419,9 +431,16 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   }
 
   // it should contain atleast one uppercase, one lowercase, one number and one special character
-  const passwordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])");
+  const passwordRegex = new RegExp(
+    "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+  );
   if (!passwordRegex.test(req.body.password)) {
-    return next(new ErrorHandler("Password should contain atleast one uppercase, one lowercase, one number and one special character", 400));
+    return next(
+      new ErrorHandler(
+        "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+        400
+      )
+    );
   }
   // try {
   //   const isSame = await college.comparePassword(req.body.password);
@@ -439,19 +458,16 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   college.resetPasswordToken = undefined;
   college.resetPasswordExpire = undefined;
 
-
   await college.save();
-
 
   // Send JWT token in response
   sendToken(college, 200, res, ip, device);
-
 });
 
 // ========================================= UPDATE COLLEGE PASSWORD ===========================================================
 // Update College Password
 exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
-  console.log(req.body, "update password body")
+  console.log(req.body, "update password body");
   const college = await College.findById(req.user.id).select("+Password");
 
   // Check if old password is correct
@@ -462,7 +478,9 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (req.body.oldPassword === req.body.newPassword) {
-    return next(new ErrorHandler("New password cannot be the same as old password", 400));
+    return next(
+      new ErrorHandler("New password cannot be the same as old password", 400)
+    );
   }
 
   // Check if new passwords match
@@ -477,9 +495,8 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 
   const ip = req.body.ip;
   console.log(ip);
-  const device = req.headers['user-agent'];
+  const device = req.headers["user-agent"];
   console.log(device);
-
 
   // Send JWT token in response
   sendToken(college, 200, res, ip, device);
@@ -496,8 +513,7 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
     Website: newCollegeData.Website,
     Address: newCollegeData.Address,
     Description: newCollegeData.Description,
-    avatar: newCollegeData.avatar
-
+    avatar: newCollegeData.avatar,
   };
   // Update college profile
   const updatedCollege = await College.findByIdAndUpdate(
@@ -514,7 +530,6 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
     college: updatedCollege,
   });
 });
-
 
 // -------------------
 // exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
@@ -559,57 +574,52 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 //   }
 // });
 
-
-
 // --------------------------
-
 
 // ================================================ Update Profile Picture ===========================================================
 
-exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res, next) => {
-  const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-    folder: "avatars",
-    width: 150,
-    crop: "scale",
-  });
+exports.updateProfilePictureCollege = catchAsyncErrors(
+  async (req, res, next) => {
+    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: "avatars",
+      width: 150,
+      crop: "scale",
+    });
 
-  // const newCollegeData = req.body;
+    // const newCollegeData = req.body;
 
-  // console.log(avatar);
+    // console.log(avatar);
 
+    // const college = await College.findByIdAndUpdate(  req.body.id,
+    const college = await College.findByIdAndUpdate(
+      req.user.id,
 
-  // const college = await College.findByIdAndUpdate(  req.body.id,
-  const college = await College.findByIdAndUpdate(req.user.id,
-
-    {
-      avatar: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
+      {
+        avatar: {
+          public_id: myCloud.public_id,
+          url: myCloud.secure_url,
+        },
       },
-    },
-    {
-      new: true,
-      runValidators: true,
-      useFindAndModify: false,
-    }
-  );
-  console.log(college)
+      {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false,
+      }
+    );
+    console.log(college);
 
-  res.status(200).json({
-    success: true,
-    college,
-  });
-});
+    res.status(200).json({
+      success: true,
+      college,
+    });
+  }
+);
 
 // ===============================================================================================================
 
-
-
 //------------------------ Upload Students----------------------------
 
-
 exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
-
   const { students } = req.body;
   // console.log(students)
 
@@ -623,13 +633,12 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
 
   for (let i = 0; i < students.length; i++) {
     const { FirstName, LastName, Email } = students[i];
-    const student = await
-      UploadedStudents.create({
-        college_id: CollegeId,
-        FirstName,
-        LastName,
-        Email,
-      });
+    const student = await UploadedStudents.create({
+      college_id: CollegeId,
+      FirstName,
+      LastName,
+      Email,
+    });
   }
 
   // college.uploadedStudents = students;
@@ -641,8 +650,6 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 // ------------------------------get uploaded students-----------------------------
 exports.getUploadedStudents = catchAsyncErrors(async (req, res) => {
   const college = await College.findById(req.user.id);
@@ -651,9 +658,8 @@ exports.getUploadedStudents = catchAsyncErrors(async (req, res) => {
     return next(new ErrorHandler("College not found", 404));
   }
 
-  console.log(req.user.id)
+  console.log(req.user.id);
   const students = await UploadedStudents.find({ college_id: req.user.id });
-
 
   res.status(200).json({
     success: true,
@@ -661,13 +667,9 @@ exports.getUploadedStudents = catchAsyncErrors(async (req, res) => {
   });
 });
 
-
-
-
 // -------------------------- // INVITE STUDENTS------------------------------
 
 exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
-
   // const { studentId } = req.body;
   // const college = await College.findById(req.user.id);
 
@@ -696,7 +698,6 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
   //   message: "Student added successfully",
   // });
 
-
   const { students } = req.body;
   const CollegeId = req.user.id;
 
@@ -707,22 +708,23 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
   }
 
   for (let i = 0; i < students.length; i++) {
-
     // from uploaded students
-    const student = await UploadedStudents.findOne({ college_id: CollegeId, Email: students[i].Email });
+    const student = await UploadedStudents.findOne({
+      college_id: CollegeId,
+      Email: students[i].Email,
+    });
     if (student) {
       // console.log(student)
       console.log({ sender: CollegeId, recipientEmail: student.Email });
     } else {
-      console.log('Student not found.');
+      console.log("Student not found.");
     }
 
     const invite = await Invitation.create({
       sender: CollegeId,
       recipientEmail: student.Email,
-      invitationLink: crypto.randomBytes(20).toString('hex'),
+      invitationLink: crypto.randomBytes(20).toString("hex"),
     });
-
 
     sendEmail({
       email: student.Email,
@@ -733,25 +735,17 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
 
     student.invited = true;
     await student.save();
-
-
   }
-
 
   res.status(200).json({
     success: true,
     message: "Students invited successfully",
-
   });
-
-
 });
-
 
 // approve students
 
 exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
-
   const { students } = req.body;
   const CollegeId = req.user.id;
 
@@ -770,7 +764,9 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     }
   }
 
-  college.pendingStudents = college.pendingStudents.filter(id => !students.includes(id));
+  college.pendingStudents = college.pendingStudents.filter(
+    (id) => !students.includes(id)
+  );
   college.students = college.students.concat(students);
   await college.save();
 
@@ -779,10 +775,6 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     message: "Students approved successfully",
   });
 });
-
-
-
-
 
 // ------------------------------get students-----------------------------
 
@@ -801,9 +793,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
 // ============================================ dashboard ===========================================================
-
 
 // getTotalJobs
 
@@ -818,7 +808,7 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
     jobs: jobs,
     // totalJobs: college.jobs.length,
   });
-})
+});
 
 // get available assessments
 
@@ -833,7 +823,7 @@ exports.getAvailableAssessments = catchAsyncErrors(async (req, res, next) => {
     assessments: college.assessments,
     totalAssessments: college.assessments.length,
   });
-})
+});
 
 // get total students
 
@@ -850,7 +840,7 @@ exports.getTotalStudents = catchAsyncErrors(async (req, res, next) => {
     students: college.students,
     totalStudents: college.students.length,
   });
-})
+});
 
 // get total companies
 
@@ -859,9 +849,8 @@ exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     companies: companies,
-
   });
-})
+});
 
 // get recent companies
 
@@ -876,14 +865,10 @@ exports.getRecentCompanies = catchAsyncErrors(async (req, res, next) => {
   } else {
     res.status(404).json({
       success: false,
-      message: 'No recent companies found',
+      message: "No recent companies found",
     });
   }
-  ;
-})
-
-
-
+});
 
 // get Placed Students
 
@@ -899,13 +884,4 @@ exports.getPlacedStudents = catchAsyncErrors(async (req, res, next) => {
     students: college.students,
     totalPlacedStudents: college.students.length,
   });
-})
-
-
-
-
-
-
-
-
-
+});
