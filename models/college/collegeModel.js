@@ -1,48 +1,53 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const collegeSchema = new mongoose.Schema({
+  qrVerify: {
+    type: Boolean,
+    default: false,
+  },
   role: {
     type: String,
-    default: 'college',
+    default: "college",
   },
   avatar: {
-    public_id:{
-    type:String,
-    // required:true
-},
-url:{
-    type:String,
-    // required:true
-}     },
-  CollegeName : {
+    public_id: {
+      type: String,
+      // required:true
+    },
+    url: {
+      type: String,
+      // required:true
+    },
+  },
+  CollegeName: {
     type: String,
     // required: [true, 'Please Enter Your College Name'],
     unique: true,
   },
   Email: {
     type: String,
-    required: [true, 'Please Enter Your Email'],
+    required: [true, "Please Enter Your Email"],
     unique: true,
   },
   FirstName: {
     type: String,
     // required: [true, 'Please Enter Your First Name'],
-    maxLength: [30, 'Name cannot exceed 30 characters'],
-    minLength: [2, 'Name should have more than 2 characters'],
+    maxLength: [30, "Name cannot exceed 30 characters"],
+    minLength: [2, "Name should have more than 2 characters"],
   },
   LastName: {
     type: String,
     // required: [true, 'Please Enter Your Last Name'],
-    maxLength: [30, 'Name cannot exceed 30 characters'],
-    minLength: [2, 'Name should have more than 2 characters'],
+    maxLength: [30, "Name cannot exceed 30 characters"],
+    minLength: [2, "Name should have more than 2 characters"],
   },
   Password: {
     type: String,
     // required: [true, 'Please Enter Your Password'],
-    minLength: [8, 'Password should be greater than 8 characters'],
+    minLength: [8, "Password should be greater than 8 characters"],
     select: false,
   },
   AvgPackage: {
@@ -51,12 +56,12 @@ url:{
   },
   Achievement: {
     type: String,
-    enum: ['Statistics', 'Percentage', 'DataName'],
+    enum: ["Statistics", "Percentage", "DataName"],
   },
-  Phone : Number,
-  Description :String,
-  Website : String,
-  Address : String,
+  Phone: Number,
+  Description: String,
+  Website: String,
+  Address: String,
   Performance: String,
   Link: String,
   Inbox: String,
@@ -82,30 +87,39 @@ url:{
   resetPasswordExpire: Date,
 
   // Students needs to be approved by college
-  pendingStudents: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-  }],
+  pendingStudents: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+    },
+  ],
   //  students approved by college
-  students: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-  }],
-  assessments: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Assessments',
-  }],
+  students: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+    },
+  ],
+  assessments: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assessments",
+    },
+  ],
 
-// ---- College's Own  ----
+  // ---- College's Own  ----
 
-// topic will be created and saved in redux and at the time of creating a test, it will be added to the test
+  // topic will be created and saved in redux and at the time of creating a test, it will be added to the test
 
-  topics: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Sections',
-  }],
+  topics: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Sections",
+    },
+  ],
 
   // tests: [],
+
 
 // --------------------
 
@@ -135,8 +149,8 @@ otpVerified: {
 
 });
 
-collegeSchema.pre('save', async function (next) {
-  if (!this.isModified('Password')) {
+collegeSchema.pre("save", async function (next) {
+  if (!this.isModified("Password")) {
     next();
   }
 
@@ -159,18 +173,18 @@ collegeSchema.methods.comparePassword = async function (password) {
 // Generating Password Reset Token
 collegeSchema.methods.getResetPasswordToken = function () {
   // Generating Token
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  const resetToken = crypto.randomBytes(20).toString("hex");
 
   // Hashing and adding resetPasswordToken to collegeSchema
   this.resetPasswordToken = crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(resetToken)
-    .digest('hex');
+    .digest("hex");
 
   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
   return resetToken;
 };
 
-const College = mongoose.model('College', collegeSchema);
+const College = mongoose.model("College", collegeSchema);
 module.exports = College;
