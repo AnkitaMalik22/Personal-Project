@@ -12,11 +12,171 @@ const UploadedStudents = require("../../models/student/uploadedStudents");
 const BlacklistToken = require("../../models/college/blacklistToken");
 const cloudinary = require("cloudinary");
 const axios = require("axios");
+
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 
-// ================================================================================================================================
+const { Vonage } = require('@vonage/server-sdk');
+const { SMS } = require('@vonage/messages');
 
+
+
+// ================================================================================================================================
+// ================================================== 2FA AUTHENTICATION ===========================================================
+
+
+exports.checkExampleOtp = catchAsyncErrors(async(req,res,next)=>{
+
+
+const encodedParams = new URLSearchParams();
+encodedParams.set('sms', '+9');
+encodedParams.set('message', 'Your OTP is 1234');
+encodedParams.set('senderid', 'SkillAssess');
+encodedParams.set('schedule', '1377959755');
+encodedParams.set('return', 'http://yourwebsite.com');
+encodedParams.set('key', '1B490066-EA03-E39A-A18C-C4868E45CFAE');
+encodedParams.set('username', 'temp-idk-test-dynamic');
+
+const options = {
+  method: 'POST',
+  url: 'https://inteltech.p.rapidapi.com/send.php',
+  headers: {
+    'content-type': 'application/x-www-form-urlencoded',
+    'X-RapidAPI-Key': '37b805b04a77mshdb64f9f6p1f365djsn0000bc54206a',
+    'X-RapidAPI-Host': 'intelteapidapi.com'
+  },
+  data: encodedParams,
+};
+
+try {
+	const response = await axios.request(options);
+	// console.log(response.data);
+  return res.status(200).json({
+    success: true,
+    message: response.data
+  });
+} catch (error) {
+
+	console.error(error);
+}
+})
+
+
+
+exports.sendOtp = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
+  college.otp = otp;
+  college.otpExpire = Date.now() + 5 * 60 * 1000;
+
+  const TO_NUMBER = `91${college.Phone}`; // `91${college.Phone}` for India
+  // const FROM_NUMBER = process.env.VONAGE_FROM_NUMBER;
+
+
+  await college.save({ validateBeforeSave: false });
+
+  const message = `Your OTP is: ${otp} for SkillAccess.Verification code is valid for 5 minutes.`;
+
+  try {
+  
+
+    const vonage = new Vonage({
+      apiKey: process.env.VONAGE_API_KEY,
+      apiSecret: process.env.VONAGE_API_SECRET
+    })
+
+    // vonage.messages.send(
+    //   new SMS(
+    //     `Hello ${college.FirstName} ${college.LastName} ,${message}`,
+    //     TO_NUMBER,
+    //     FROM_NUMBER,
+    //   ),
+    // )
+    //   .then(resp =>  {return  res.status(200).json({
+    //     success: true,
+    //     message: `OTP sent to ${college.Email} successfully via SMS. messageUUID: ${resp.messageUUID}`,
+    //   })  }
+    //   )
+    //   .catch(err => console.error(err));
+   const from = "Vonage APIs"
+const to = TO_NUMBER
+const text =  `Hello ${college.FirstName} ${college.LastName} ,${message}`;
+
+async function sendSMS() {
+    await vonage.sms.send({to, from, text})
+        .then(resp => { console.log('Message sent successfully'); console.log(resp); })
+        .catch(err => { console.log('There was an error sending the messages.'); console.error(err); });
+}
+
+sendSMS();
+
+    return res.status(200).json({
+      success: true,
+      message: `OTP sent to ${college.Phone} successfully via SMS.`,
+    });
+
+
+   
+  } catch (error) {
+    college.otp = undefined;
+    college.otpExpire = undefined;
+
+    await college.save({ validateBeforeSave: false });
+
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+
+
+// ================================================================================================================================
+// ================================================== VERIFY OTP ===========================================================
+
+exports.verifyOtp = catchAsyncErrors(async (req, res, next) => {
+
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const { otp } = req.body;
+
+  if (!otp) {
+    return next(new ErrorHandler("Please enter OTP", 400));
+  }
+
+  if (otp !== college.otp) {
+    return next(new ErrorHandler("OTP is incorrect", 400));
+  }
+
+
+  // if (college.otpExpire < Date.now()) {
+  //   return next(new ErrorHandler("OTP is expired. Please request a new one", 400));
+  // }
+
+  college.otpVerified = true;
+  college.otp = undefined;
+  college.otpExpire = undefined;
+
+  await college.save({ validateBeforeSave: false });
+
+  return res.status(200).json({
+    success: true,
+    message: "OTP verified successfully",
+  });
+});
+
+
+
+// ================================================================================================================================
+//  SIDD
 exports.generateQr = catchAsyncErrors(async (req, res, next) => {
   let secret = speakeasy.generateSecret({
     name: "WeAreDevs",
@@ -46,6 +206,7 @@ exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
   return res.status(400).json({ verified: verified });
 });
 
+// 
 // =================================================== REGISTER COLLEGE ===========================================================
 
 exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
@@ -414,7 +575,8 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   const college = await College.findOne({
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },
-  });
+  }).select("+Password");
+
 
   if (!college) {
     return next(
@@ -424,6 +586,14 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
       )
     );
   }
+
+
+  const isSame= await college.comparePassword(req.body.password);
+
+  if (isSame) {
+    return next(new ErrorHandler("Password cannot be same as old password", 400));
+  }
+
 
   // Check if passwords match
   if (req.body.password !== req.body.confirmPassword) {

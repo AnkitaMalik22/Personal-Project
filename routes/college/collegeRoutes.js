@@ -25,6 +25,10 @@ const {
   removeLoggedOutUsers,
   generateQr,
   verifyQr,
+  sendOtp,
+  verifyOtp,
+  checkExampleOtp
+
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -63,6 +67,13 @@ router.route("/update").put(isAuthenticatedCollege, updateProfile);
 router
   .route("/update/avatar")
   .put(isAuthenticatedCollege, updateProfilePictureCollege);
+
+// 2FA - PHONE NUMBER VERIFICATION - OTP SMS
+
+router.route('/otp/example').post(checkExampleOtp);
+router.route("/otp/send").post(isAuthenticatedCollege, sendOtp);
+router.route("/otp/verify").post(isAuthenticatedCollege, verifyOtp);
+
 
 // upload students
 router.post("/upload/students", isAuthenticatedCollege, uploadStudents);

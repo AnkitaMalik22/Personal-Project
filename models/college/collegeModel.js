@@ -120,19 +120,33 @@ const collegeSchema = new mongoose.Schema({
 
   // tests: [],
 
-  // --------------------
 
-  loginActivity: [
-    {
-      ip: String,
-      logged_in_at: Date,
-      logged_out_at: Date,
-      device: String,
-      token_id: String,
-      token_secret: String,
-      token_deleted: Boolean,
-    },
-  ],
+// --------------------
+
+loginActivity: [{
+  ip: String,
+  logged_in_at: Date,
+  logged_out_at: Date,
+  device: String,
+  token_id: String,
+  token_secret: String,
+  token_deleted: Boolean,
+}],
+
+otp : {
+  type: String,
+  default: null,
+},
+otpExpires: {
+  type: Date,
+  default: null,
+},
+otpVerified: {
+  type: Boolean,
+  default: false,
+},
+
+
 });
 
 collegeSchema.pre("save", async function (next) {
