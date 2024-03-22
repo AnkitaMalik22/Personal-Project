@@ -6,15 +6,13 @@ const bookmarkSchema = new mongoose.Schema({
         ref: 'College',
     },
 
-    questions: [
-        {
+
             // questionId: {
             //     type: mongoose.Schema.ObjectId,
             //     ref: 'Question',
             //     // required: [true, 'Please enter question id']
             // },
-
-
+            Type :  String,
             Title: String,
             Options: {
                 type: Array,
@@ -41,17 +39,16 @@ const bookmarkSchema = new mongoose.Schema({
             marks : {
                 type: Number,
                 default: 0,
-            }
+            },
             // for subjective
             // studentAnswer: {
             //     type: String,
             //     // required: [true, 'Please enter student answer']
             // }
-        },
+          
        
-    ],
-    essay: [
-        {
+
+
             //    questionId: {
             //         type: mongoose.Schema.ObjectId,
             //         ref: 'Essay',
@@ -66,12 +63,9 @@ const bookmarkSchema = new mongoose.Schema({
             studentAnswer: {
                 type: String,
                 // required: [true, 'Please enter student answer']
-            }
-        }
-    ],
-    video: [
-        {
-            Duration: String,
+            },
+    
+   Duration: String,
             video: String,
             videoFile: String,
             long: [{
@@ -121,11 +115,9 @@ const bookmarkSchema = new mongoose.Schema({
             studentAnswer: {
                 type: String,
                 // required: [true, 'Please enter student answer']
-            }
-        }
-    ],
-    findAnswers: [
-        {
+            },
+    
+   
             Title: String,
             questions: [{
                question: String,
@@ -145,11 +137,9 @@ const bookmarkSchema = new mongoose.Schema({
             studentAnswer: {
                 type: String,
                 // required: [true, 'Please enter student answer']
-            }
-        }
-    ],
-    compiler: [
-        {
+            },
+    
+
             Duration: String,
             code: {
                 type: String,
@@ -194,9 +184,18 @@ const bookmarkSchema = new mongoose.Schema({
             studentAnswer: {
                 type: String,
                 // required: [true, 'Please enter student answer']
-            }
-        }
-    ],
+            },
+            college : {
+                type: mongoose.Schema.ObjectId,
+                ref: 'College',
+                // required: [true, 'Please enter college id']
+            },
+            questionId : {
+                type: mongoose.Schema.ObjectId,
+                ref: 'Question',
+                // required: [true, 'Please enter question id']
+            },
+    
    
 }, {
     timestamps: true
