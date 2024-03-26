@@ -145,6 +145,11 @@ otpVerified: {
   type: Boolean,
   default: false,
 },
+authType :{
+  type : String,
+  enum : ["otp" ,"qr",'none'],
+  default : 'qr'
+}
 
 
 });

@@ -54,7 +54,7 @@ const bookmarkSchema = new mongoose.Schema({
             //         ref: 'Essay',
             //         // required: [true, 'Please enter question id']
             //     },
-            Title: String,
+            // Title: String,
             Duration: String,
             Answer: {
                 type: String,
@@ -118,7 +118,7 @@ const bookmarkSchema = new mongoose.Schema({
             },
     
    
-            Title: String,
+            // Title: String,
             questions: [{
                question: String,
                studentAnswer : String,
