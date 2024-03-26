@@ -11,6 +11,7 @@ const { getAllQuestions, getQuestionById, createQuestion, updateQuestionById, de
 const { getSectionsByAssessmentId, getSectionById, createSection, updateSection, deleteSection } = sectionsController;
 const { setAnswer, getAnswerByQuestionId ,setAnswerIndex,addMarksLongAnswerStudent,updateMarksLongAnswerStudent, setLongAnswerStudent, getLongAnswerStudent, setAnswerIndexStudent, getAnswerUsingIndex, checkAnswerIndexStudent, addMarksMCQ, updateMarksMCQ } = answersController;
 
+const { addBookmark, getBookmarkById, getAllBookmarks,removeBookmark } = require('../../controllers/college/assessment/bookmark');
 // ======================================================= ROUTES =======================================================
 
 
@@ -75,6 +76,13 @@ router.get('/marks/mcq/add/:questionId',  isAuthenticatedCollege || isAuthentica
 router.put('/marks/mcq/marks/update/:questionId',  isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), updateMarksMCQ);
 
 
+//  BOOKMARKS ROUTES
+
+router.post('/bookmarks/add',isAuthenticatedCollege, addBookmark);
+router.get('/bookmarks/:id', isAuthenticatedCollege, getBookmarkById);
+router.delete('/bookmarks/:id', isAuthenticatedCollege, removeBookmark);
+
+router.get('/get/bookmarks', isAuthenticatedCollege, getAllBookmarks);
 
 
 
