@@ -27,8 +27,8 @@ const {
   verifyQr,
   sendOtp,
   verifyOtp,
-  checkExampleOtp
-
+  checkExampleOtp,
+  selectAuth,
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -47,7 +47,8 @@ const {
 } = require("../../controllers/college/assessment/sections");
 
 // const videoUpload = require("../../utils/upload.js");
-router.route("/2fa/getSecretQr").post(generateQr);
+router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);
+router.route("/2fa/getSecretQr").get(isAuthenticatedCollege, generateQr);
 router.route("/2fa/verifyQr").post(isAuthenticatedCollege, verifyQr);
 router.route("/register").post(registerCollege);
 router.route("/login").post(loginCollege);
@@ -70,10 +71,9 @@ router
 
 // 2FA - PHONE NUMBER VERIFICATION - OTP SMS
 
-router.route('/otp/example').post(checkExampleOtp);
+router.route("/otp/example").post(checkExampleOtp);
 router.route("/otp/send").post(isAuthenticatedCollege, sendOtp);
 router.route("/otp/verify").post(isAuthenticatedCollege, verifyOtp);
-
 
 // upload students
 router.post("/upload/students", isAuthenticatedCollege, uploadStudents);
