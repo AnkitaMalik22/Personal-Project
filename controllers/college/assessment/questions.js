@@ -3,6 +3,7 @@ const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const Compiler = require("../../../models/college/assessment/Compiler");
 const Essay = require("../../../models/college/assessment/Essay");
 const Video = require("../../../models/college/assessment/Video");
+const Assessments = require("../../../models/college/assessment/assessments");
 const findAnswer = require("../../../models/college/assessment/findAnswer");
 const Questions = require("../../../models/college/assessment/questions");
 const Section = require("../../../models/college/assessment/sections");
@@ -106,27 +107,27 @@ exports.getQuestionById = catchAsyncErrors(async (req, res, next) => {
 exports.updateQuestionById = catchAsyncErrors(async (req, res) => {
   const { id } = req.params;
   // const userId = req.user.id;
-const {type}= req.query;
+  const { type } = req.query;
 
   let question = [];
   if (type === 'mcq') {
-  question=  await Questions.findByIdAndUpdate(id, req.body, {
+    question = await Questions.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else if (type === 'findAnswer') {
-    question=   await findAnswer.findByIdAndUpdate(id, req.body, {
+    question = await findAnswer.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else if (type === 'code') {
-    question=   await Compiler.findByIdAndUpdate(id, req.body, {
+    question = await Compiler.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else if (type === 'video') {
-    question=   await Video.findByIdAndUpdate(id, req.body, {
+    question = await Video.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   } else {
-    question=  await Essay.findByIdAndUpdate(id, req.body, {
+    question = await Essay.findByIdAndUpdate(id, req.body, {
       new: true,
     });
   }
@@ -206,3 +207,44 @@ exports.deleteQuestionById = catchAsyncErrors(async (req, res, next) => {
 });
 
 // ==========================================================================================================================================
+// ==========================================================================================================================================
+
+// recent questions
+
+exports.getAllRecentQuestions = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const assessments = await Assessments.find({ createdBy: userId }).populate("topics")
+    .sort({ createdAt: -1 })
+    .limit(5);
+  let topics = [];
+
+assessments.forEach(async (assessment) => {
+assessment.topics.forEach(async (topic)=>{{
+  topics.push(topic)
+
+}})
+});
+
+// let questions = [];
+// for (let i = 0; i < topics.length; i++) {
+//   if (topics[i].questions){
+//     let question = Questions.findById(topics[i].questions._id);
+//     questions.push(topics[i].questions);
+//   }
+//   else if
+//   questions.push(topics[i].questions);
+//   questions.push(topics[i].essay);
+//   questions.push(topics[i].findAnswer);
+//   questions.push(topics[i].compiler);
+//   questions.push(topics[i].video);
+// }
+
+res.status(200).json({
+  success: true,
+topics
+});
+});
+
+
+// delete recent Topic by ID
