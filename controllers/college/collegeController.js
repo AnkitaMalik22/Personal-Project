@@ -289,6 +289,19 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
 
+     // it should contain atleast one uppercase, one lowercase, one number and one special character
+     const passwordRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+    );
+    if (!passwordRegex.test(Password)) {
+      return next(
+        new ErrorHandler(
+          "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+          400
+        )
+      );
+    }
+
     const avatar = {
       public_id: "avatars/wy3fbtukb75frndzgnxx",
       url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png",
@@ -303,6 +316,8 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
     // console.log("req ip = ",req.ip)
     const device = req.headers["user-agent"];
     console.log(device);
+
+
 
     // Create a new college
     const college = await College.create({
@@ -646,6 +661,18 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   if (req.body.newPassword !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
+    // it should contain atleast one uppercase, one lowercase, one number and one special character
+    const passwordRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+    );
+    if (!passwordRegex.test(req.body.newPassword)) {
+      return next(
+        new ErrorHandler(
+          "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+          400
+        )
+      );
+    }
 
   // Update college password
   college.Password = req.body.newPassword;
