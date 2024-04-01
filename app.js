@@ -69,6 +69,7 @@ app.use("/api/admin", adminRoutes);
 
 
 
+
 app.get("/", (req, res) => {
   res.send("API is running");
 });

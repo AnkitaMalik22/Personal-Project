@@ -39,6 +39,25 @@ const teamSchema = new mongoose.Schema({
         required: true,
     },
 
+    Designation: {
+        type: String,
+    
+    },
+    Department: {
+        type: String,
+    },
+
+    Collaborations: {
+        type: String,
+    },
+    Profile: {
+        type: String,
+    },
+    Experience: {
+        type: String,
+    },
+
+
 });
 
 const Teams = mongoose.model('Teams', teamSchema);
