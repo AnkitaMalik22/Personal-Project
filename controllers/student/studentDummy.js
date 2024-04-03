@@ -160,9 +160,14 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler('Student or Assessment not found', 404));
     }
 
-    if (!student.studentTests.includes(testId)) {
-        return next(new ErrorHandler('Test not started', 404));
-    }
+    // if (!student.studentTests.includes(testId)) {
+    //     return next(new ErrorHandler('Test not started', 404));
+    // }
+
+    // -------------------  add test  route is already there to add the test to the student -------------------
+
+    student.studentTests.push(testId);
+    // -------------------------------------------------------------------------------------------------------------
 
     if (assessment.studentResponses.includes(student._id)) {
         return next(new ErrorHandler('Test already submitted', 404));

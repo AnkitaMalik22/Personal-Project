@@ -77,7 +77,16 @@ const ScoreSchema = new mongoose.Schema({
 
 //-------------------------------- Define Students Schema --------------------------------------------
 const studentSchema = new mongoose.Schema({
-  avatar: String,
+  avatar: {
+    public_id: {
+      type: String,
+      // required:true
+    },
+    url: {
+      type: String,
+      // required:true
+    },
+  },
   Email: {
     type: String,
     required: [true, "Please Enter Your Email"],
@@ -101,7 +110,7 @@ const studentSchema = new mongoose.Schema({
   },
   Password: {
     type: String,
-    required: [true, "Please Enter Your Password"],
+    // required: [true, "Please Enter Your Password"],
     minLength: [8, "Password should be greater than 8 characters"],
     select: false,
   },
@@ -217,6 +226,36 @@ loggedOut: { type: Boolean, default: false },
       ref: "Jobs",
     },
   ],
+// ---------------------
+  loginActivity: [
+    {
+      ip: String,
+      logged_in_at: Date,
+      logged_out_at: Date,
+      device: String,
+      token_id: String,
+      token_secret: String,
+      token_deleted: Boolean,
+    },
+  ],
+
+  otp: {
+    type: String,
+    default: null,
+  },
+  otpExpires: {
+    type: Date,
+    default: null,
+  },
+  otpVerified: {
+    type: Boolean,
+    default: false,
+  },
+  authType: {
+    type: String,
+    enum: ["otp", "qr", "none"],
+    default: "none",
+  },
 });
 
 // ============================== Schema END =============================

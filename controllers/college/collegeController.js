@@ -1,11 +1,12 @@
 const ErrorHandler = require("../../utils/errorhandler");
 const catchAsyncErrors = require("../../middlewares/catchAsyncErrors");
+const { Student } = require("../../models/student/studentModel");
 const College = require("../../models/college/collegeModel");
 const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
 const Company = require("../../models/company/companyModel");
-const { Student } = require("../../models/student/studentModel");
+
 const Job = require("../../models/company/jobModel");
 const Invitation = require("../../models/student/inviteModel");
 const UploadedStudents = require("../../models/student/uploadedStudents");
@@ -17,6 +18,7 @@ const qrcode = require("qrcode");
 
 const { Vonage } = require("@vonage/server-sdk");
 const { SMS } = require("@vonage/messages");
+// Import the Student model
 
 // ================================================================================================================================
 // ================================================== 2FA AUTHENTICATION ===========================================================
@@ -260,6 +262,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
         LastName,
         Email,
         avatar,
+        CollegeName : `${FirstName} ${LastName}`,
       });
 
       // var ip = (req.headers['x-forwarded-for'] || '')
@@ -289,6 +292,19 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
 
+     // it should contain atleast one uppercase, one lowercase, one number and one special character
+     const passwordRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+    );
+    if (!passwordRegex.test(Password)) {
+      return next(
+        new ErrorHandler(
+          "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+          400
+        )
+      );
+    }
+
     const avatar = {
       public_id: "avatars/wy3fbtukb75frndzgnxx",
       url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png",
@@ -303,6 +319,8 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
     // console.log("req ip = ",req.ip)
     const device = req.headers["user-agent"];
     console.log(device);
+
+
 
     // Create a new college
     const college = await College.create({
@@ -646,6 +664,18 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   if (req.body.newPassword !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
+    // it should contain atleast one uppercase, one lowercase, one number and one special character
+    const passwordRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+    );
+    if (!passwordRegex.test(req.body.newPassword)) {
+      return next(
+        new ErrorHandler(
+          "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+          400
+        )
+      );
+    }
 
   // Update college password
   college.Password = req.body.newPassword;
@@ -792,12 +822,37 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
 
   for (let i = 0; i < students.length; i++) {
     const { FirstName, LastName, Email } = students[i];
-    const student = await UploadedStudents.create({
-      college_id: CollegeId,
-      FirstName,
-      LastName,
-      Email,
+    // const student = await UploadedStudents.create({
+    //   college_id: CollegeId,
+    //   FirstName,
+    //   LastName,
+    //   Email,
+    // });
+
+    const student = await Invitation.findOne({
+      recipientEmail: Email,
     });
+
+ if(!student){
+  const invite = await Invitation.create({
+    FirstName ,
+    LastName,
+    Email,
+    sender: CollegeId,
+    recipientEmail:Email,
+    invitationLink: crypto.randomBytes(20).toString("hex"),
+  });
+
+  sendEmail({
+    email: Email,
+    subject: "Invitation to join College",
+    message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: http://localhost:3000/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+    // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+  });
+
+}
+    // student.invited = true;
+    // await student.save();
   }
 
   // college.uploadedStudents = students;
@@ -805,7 +860,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Students uploaded successfully",
+    message: "Students uploaded  &  Invited successfully",
   });
 });
 
@@ -888,7 +943,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     sendEmail({
       email: student.Email,
       subject: "Invitation to join College",
-      message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: http://localhost:4000/api/students/CollegeId=${CollegeId}/inviteLink=${invite.invitationLink}`,
+      message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: http://localhost:3000/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
       // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
     });
 
@@ -902,53 +957,115 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+
+
+// pending students
+
+exports.getPendingStudents = catchAsyncErrors(async (req, res, next) => {
+  const college = await College.findById(req.user.id);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const pending = [];
+  for (let i = 0; i < college.pendingStudents.length; i++) {
+    const student = await Student.findById(college.pendingStudents[i]);
+    pending.push(student);
+  }
+
+
+  // const pendingStudents = await College.findById(req.user.id).select("pendingStudents").populate({
+  //   path: "pendingStudents",
+  // });
+console.log(pending);
+
+
+  res.status(200).json({
+    success: true,
+    pendingStudents: pending,
+  });
+});
+
+
+ 
+
 // approve students
 
 exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
-  const { students } = req.body;
+
+try {
+  console.log(req.body, "approve students")
+  const { studentId } = req.body;
   const CollegeId = req.user.id;
 
   const college = await College.findById(CollegeId);
 
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
+    
   }
 
-  for (let i = 0; i < college.pendingStudents.length; i++) {
-    const student = await Student.findById(college.pendingStudents[i]);
+  const student = await Student.findById(studentId.studentId);
 
-    if (students.includes(student.id)) {
-      student.college = CollegeId;
-      await student.save();
-    }
+  // for (let i = 0; i < college.pendingStudents.length; i++) {
+  //   const student = await Student.findById(college.pendingStudents[i]);
+
+  //   if (students.includes(student.id)) {
+  //     student.college = CollegeId;
+  //     await student.save();
+  //   }
+  // }
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
   }
 
   college.pendingStudents = college.pendingStudents.filter(
-    (id) => !students.includes(id)
+    (id) => id.toString() !== studentId.studentId
   );
-  college.students = college.students.concat(students);
+  console.log(college.pendingStudents);
+
+  college.students = college.students.concat(student);
+
+  console.log(college.students);
   await college.save();
 
   res.status(200).json({
     success: true,
     message: "Students approved successfully",
   });
+} catch (error) {
+  console.log(error);
+}
 });
 
 // ------------------------------get students-----------------------------
 
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   const id = req.params.id;
+
+  const college = await College.findById(id);
   const approvedStudents = await College.findById(id).populate({
     path: "students",
   });
-  const uploadedStudents = await UploadedStudents.find({ college_id: id });
-  const invitedStudents = await Invitation.find({ sender: id });
+  // const uploadedStudents = await UploadedStudents.find({ college_id: id });
+  // const invitedStudents = await Invitation.find({ sender: id });
+
+  const uploadedStudents =  await Invitation.find({ sender: id });
+
+
+  const pending = [];
+  for (let i = 0; i < college.pendingStudents.length; i++) {
+    const student = await Student.findById(college.pendingStudents[i]);
+    pending.push(student);
+  }
   res.status(200).json({
     success: true,
     approvedStudents: approvedStudents.students,
     uploadedStudents,
-    invitedStudents,
+    pendingStudents : pending
+    // invitedStudents,
   });
 });
 
