@@ -90,14 +90,14 @@ const collegeSchema = new mongoose.Schema({
   pendingStudents: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
+      ref: "Students",
     },
   ],
   //  students approved by college
   students: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
+      ref: "Students",
     },
   ],
   assessments: [

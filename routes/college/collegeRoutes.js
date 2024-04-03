@@ -29,6 +29,8 @@ const {
   verifyOtp,
   checkExampleOtp,
   selectAuth,
+  getPendingStudents,
+  approveStudents,
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -86,6 +88,11 @@ router.get("/:id/students", isAuthenticatedCollege, getStudents);
 
 // invite students
 router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
+// approve students
+router.post("/student/approve", isAuthenticatedCollege, approveStudents);
+
+// pending students
+router.get("/students/pending", isAuthenticatedCollege, getPendingStudents);
 
 // getAll assessment of a particular college
 
