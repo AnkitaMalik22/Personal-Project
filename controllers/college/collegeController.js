@@ -262,6 +262,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
         LastName,
         Email,
         avatar,
+        CollegeName : `${FirstName} ${LastName}`,
       });
 
       // var ip = (req.headers['x-forwarded-for'] || '')
