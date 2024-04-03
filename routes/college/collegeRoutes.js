@@ -45,8 +45,14 @@ const {
   addTopicstoAssessment,
   uploadVideo,
 } = require("../../controllers/college/assessment/sections");
+const {
+  sendEMail,
+} = require("../../controllers/college/inbox/inboxController");
 
 // const videoUpload = require("../../utils/upload.js");
+//inbox
+router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
+
 router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);
 router.route("/2fa/getSecretQr").get(isAuthenticatedCollege, generateQr);
 router.route("/2fa/verifyQr").post(isAuthenticatedCollege, verifyQr);
