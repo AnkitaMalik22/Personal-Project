@@ -163,8 +163,8 @@ const collegeSchema = new mongoose.Schema({
     {
       from: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Any",
-        validate: [validateRef, "Invalid reference collection."],
+        ref: "College",
+        // validate: [validateRef, "Invalid reference collection."],
       },
       message: String,
       subject: String,

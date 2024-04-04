@@ -1,79 +1,75 @@
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
+const Inbox = require("../../../models/college/inbox/Inbox");
 const { Student } = require("../../../models/student/studentModel");
 const ErrorHandler = require("../../../utils/errorhandler");
 
 // Forgot Password
 exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
   const role = req.params.role;
-  let user;
-
+  let user, emailTo;
   if (role === "college") {
-    user = await College.findById(req.user.id);
+    user = await College.findOne({ Email: req.body.Email });
   } else {
-    user = await Student.findById(req.user.id);
+    user = await Student.findOne({ Email: req.body.Email });
   }
 
-  let college = await College.findOne({ Email: req.body.Email });
-  let student = await Student.findOne({ Email: req.body.Email });
-  if (!college && !student) {
+  const college = await College.findOne({ Email: req.body.Email });
+  const student = await Student.findOne({ Email: req.body.Email });
+  if (college) {
+    emailTo = "College";
+  } else if (student) {
+    emailTo = "Student";
+  } else {
     return next(new ErrorHandler("not found", 404));
   }
-
   try {
-    if (college) {
-      const result = await college.updateOne({
+    const sender = await Inbox.findOneAndUpdate(
+      { user: req.user.id }, // Find the document with the specified user ID
+      {
         $push: {
-          emails: {
+          emailsSent: {
+            refModel: emailTo,
+            Date: new Date(),
+            to: user._id,
+            message: req.body.Message,
+            subject: req.body.Subject,
+          },
+        },
+      },
+      { new: true, upsert: true } // Return the modified document after update
+    );
+    sender.emailsSent.reverse();
+    const receiver = await Inbox.findOneAndUpdate(
+      { user: user._id }, // Find the document with the specified user ID
+      {
+        $push: {
+          emailsReceived: {
+            refModel: emailTo,
+            Date: new Date(),
             from: req.user.id,
             message: req.body.Message,
             subject: req.body.Subject,
           },
         },
-      });
-      await user.updateOne({
-        $push: {
-          emailsSent: {
-            to: req.body.Email,
-            message: req.body.Message,
-            subject: req.body.Subject,
-          },
-        },
-      });
-      user = await College.findById(req.user.id);
+      },
+      { new: true, upsert: true } // Return the modified document after update
+    );
 
-      res.status(200).json({
-        success: true,
-        message: `Email sent successfully`,
-        inbox: user.emails,
-        sent: user.emailsSent,
-      });
-    }
-    if (student) {
-      const result = await college.updateOne({
-        $push: {
-          emails: {
-            from: req.user.id,
-            message: req.body.Message,
-            subject: req.body.Subject,
-          },
-        },
-      });
-      await user.updateOne({
-        $push: {
-          emailsSent: {
-            to: req.body.Email,
-            message: req.body.Message,
-            subject: req.body.Subject,
-          },
-        },
-      });
-      res.status(200).json({
-        success: true,
-        message: `Email sent successfully`,
-        result,
-      });
-    }
+    res.status(200).send({ sender, receiver });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+exports.getEmail = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const mail = await Inbox.findOne({ user: req.user.id }).populate({
+      path: "emailsReceived.from",
+      select: "FirstName LastName Email CollegeName",
+    });
+
+    res.status(200).send({ success: true, mail });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
