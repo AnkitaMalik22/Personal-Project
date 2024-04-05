@@ -22,6 +22,8 @@ const sendToken = require("../../../utils/jwtToken");
 exports.inviteMember = catchAsyncErrors(async (req, res, next) => {
     const { Name, Role, Email, Phone } = req.body;
 
+    console.log("invite called")
+
     const college = await College.findById(req.user.id);
 
     if (!college) {
@@ -159,6 +161,7 @@ exports.registerMember = catchAsyncErrors(async (req, res, next) => {
 
 exports.addMember = catchAsyncErrors(async (req, res, next) => {
     const { Name, Role, Email, Phone } = req.body;
+    console.log("add member called")
 
     const team = await Teams.create({
         Name,

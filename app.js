@@ -56,6 +56,7 @@ const adminRoutes = require("./routes/admin/adminTestRoutes.js");
 
 const studentDummyRoutes = require("./routes/student/studentDummyRoutes.js");
 const collegeTeamRoutes = require("./routes/college/teamRoutes.js");
+const qbRoutes = require("./routes/college/qbRoutes.js");
 
 // routes
 app.use("/api/college", collegeRoutes );
@@ -65,6 +66,7 @@ app.use("/api/student",studentRoutes );
 app.use("/api/studentDummy", studentDummyRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/qb", qbRoutes);
 
 
 

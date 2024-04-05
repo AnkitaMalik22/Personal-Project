@@ -4,6 +4,7 @@ const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
 const { Student } = require("../../../models/student/studentModel");
 const Section = require("../../../models/college/assessment/sections");
+const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
 
 // =========================================================================================================================================
 
@@ -75,6 +76,27 @@ if (assessments.length > 0) {
     totalTime: req.body.totalDuration,
     createdByCompany,
   });
+
+const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
+
+if (!recentQuestion) {
+  console.log("recentQuestion not found", topics);
+
+  await RecentQuestions.create({
+    createdBy: id,
+    topics,
+  });
+} else {
+  console.log("recentQuestion found", topics);
+  recentQuestion.topics = recentQuestion.topics || [];
+  recentQuestion.topics.push(...topics);
+
+  console.log("recentQuestion found", recentQuestion);
+
+  await recentQuestion.save();
+}
+
+
 
   await college.save();
   await assessment.save();

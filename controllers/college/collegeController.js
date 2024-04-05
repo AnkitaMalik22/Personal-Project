@@ -812,6 +812,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
   // console.log(students)
 
+  // console.log ("upload students called" , students , "students")
+
   const CollegeId = req.user.id;
 
   const college = await College.findById(CollegeId);
@@ -833,6 +835,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       recipientEmail: Email,
     });
 
+
  if(!student){
   const invite = await Invitation.create({
     FirstName ,
@@ -842,6 +845,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     recipientEmail:Email,
     invitationLink: crypto.randomBytes(20).toString("hex"),
   });
+
+  // console.log(invite);
 
   sendEmail({
     email: Email,
@@ -1053,6 +1058,8 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   // const invitedStudents = await Invitation.find({ sender: id });
 
   const uploadedStudents =  await Invitation.find({ sender: id });
+
+  console.log(uploadedStudents , "uploaded students" , id)
 
 
   const pending = [];
