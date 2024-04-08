@@ -86,13 +86,13 @@ exports.getSectionsByAssessmentId = catchAsyncErrors(async (req, res, next) => {
 exports.getSectionById = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const section = await Section.findById(id);
+    const section = await Section.findById(id).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler")
 
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
     }
 
-    res.json(section);
+    res.status(200).json(section);
   } catch (error) {
     console.error("Error getting section:", error);
     res.status(500).json({ error: "Internal Server Error" });

@@ -822,6 +822,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("College not found", 404));
   }
 
+  const allDuplicateEmails = [];
+
   for (let i = 0; i < students.length; i++) {
     const { FirstName, LastName, Email } = students[i];
     // const student = await UploadedStudents.create({
@@ -844,7 +846,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     sender: CollegeId,
     recipientEmail:Email,
     invitationLink: crypto.randomBytes(20).toString("hex"),
-  });
+  })
+
 
   // console.log(invite);
 
@@ -856,17 +859,33 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   });
 
 }
+else{
+  allDuplicateEmails.push(Email);
+}
     // student.invited = true;
     // await student.save();
+  }
+
+  console.log(allDuplicateEmails);
+
+  if (allDuplicateEmails.length == students.length) {
+    console.log("all duplicate emails");
+    return res.status(400).json({
+      success: false,
+      message: "Student already invited",
+    });
+  }
+  else{
+    res.status(200).json({
+      success: true,
+      message: "Students uploaded & Invited successfully",
+    });
   }
 
   // college.uploadedStudents = students;
   // await college.save();
 
-  res.status(200).json({
-    success: true,
-    message: "Students uploaded  &  Invited successfully",
-  });
+  
 });
 
 // ------------------------------get uploaded students-----------------------------
