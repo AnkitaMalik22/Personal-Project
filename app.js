@@ -7,9 +7,9 @@ const errorMiddleware = require("./middlewares/error");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const cloudinary=require("cloudinary")
+const Stripe = require("stripe");
 
-
-
+const stripe=Stripe(process.env.Stripe_Key)
 // ======================================================= APP CONFIG ===================================================
 
 const app = express();
@@ -68,6 +68,63 @@ app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/qb", qbRoutes);
 
+
+app.post("/create-checkout-session", async (req, res) => {
+  const { products, customerName, customerAddress } = req.body;
+
+  // Debugging: Print out request body
+  console.log("Request Body:", req.body);
+
+  const customerEmail = customerName.toLowerCase().replace(/\s+/g, '') + '@example.com';
+
+  const currency = "inr"; // Example: Get currency from your data or logic
+  let addressCollectionOptions = {
+    billing_address_collection: 'required', // Default to required
+    shipping_address_collection: {
+      allowed_countries: ['IN'], // Default to IN addresses
+    },
+  };
+
+  // Debugging: Print out currency and customer address
+  console.log("Currency:", currency);
+  console.log("Customer Country:", customerAddress ? customerAddress.country : "Unknown");
+
+  if (currency !== "inr" && customerAddress && customerAddress.country !== "IN") {
+    // For non-INR transactions and non-Indian addresses, set billing/shipping address outside India
+    addressCollectionOptions = {
+      billing_address_collection: 'auto',
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA', 'GB', 'AU'], // Example: List of countries outside India
+      },
+    };
+  }
+
+  // Debugging: Print out addressCollectionOptions
+  console.log("Address Collection Options:", addressCollectionOptions);
+
+  const lineItems = products.map((product) => ({
+    price_data: {
+      currency: currency,
+      product_data: {
+        name: product.dish,
+      },
+      unit_amount: product.price * 100,
+    },
+    quantity: product.qnty,
+  }));
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: lineItems,
+    mode: "payment",
+    success_url: "http://localhost:3000/collage/accounting",
+    cancel_url: "http://localhost:3000/collage/dashboard",
+    customer_email: customerEmail,
+    ...addressCollectionOptions, // Spread the address collection options
+  });
+
+  res.json({ id: session.id });
+});
 
 
 
