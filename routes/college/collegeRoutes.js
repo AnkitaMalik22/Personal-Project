@@ -50,10 +50,16 @@ const {
 const {
   sendEMail,
   getEmail,
+  uploadAttachment,
+  sendReply,
+  searchMail,
 } = require("../../controllers/college/inbox/inboxController");
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
+router.route("/inbox/search").get(isAuthenticatedCollege, searchMail);
+router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
+router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
 router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
 router.route("/inbox/Mail").get(isAuthenticatedCollege, getEmail);
 router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);

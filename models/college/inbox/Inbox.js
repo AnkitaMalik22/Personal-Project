@@ -6,29 +6,25 @@ const inboxSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       refPath: "refModel",
     },
+    refModel: {
+      type: String,
+      required: true,
+      enum: ["College", "Student"],
+    },
     emailsReceived: [
       {
-        refModel: {
-          type: String,
-          required: true,
-          enum: ["College", "Student"],
+        mail: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Mail",
         },
-        Date: Date,
-        from: {
-          type: mongoose.Schema.ObjectId,
-          refPath: "emailsReceived.refModel",
-        },
-        message: String,
-        subject: String,
-        ref: String,
       },
     ],
     emailsSent: [
       {
-        Date: Date,
-        to: String,
-        message: String,
-        subject: String,
+        mail: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Mail",
+        },
       },
     ],
   },
