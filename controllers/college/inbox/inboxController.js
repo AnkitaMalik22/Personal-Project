@@ -132,7 +132,8 @@ exports.sendReply = catchAsyncErrors(async (req, res) => {
 
 exports.getEmail = catchAsyncErrors(async (req, res, next) => {
   try {
-    const mail = await Inbox.findOne({ user: req.user.id })
+    const { skip = 0, limit = 10 } = req.query;
+    let mail = await Inbox.findOne({ user: req.user.id })
       .populate({
         path: "emailsReceived.mail",
         populate: {
@@ -162,7 +163,10 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
         },
       });
 
-    res.status(200).send({ success: true, mail });
+    const total = mail.emailsReceived.length;
+    mail.emailsReceived = mail.emailsReceived.slice(skip, limit);
+
+    res.status(200).send({ success: true, mail, total });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
@@ -170,9 +174,11 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
 
 exports.searchMail = async (req, res) => {
   try {
+    const { skip = 0, limit = 10 } = req.query;
     const uploadPromises = [];
     let from,
       to = null;
+    let within = 1;
     from = await College.find({ Email: req.body.from });
     // to = await College.find({ Email: req.body.to });
 
@@ -189,16 +195,27 @@ exports.searchMail = async (req, res) => {
 
     const endDate = new Date(); // Current date
 
-    const dateToMatch = new Date(req.body.date); // Convert the date from the request body to a Date object
+    let dateToMatch = new Date();
+
+    if (req.body.date) {
+      dateToMatch = new Date(req.body.date);
+    }
+    if (req.body.within) {
+      within = req.body.within;
+    }
+    // Convert the date from the request body to a Date object
 
     const nextDay = new Date(dateToMatch); // Create a new Date object for the day after dateToMatch
-    nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setDate(nextDay.getDate() + within);
     let mails, query;
-    if (req.body.within) {
+
+    if (req.body.within && !req.body.date) {
       query = {
         // Always include the Date field in the query
         Date: { $gte: startDate, $lt: endDate },
       };
+    } else if (!req.body.within && !req.body.date) {
+      query = {};
     } else {
       query = {
         Date: { $gte: dateToMatch, $lt: nextDay }, // Match documents between dateToMatch (inclusive) and nextDay (exclusive)
@@ -220,7 +237,12 @@ exports.searchMail = async (req, res) => {
       query.from = from._id;
     }
 
-    mails = await Mail.find(query);
+    console.log(query);
+    mails = await Mail.find(query)
+      .skip(skip)
+      .limit(limit)
+      .populate("from")
+      .populate("to");
 
     res.status(200).send(mails);
   } catch (error) {

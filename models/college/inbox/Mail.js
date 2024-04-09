@@ -27,6 +27,9 @@ const mailSchema = new mongoose.Schema(
     attachments: [
       {
         url: String,
+        size: String,
+        name: String,
+        format: String,
       },
     ],
     replies: [

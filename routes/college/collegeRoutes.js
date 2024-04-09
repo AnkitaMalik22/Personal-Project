@@ -57,7 +57,7 @@ const {
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
-router.route("/inbox/search").get(isAuthenticatedCollege, searchMail);
+router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
 router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
 router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
 router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
