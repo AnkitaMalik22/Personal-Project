@@ -28,6 +28,7 @@
     "nodemon": "^3.1.0",
     "qrcode": "^1.5.3",
     "socket.io": "^4.7.5",
-    "speakeasy": "^2.0.0"
+    "speakeasy": "^2.0.0",
+    "stripe": "^14.24.0"
   }
 }
