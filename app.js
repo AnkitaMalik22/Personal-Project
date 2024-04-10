@@ -92,7 +92,13 @@ const server = app.listen(process.env.PORT, () => {
 
 const io = new socketIo.Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "https://65a11283c51a3ba9c2cdb954--mellifluous-conkies-ba7b88.netlify.app/",
+      "https://deploy-preview-8--mellifluous-conkies-ba7b88.netlify.app",
+      "https://skillaccessclient.netlify.app",
+      "https://skillaccessprod.netlify.app",
+    ],
   },
 });
 // ======================================= HANDLE UNHANDLED PROMISE REJECTION =======================================================

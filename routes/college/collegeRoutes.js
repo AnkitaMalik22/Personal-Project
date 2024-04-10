@@ -56,6 +56,7 @@ const {
   addMailBookmark,
   getBookmarkedMails,
   deleteBookmarkedMail,
+
   deleteMail,
 } = require("../../controllers/college/inbox/inboxController");
 
@@ -154,6 +155,7 @@ router.post(
 
 // ======================== INBOX ROUTES =======================================
 
+router.route("/inbox/delete/:id").delete(isAuthenticatedCollege, deleteMail);
 router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
 router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
 router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
@@ -163,6 +165,7 @@ router.route("/inbox/bookmark/:id").post(isAuthenticatedCollege, addMailBookmark
 router.route("/inbox/bookmarks").get(isAuthenticatedCollege, getBookmarkedMails);
 router.route("/inbox/bookmark/:id").delete(isAuthenticatedCollege, deleteBookmarkedMail);
 router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteMail);
+
 
 
 
