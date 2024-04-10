@@ -53,15 +53,15 @@ const {
   uploadAttachment,
   sendReply,
   searchMail,
+  addMailBookmark,
+  getBookmarkedMails,
+  deleteBookmarkedMail,
+  deleteMail,
 } = require("../../controllers/college/inbox/inboxController");
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
-router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
-router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
-router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
-router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
-router.route("/inbox/Mail").get(isAuthenticatedCollege, getEmail);
+
 router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);
 router.route("/2fa/getSecretQr").get(isAuthenticatedCollege, generateQr);
 router.route("/2fa/verifyQr").post(isAuthenticatedCollege, verifyQr);
@@ -150,4 +150,26 @@ router.post(
   isAuthenticatedCollege,
   getPlacedStudents
 );
+
+
+// ======================== INBOX ROUTES =======================================
+
+router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
+router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
+router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
+router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
+router.route("/inbox/Mail").get(isAuthenticatedCollege, getEmail);
+router.route("/inbox/bookmark/:id").post(isAuthenticatedCollege, addMailBookmark);
+router.route("/inbox/bookmarks").get(isAuthenticatedCollege, getBookmarkedMails);
+router.route("/inbox/bookmark/:id").delete(isAuthenticatedCollege, deleteBookmarkedMail);
+router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteMail);
+
+
+
+
+
+
+
+
+
 module.exports = router;
