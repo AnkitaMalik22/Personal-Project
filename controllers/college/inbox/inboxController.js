@@ -5,6 +5,8 @@ const Mail = require("../../../models/college/inbox/Mail");
 const { Student } = require("../../../models/student/studentModel");
 const ErrorHandler = require("../../../utils/errorhandler");
 const { v2: cloudinary } = require("cloudinary");
+
+const mongoose = require("mongoose");
 // Forgot Password
 
 exports.uploadAttachment = async (req, res) => {
@@ -226,8 +228,8 @@ exports.searchMail = async (req, res) => {
     // if (to._id) {
     query.to = req.user.id;
     // }
-
-    query.isDeletedReceiver = { $nin: [req.user.id] };
+    const objectId = new mongoose.Types.ObjectId(req.user.id);
+    query.isDeletedReceiver = { $nin: objectId };
 
     // Conditionally include the 'message' field
     if (req.body.keyword) {
@@ -249,6 +251,7 @@ exports.searchMail = async (req, res) => {
     res.status(200).send(mails);
   } catch (error) {
     console.log(error);
+    res.status(500).json({ success: false });
   }
 };
 
@@ -261,13 +264,13 @@ exports.deleteMail = async (req, res) => {
     );
 
     let mail = await Mail.findOneAndUpdate(
-      { user: req.user.id },
-      { $push: { isDeletedReceiver: { user: req.params.id } } },
+      { to: req.user.id },
+      { $push: { isDeletedReceiver: { user: req.user.id } } },
       { new: true } // To return the updated document after the update
     );
-    if (mail) {
-      res.status(200).json({ success: true, mail });
+    if (!mail || !inbox) {
     }
+    res.status(200).json({ success: true, mail, inbox });
   } catch (error) {
     console.log(error);
   }
