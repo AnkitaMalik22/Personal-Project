@@ -249,3 +249,18 @@ exports.searchMail = async (req, res) => {
     console.log(error);
   }
 };
+
+exports.deleteMail = async (req, res) => {
+  try {
+    let mail = await Inbox.findOneAndUpdate(
+      { user: req.user.id },
+      { $pull: { emailsReceived: { mail: req.body.id } } },
+      { new: true } // To return the updated document after the update
+    );
+    if (mail) {
+      res.status(200).json({ success: true, mail });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};

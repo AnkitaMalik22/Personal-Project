@@ -7,6 +7,11 @@ const mailSchema = new mongoose.Schema(
       required: true,
       enum: ["College", "Student"],
     },
+    isDeletedReceiver: [
+      {
+        type: mongoose.Schema.ObjectId,
+      },
+    ],
     MailtypeFrom: {
       type: String,
       required: true,
