@@ -44,6 +44,10 @@ const mailSchema = new mongoose.Schema(
         ],
       },
     ],
+    bookmarked: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

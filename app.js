@@ -39,9 +39,12 @@ app.use(
       "https://65a11283c51a3ba9c2cdb954--mellifluous-conkies-ba7b88.netlify.app/",
       "https://deploy-preview-8--mellifluous-conkies-ba7b88.netlify.app",
       "https://skillaccessclient.netlify.app",
+      "https://skillaccessclient.netlify.app/",
       "https://skillaccessprod.netlify.app",
+      "https://checkout.stripe.com",
     ],
     credentials: true,
+    
   })
 );
 
@@ -59,6 +62,8 @@ const adminRoutes = require("./routes/admin/adminTestRoutes.js");
 
 const studentDummyRoutes = require("./routes/student/studentDummyRoutes.js");
 const collegeTeamRoutes = require("./routes/college/teamRoutes.js");
+const qbRoutes = require("./routes/college/qbRoutes.js");
+const paymentRoutes = require("./routes/college/paymentRoutes.js");
 
 // routes
 app.use("/api/college", collegeRoutes);
@@ -68,6 +73,8 @@ app.use("/api/student", studentRoutes);
 app.use("/api/studentDummy", studentDummyRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/qb", qbRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running");

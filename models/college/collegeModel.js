@@ -177,6 +177,23 @@ const collegeSchema = new mongoose.Schema({
       subject: String,
     },
   ],
+
+  // --------------------
+
+  subscription :   {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscription',
+    },
+    payments : [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subscription',
+      }
+    ],
+    planEndDate : {
+      type: Date,
+    },
+  
 });
 
 collegeSchema.pre("save", async function (next) {

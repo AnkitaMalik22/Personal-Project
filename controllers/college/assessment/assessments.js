@@ -4,6 +4,8 @@ const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
 const { Student } = require("../../../models/student/studentModel");
 const Section = require("../../../models/college/assessment/sections");
+const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
+const sendEmail = require("../../../utils/sendEmail");
 
 // =========================================================================================================================================
 
@@ -24,25 +26,25 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
- const assessments = await Assessments.find({ createdBy: id });
+  const assessments = await Assessments.find({ createdBy: id });
 
-if (assessments.length > 0) {
-  let assessmentExists = false;
-  assessments.forEach((assessment) => {
-    if (assessment.name === req.body.name) {
-      assessmentExists = true;
+  if (assessments.length > 0) {
+    let assessmentExists = false;
+    assessments.forEach((assessment) => {
+      if (assessment.name === req.body.name) {
+        assessmentExists = true;
+      }
+    });
+
+    if (assessmentExists) {
+      return next(
+        new ErrorHandler(
+          `Assessment with name ${req.body.name} already exists`,
+          400
+        )
+      );
     }
-  });
-
-  if (assessmentExists) {
-    return next(
-      new ErrorHandler(
-        `Assessment with name ${req.body.name} already exists`,
-        400
-      )
-    );
   }
-}
 
 
   // const {testSections} = req.body;
@@ -64,17 +66,38 @@ if (assessments.length > 0) {
   const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
 
   // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
-  
+
 
   let assessment = await Assessments.create({
     ...req.body,
     createdBy: id,
     // college: id,
     // company: id,
-    totalQuestionsCount : req.body.totalQuestions,
+    totalQuestionsCount: req.body.totalQuestions,
     totalTime: req.body.totalDuration,
     createdByCompany,
   });
+
+  const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
+
+  if (!recentQuestion) {
+    console.log("recentQuestion not found", topics);
+
+    await RecentQuestions.create({
+      createdBy: id,
+      topics,
+    });
+  } else {
+    console.log("recentQuestion found", topics);
+    recentQuestion.topics = recentQuestion.topics || [];
+    recentQuestion.topics.push(...topics);
+
+    console.log("recentQuestion found", recentQuestion);
+
+    await recentQuestion.save();
+  }
+
+
 
   await college.save();
   await assessment.save();
@@ -85,6 +108,68 @@ if (assessments.length > 0) {
   });
 });
 
+
+
+// ===================================================| Invite Student to Assessment |========================================================
+
+const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
+try {
+  const  students  = req.body;
+  console.log(students , "students")
+
+  // console.log ("upload students called" , students , "students")
+
+  const CollegeId = req.user.id;
+
+  const assessmentId = req.params.id;
+
+  const college = await College.findById(CollegeId);
+  const assessment = await Assessments.findById(assessmentId);
+
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  if (!assessment) {
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  if(students){
+    for (let i = 0; i < students.length; i++) {
+      const { FirstName, LastName, Email } = students[i];
+  
+  
+    //   // send Email to attend the test
+    //  if(assessment.invitedStudents.includes(Email)){
+    //   console.log("Student already invited")
+    //   // return next(new ErrorHandler("Student already invited", 404));
+    //   }else{
+    //   assessment.invitedStudents.push(Email);
+    //   await assessment.save();
+    //   }
+
+  
+  
+      sendEmail({
+        email: Email,
+        subject: "Invitation to join Test",
+        message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, plearse register first.`,
+  
+      });
+  
+    }
+  }
+
+  
+  res.status(200).json({
+    success: true,
+    message: "Students Invited successfully for the test",
+  });
+} catch (error) {
+  console.log(error)
+}
+});
+
 // ===================================================| Get All Assessments  |================================================================
 
 // Get All Assessments -- // By College or Company //
@@ -92,7 +177,7 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.user;
   let assessments = await Assessments.find({ createdBy: id });
 
- 
+
   res.status(200).json({
     success: true,
     assessments,
@@ -287,4 +372,5 @@ module.exports = {
   deleteAssessmentById,
   startAssessment,
   endAssessment,
+  inviteStudentsToTest,
 };

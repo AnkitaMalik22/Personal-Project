@@ -7,6 +7,8 @@ const ErrorHandler = require("../../../utils/errorhandler");
 const { v2: cloudinary } = require("cloudinary");
 
 const mongoose = require("mongoose");
+const BookmarkedMail = require("../../../models/college/inbox/BookmarkedMails");
+
 // Forgot Password
 
 exports.uploadAttachment = async (req, res) => {
@@ -275,3 +277,119 @@ exports.deleteMail = async (req, res) => {
     console.log(error);
   }
 };
+
+// ------------------------------------------------------------------------------------------------------------------
+
+exports.addMailBookmark = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const mail = await Mail.findById(req.params.id);
+
+  if (!mail) {
+    return next(new ErrorHandler("Mail not found", 404));
+  }
+
+  const isMailBookmarked = await BookmarkedMail.findOne({
+    mail: req.params.id,
+    userId,
+  });
+
+  if (isMailBookmarked) {
+    return next(new ErrorHandler("Mail already bookmarked", 400));
+  }
+
+  await BookmarkedMail.create({
+    mail: req.params.id,
+    userId,
+  });
+
+  mail.bookmarked = true;
+  await mail.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Mail bookmarked successfully",
+  });
+});
+
+exports.getBookmarkedMails = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const bookmarks = await BookmarkedMail.find({ userId }).populate({
+    path: "mail",
+    populate: {
+      path: "from",
+      select: "FirstName LastName Email CollegeName",
+    },
+  });
+
+  res.status(200).json({
+    success: true,
+    bookmarks,
+  });
+});
+
+
+
+exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
+  const { id } = req.params;
+
+
+
+  const bookmarkedMail = await BookmarkedMail.findById(id);
+
+  if (!bookmarkedMail) {
+    return next(new ErrorHandler("Bookmarked Mail not found", 404));
+  }
+  const mailId = bookmarkedMail.mail;
+
+  const mail = await Mail.findById(mailId);
+  if (!mail) {
+    return next(new ErrorHandler("Mail not found", 404));
+  }
+
+  mail.bookmarked = false;
+  await mail.save();
+  await bookmarkedMail.remove();
+
+
+
+
+  res.status(200).json({
+    success: true,
+    message: "Bookmarked Mail deleted successfully",
+  });
+});
+
+exports.deleteMail = catchAsyncErrors(async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  
+
+  const mail = await Mail.findById(id);
+
+  if (!mail) {
+    return next(new ErrorHandler("Mail not found", 404));
+  }
+
+  if(userId.toString() !== mail.from.toString() && userId.toString() !== mail.to.toString()){
+    return next(new ErrorHandler("You are not authorized to delete this mail", 401));
+  }
+
+
+  await mail.remove();
+
+  res.status(200).json({  
+    success: true,
+    message: "Mail deleted successfully",
+  });
+
+});
+
+
+
+
+
+
+

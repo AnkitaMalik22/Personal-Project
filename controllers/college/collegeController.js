@@ -812,6 +812,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
   // console.log(students)
 
+  // console.log ("upload students called" , students , "students")
+
   const CollegeId = req.user.id;
 
   const college = await College.findById(CollegeId);
@@ -819,6 +821,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
+
+  const allDuplicateEmails = [];
 
   for (let i = 0; i < students.length; i++) {
     const { FirstName, LastName, Email } = students[i];
@@ -833,6 +837,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       recipientEmail: Email,
     });
 
+
  if(!student){
   const invite = await Invitation.create({
     FirstName ,
@@ -841,27 +846,46 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     sender: CollegeId,
     recipientEmail:Email,
     invitationLink: crypto.randomBytes(20).toString("hex"),
-  });
+  })
+
+
+  // console.log(invite);
 
   sendEmail({
     email: Email,
     subject: "Invitation to join College",
-    message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: http://localhost:3000/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+    message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
     // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
   });
 
+}
+else{
+  allDuplicateEmails.push(Email);
 }
     // student.invited = true;
     // await student.save();
   }
 
+  console.log(allDuplicateEmails);
+
+  if (allDuplicateEmails.length == students.length) {
+    console.log("all duplicate emails");
+    return res.status(400).json({
+      success: false,
+      message: "Student already invited",
+    });
+  }
+  else{
+    res.status(200).json({
+      success: true,
+      message: "Students uploaded & Invited successfully",
+    });
+  }
+
   // college.uploadedStudents = students;
   // await college.save();
 
-  res.status(200).json({
-    success: true,
-    message: "Students uploaded  &  Invited successfully",
-  });
+  
 });
 
 // ------------------------------get uploaded students-----------------------------
@@ -1053,6 +1077,8 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   // const invitedStudents = await Invitation.find({ sender: id });
 
   const uploadedStudents =  await Invitation.find({ sender: id });
+
+  console.log(uploadedStudents , "uploaded students" , id)
 
 
   const pending = [];

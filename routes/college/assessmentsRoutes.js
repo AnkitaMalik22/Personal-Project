@@ -6,7 +6,7 @@ const sectionsController = require('../../controllers/college/assessment/section
 const answersController = require('../../controllers/college/assessment/answers');
 const { isAuthenticatedStudent,isAuthenticatedCollege,isAuthenticatedCompany, authorizeRoles } = require('../../middlewares/auth');
 
-const { createAssessment, getAllAssessments, getAssessmentById, updateAssessmentById,deleteAssessmentById,startAssessment,endAssessment } = assessmentsController;
+const { createAssessment, getAllAssessments, getAssessmentById, updateAssessmentById,deleteAssessmentById,startAssessment,endAssessment,inviteStudentsToTest } = assessmentsController;
 const { getAllQuestions, getQuestionById, createQuestion, updateQuestionById, deleteQuestionById  ,getAllRecentQuestions} = questionsController;
 const { getSectionsByAssessmentId, getSectionById, createSection, updateSection, deleteSection } = sectionsController;
 const { setAnswer, getAnswerByQuestionId ,setAnswerIndex,addMarksLongAnswerStudent,updateMarksLongAnswerStudent, setLongAnswerStudent, getLongAnswerStudent, setAnswerIndexStudent, getAnswerUsingIndex, checkAnswerIndexStudent, addMarksMCQ, updateMarksMCQ } = answersController;
@@ -89,6 +89,9 @@ router.get('/get/bookmarks', isAuthenticatedCollege, getAllBookmarks);
 
 router.get('/recent/questions', isAuthenticatedCollege, getAllRecentQuestions);
 
+
+// INVITE STUDENTS TO ASSESSMENT
+router.post('/invite/students/:id', isAuthenticatedCollege, inviteStudentsToTest);
 
 
 

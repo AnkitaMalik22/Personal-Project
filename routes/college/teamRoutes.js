@@ -12,7 +12,7 @@ const {
     getAllInvitedMembers,
 } = require("../../controllers/college/teams/teamController");
 
-router.route("/add").post(isAuthenticatedCollege, addMember);
+// router.route("/add").post(isAuthenticatedCollege, addMember);
 router.route("/invite").post(isAuthenticatedCollege, inviteMember);
 router.route("/register").post(registerMember);
 router.route("/").get(isAuthenticatedCollege, getAllMembers);
