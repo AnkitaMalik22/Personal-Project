@@ -64,8 +64,8 @@ const makePayment =  async (req, res) => {
         payment_method_types: ["card"],
         line_items: lineItems, // Add line_items property
         mode: "payment",
-        success_url: "http://localhost:3000/collage/accounting",
-        cancel_url: "http://localhost:3000/collage/dashboard",
+        success_url: "https://skillaccessclient.netlify.app/collage/accounting",
+        cancel_url: "https://skillaccessclient.netlify.app/collage/dashboard",
         customer_email: customerEmail,
         ...addressCollectionOptions, // Spread the address collection options
     });
