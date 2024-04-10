@@ -227,6 +227,8 @@ exports.searchMail = async (req, res) => {
     query.to = req.user.id;
     // }
 
+    query.isDeletedReceiver = { $nin: [req.user.id] };
+
     // Conditionally include the 'message' field
     if (req.body.keyword) {
       query.message = { $regex: new RegExp(`.*${req.body.keyword}.*`) };
@@ -252,9 +254,15 @@ exports.searchMail = async (req, res) => {
 
 exports.deleteMail = async (req, res) => {
   try {
-    let mail = await Inbox.findOneAndUpdate(
+    let inbox = await Inbox.findOneAndUpdate(
       { user: req.user.id },
-      { $pull: { emailsReceived: { mail: req.body.id } } },
+      { $pull: { emailsReceived: { mail: req.params.id } } },
+      { new: true } // To return the updated document after the update
+    );
+
+    let mail = await Mail.findOneAndUpdate(
+      { user: req.user.id },
+      { $push: { isDeletedReceiver: { user: req.params.id } } },
       { new: true } // To return the updated document after the update
     );
     if (mail) {

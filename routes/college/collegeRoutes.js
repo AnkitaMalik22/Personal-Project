@@ -53,10 +53,12 @@ const {
   uploadAttachment,
   sendReply,
   searchMail,
+  deleteMail,
 } = require("../../controllers/college/inbox/inboxController");
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
+router.route("/inbox/delete/:id").delete(isAuthenticatedCollege, deleteMail);
 router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
 router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
 router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
