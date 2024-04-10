@@ -361,7 +361,7 @@ exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-exports.deleteMail = catchAsyncErrors(async (req, res, next) => {
+exports.deleteCollegeMail = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
 
