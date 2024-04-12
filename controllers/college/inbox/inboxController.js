@@ -231,7 +231,7 @@ exports.searchMail = async (req, res) => {
     query.to = req.user.id;
     // }
     const objectId = new mongoose.Types.ObjectId(req.user.id);
-    query.isDeletedReceiver = { $nin: objectId };
+    query.isDeletedReceiver = { $nin: { user: objectId } };
 
     // Conditionally include the 'message' field
     if (req.body.keyword) {
@@ -329,12 +329,8 @@ exports.getBookmarkedMails = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
-
-
 
   const bookmarkedMail = await BookmarkedMail.findById(id);
 
@@ -352,9 +348,6 @@ exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
   await mail.save();
   await bookmarkedMail.remove();
 
-
-
-
   res.status(200).json({
     success: true,
     message: "Bookmarked Mail deleted successfully",
@@ -365,31 +358,25 @@ exports.deleteCollegeMail = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
 
-  
-
   const mail = await Mail.findById(id);
 
   if (!mail) {
     return next(new ErrorHandler("Mail not found", 404));
   }
 
-  if(userId.toString() !== mail.from.toString() && userId.toString() !== mail.to.toString()){
-    return next(new ErrorHandler("You are not authorized to delete this mail", 401));
+  if (
+    userId.toString() !== mail.from.toString() &&
+    userId.toString() !== mail.to.toString()
+  ) {
+    return next(
+      new ErrorHandler("You are not authorized to delete this mail", 401)
+    );
   }
-
 
   await mail.remove();
 
-  res.status(200).json({  
+  res.status(200).json({
     success: true,
     message: "Mail deleted successfully",
   });
-
 });
-
-
-
-
-
-
-

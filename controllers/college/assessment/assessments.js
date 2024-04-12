@@ -46,7 +46,6 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     }
   }
 
-
   // const {testSections} = req.body;
   const { topics } = req.body;
 
@@ -66,7 +65,6 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
 
   // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
-
 
   let assessment = await Assessments.create({
     ...req.body,
@@ -97,8 +95,6 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     await recentQuestion.save();
   }
 
-
-
   await college.save();
   await assessment.save();
 
@@ -108,66 +104,58 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 // ===================================================| Invite Student to Assessment |========================================================
 
 const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
-try {
-  const  students  = req.body;
-  console.log(students , "students")
+  try {
+    const students = req.body;
+    console.log(students, "students");
 
-  // console.log ("upload students called" , students , "students")
+    // console.log ("upload students called" , students , "students")
 
-  const CollegeId = req.user.id;
+    const CollegeId = req.user.id;
 
-  const assessmentId = req.params.id;
+    const assessmentId = req.params.id;
 
-  const college = await College.findById(CollegeId);
-  const assessment = await Assessments.findById(assessmentId);
+    const college = await College.findById(CollegeId);
+    const assessment = await Assessments.findById(assessmentId);
 
-  if (!college) {
-    return next(new ErrorHandler("College not found", 404));
-  }
-
-  if (!assessment) {
-    return next(new ErrorHandler("Assessment not found", 404));
-  }
-
-  if(students){
-    for (let i = 0; i < students.length; i++) {
-      const { FirstName, LastName, Email } = students[i];
-  
-  
-    //   // send Email to attend the test
-    //  if(assessment.invitedStudents.includes(Email)){
-    //   console.log("Student already invited")
-    //   // return next(new ErrorHandler("Student already invited", 404));
-    //   }else{
-    //   assessment.invitedStudents.push(Email);
-    //   await assessment.save();
-    //   }
-
-  
-  
-      sendEmail({
-        email: Email,
-        subject: "Invitation to join Test",
-        message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, plearse register first.`,
-  
-      });
-  
+    if (!college) {
+      return next(new ErrorHandler("College not found", 404));
     }
-  }
 
-  
-  res.status(200).json({
-    success: true,
-    message: "Students Invited successfully for the test",
-  });
-} catch (error) {
-  console.log(error)
-}
+    if (!assessment) {
+      return next(new ErrorHandler("Assessment not found", 404));
+    }
+
+    if (students) {
+      for (let i = 0; i < students.length; i++) {
+        const { FirstName, LastName, Email } = students[i];
+
+        //   // send Email to attend the test
+        //  if(assessment.invitedStudents.includes(Email)){
+        //   console.log("Student already invited")
+        //   // return next(new ErrorHandler("Student already invited", 404));
+        //   }else{
+        //   assessment.invitedStudents.push(Email);
+        //   await assessment.save();
+        //   }
+
+        sendEmail({
+          email: Email,
+          subject: "Invitation to join Test",
+          message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, plearse register first.`,
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Students Invited successfully for the test",
+    });
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // ===================================================| Get All Assessments  |================================================================
@@ -176,7 +164,6 @@ try {
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.user;
   let assessments = await Assessments.find({ createdBy: id });
-
 
   res.status(200).json({
     success: true,
@@ -197,8 +184,10 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
   //   (assessment) => assessment._id == id
   // );
 
-
-  const assessment = await Assessments.findById(id);
+  const assessment = await Assessments.findById(id).populate({
+    path: "studentResponses",
+    populate: { path: "studentId" }, // Replace "fieldNameToPopulate" with the field you want to populate
+  });
 
   if (!assessment) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
