@@ -211,17 +211,20 @@ exports.searchMail = async (req, res) => {
 
     const nextDay = new Date(dateToMatch); // Create a new Date object for the day after dateToMatch
     nextDay.setDate(nextDay.getDate() + within);
-    let mails, query;
+    let mails;
+    let query = {};
 
     if (req.body.within && !req.body.date) {
       query = {
+        isDeletedReceiver: { $nin: { user: req.user.id } },
         // Always include the Date field in the query
         Date: { $gte: startDate, $lt: endDate },
       };
     } else if (!req.body.within && !req.body.date) {
-      query = {};
+      query = { isDeletedReceiver: { $nin: { user: req.user.id } } };
     } else {
       query = {
+        isDeletedReceiver: { $nin: { user: req.user.id } },
         Date: { $gte: dateToMatch, $lt: nextDay }, // Match documents between dateToMatch (inclusive) and nextDay (exclusive)
       };
     }
@@ -231,7 +234,7 @@ exports.searchMail = async (req, res) => {
     query.to = req.user.id;
     // }
     const objectId = new mongoose.Types.ObjectId(req.user.id);
-    query.isDeletedReceiver = { $nin: { user: objectId } };
+    // query.isDeletedReceiver = { $nin: { user: req.user.id } };
 
     // Conditionally include the 'message' field
     if (req.body.keyword) {
@@ -244,7 +247,21 @@ exports.searchMail = async (req, res) => {
     }
 
     console.log(query);
-    mails = await Mail.find(query)
+
+    mails = await Mail.find({
+      $and: [
+        {
+          isDeletedReceiver: {
+            $not: {
+              $elemMatch: {
+                user: req.user.id,
+              },
+            },
+          },
+        },
+        query, // Your existing query conditions
+      ],
+    })
       .skip(skip)
       .limit(limit)
       .populate("from")
@@ -266,7 +283,7 @@ exports.deleteMail = async (req, res) => {
     );
 
     let mail = await Mail.findOneAndUpdate(
-      { to: req.user.id },
+      { _id: req.params.id },
       { $push: { isDeletedReceiver: { user: req.user.id } } },
       { new: true } // To return the updated document after the update
     );
