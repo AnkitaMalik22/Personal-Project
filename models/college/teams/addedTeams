@@ -30,6 +30,7 @@ const addedTeamsSchema = new mongoose.Schema({
         required: [true, "Please Enter Your Email"],
         unique: true,
     },
+    Phone : Number,
     invited: {
         type: Boolean,
         default: false
