@@ -163,8 +163,8 @@ router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
 router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
 router.route("/inbox/Mail").get(isAuthenticatedCollege, getEmail);
 router.route("/inbox/bookmark/:id").post(isAuthenticatedCollege, addMailBookmark);
-router.route("/inbox/bookmarks").get(isAuthenticatedCollege, getBookmarkedMails);
 router.route("/inbox/bookmark/:id").delete(isAuthenticatedCollege, deleteBookmarkedMail);
+router.route("/inbox/bookmarks").get(isAuthenticatedCollege, getBookmarkedMails);
 router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteCollegeMail);
 
 

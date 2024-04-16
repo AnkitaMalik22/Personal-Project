@@ -142,30 +142,30 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
         path: "emailsReceived.mail",
         populate: {
           path: "from",
-          select: "FirstName LastName Email CollegeName",
+          select: "FirstName LastName Email CollegeName avatar",
         },
       })
       .populate({
         path: "emailsSent.mail",
         populate: {
           path: "from",
-          select: "FirstName LastName Email CollegeName",
+          select: "FirstName LastName Email CollegeName avatar",
         },
       })
       .populate({
         path: "emailsSent.mail",
         populate: {
           path: "to",
-          select: "FirstName LastName Email CollegeName",
+          select: "FirstName LastName Email CollegeName avatar",
         },
       })
       .populate({
         path: "emailsReceived.mail",
         populate: {
           path: "to",
-          select: "FirstName LastName Email CollegeName",
+          select: "FirstName LastName Email CollegeName avatar",
         },
-      });
+      })
 
     const total = mail.emailsReceived.length;
     mail.emailsReceived = mail.emailsReceived.slice(skip, limit);
@@ -301,6 +301,7 @@ exports.addMailBookmark = catchAsyncErrors(async (req, res, next) => {
   const userId = req.user.id;
 
   const mail = await Mail.findById(req.params.id);
+  console.log(mail , req.params.id)
 
   if (!mail) {
     return next(new ErrorHandler("Mail not found", 404));
@@ -349,11 +350,15 @@ exports.getBookmarkedMails = catchAsyncErrors(async (req, res, next) => {
 exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
 
-  const bookmarkedMail = await BookmarkedMail.findById(id);
+  const bookmarkedMail = await BookmarkedMail.findOne({mail : id });
 
   if (!bookmarkedMail) {
     return next(new ErrorHandler("Bookmarked Mail not found", 404));
   }
+
+  await BookmarkedMail.deleteOne({
+    mail: id,
+  });
   const mailId = bookmarkedMail.mail;
 
   const mail = await Mail.findById(mailId);
@@ -363,7 +368,6 @@ exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
 
   mail.bookmarked = false;
   await mail.save();
-  await bookmarkedMail.remove();
 
   res.status(200).json({
     success: true,

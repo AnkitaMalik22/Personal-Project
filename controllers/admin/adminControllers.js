@@ -37,7 +37,8 @@ const getTopicById = async (req, res) => {
       .populate("questions")
       .populate("findAnswers")
       .populate("essay")
-      .populate("video");
+      .populate("video")
+      .populate("compiler")
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",

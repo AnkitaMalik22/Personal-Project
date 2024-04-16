@@ -2,14 +2,14 @@ const mongoose = require("mongoose");
 
 const mailSchema = new mongoose.Schema(
   {
-   mailId: {
+   mail: {
         type: mongoose.Schema.ObjectId,
         ref: "Mail",
     },
     userId:{
         type: mongoose.Schema.ObjectId,
         ref: "College",
-    }
+    },
   },
   { timestamps: true }
 );
