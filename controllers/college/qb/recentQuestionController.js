@@ -86,11 +86,22 @@ try {
 
     //const topics = recentQuestions.map((recentQuestion) => recentQuestion.topics).flat();
 
-    console.log(recentQuestions[0]?.topics, "topics");
+    // console.log(recentQuestions[0]?.topics, "topics");
 
-    const filteredTopics = recentQuestions[0]?.topics?.filter((topic) => topic._id !== id);
 
-    console.log(filteredTopics, "filtered");
+    const filteredTopics = recentQuestions[0]?.topics?.filter((topic) => {
+        // console.log(topic._id, "id", id, "type", type);
+        return !(topic._id === id && topic.Type === type);
+      });
+      
+
+//    let arr = filteredTopics.map((topic) => {
+//         console.log(topic.Type , "type" , type)
+//         // return topic.Type === type && topic._id !== id;
+//     });
+//     console.log(arr, "arr");
+
+    console.log(filteredTopics.length, "filtered");
 
     await RecentQuestions.findByIdAndUpdate(recentQuestions[0]._id, {
 
