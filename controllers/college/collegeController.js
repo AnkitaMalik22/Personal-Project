@@ -1067,7 +1067,7 @@ try {
 // ------------------------------get students-----------------------------
 
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
-  const id = req.params.id;
+  const id = req.user.id;
 
   const college = await College.findById(id);
   const approvedStudents = await College.findById(id).populate({
@@ -1078,7 +1078,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 
   const uploadedStudents =  await Invitation.find({ sender: id });
 
-  console.log(uploadedStudents , "uploaded students" , id)
+  // console.log(uploadedStudents , "uploaded students" , id)
 
 
   const pending = [];
