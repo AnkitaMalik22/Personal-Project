@@ -77,7 +77,7 @@ const assessmentsSchema = new Schema({
   level: {
     type: String,
     default: "beginner",
-    // enum: ["beginner", "intermediate", "advanced"],
+    // enum: ["beginner", "intermediate", "advanced" ,"adaptive"],
     // required: true,
   },
   type: {

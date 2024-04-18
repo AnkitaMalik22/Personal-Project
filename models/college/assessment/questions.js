@@ -16,10 +16,10 @@ const questionsSchema = new Schema({
     type: String,
     // required:true
   },
-  QuestionLevel:{
+  QuestionLevel: {
     type: String,
-    default: "L1",
-    enum : ["L1","L2","L3"]
+    default: "beginner",
+    enum: ["beginner", "intermediate", "advanced"],
   },
   Duration: String,
   Title: String,
