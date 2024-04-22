@@ -262,7 +262,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
         LastName,
         Email,
         avatar,
-        CollegeName : `${FirstName} ${LastName}`,
+        CollegeName: `${FirstName} ${LastName}`,
       });
 
       // var ip = (req.headers['x-forwarded-for'] || '')
@@ -292,8 +292,8 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
 
-     // it should contain atleast one uppercase, one lowercase, one number and one special character
-     const passwordRegex = new RegExp(
+    // it should contain atleast one uppercase, one lowercase, one number and one special character
+    const passwordRegex = new RegExp(
       "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
     );
     if (!passwordRegex.test(Password)) {
@@ -319,8 +319,6 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
     // console.log("req ip = ",req.ip)
     const device = req.headers["user-agent"];
     console.log(device);
-
-
 
     // Create a new college
     const college = await College.create({
@@ -440,6 +438,7 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
       login.token_deleted = true;
     }
   });
+  college.qrVerify = false;
 
   const blacklist_token = await BlacklistToken.create({
     token: token,
@@ -505,7 +504,7 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
       login.token_deleted = true;
     }
   });
-
+  college.qrVerify = false;
   console.log(college.loginActivity);
 
   await college.save({ validateBeforeSave: false });
@@ -664,18 +663,18 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   if (req.body.newPassword !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
-    // it should contain atleast one uppercase, one lowercase, one number and one special character
-    const passwordRegex = new RegExp(
-      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+  // it should contain atleast one uppercase, one lowercase, one number and one special character
+  const passwordRegex = new RegExp(
+    "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+  );
+  if (!passwordRegex.test(req.body.newPassword)) {
+    return next(
+      new ErrorHandler(
+        "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+        400
+      )
     );
-    if (!passwordRegex.test(req.body.newPassword)) {
-      return next(
-        new ErrorHandler(
-          "Password should contain atleast one uppercase, one lowercase, one number and one special character",
-          400
-        )
-      );
-    }
+  }
 
   // Update college password
   college.Password = req.body.newPassword;
@@ -837,31 +836,27 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       recipientEmail: Email,
     });
 
+    if (!student) {
+      const invite = await Invitation.create({
+        FirstName,
+        LastName,
+        Email,
+        sender: CollegeId,
+        recipientEmail: Email,
+        invitationLink: crypto.randomBytes(20).toString("hex"),
+      });
 
- if(!student){
-  const invite = await Invitation.create({
-    FirstName ,
-    LastName,
-    Email,
-    sender: CollegeId,
-    recipientEmail:Email,
-    invitationLink: crypto.randomBytes(20).toString("hex"),
-  })
+      // console.log(invite);
 
-
-  // console.log(invite);
-
-  sendEmail({
-    email: Email,
-    subject: "Invitation to join College",
-    message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
-    // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
-  });
-
-}
-else{
-  allDuplicateEmails.push(Email);
-}
+      sendEmail({
+        email: Email,
+        subject: "Invitation to join College",
+        message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+        // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+      });
+    } else {
+      allDuplicateEmails.push(Email);
+    }
     // student.invited = true;
     // await student.save();
   }
@@ -874,8 +869,7 @@ else{
       success: false,
       message: "Student already invited",
     });
-  }
-  else{
+  } else {
     res.status(200).json({
       success: true,
       message: "Students uploaded & Invited successfully",
@@ -884,8 +878,6 @@ else{
 
   // college.uploadedStudents = students;
   // await college.save();
-
-  
 });
 
 // ------------------------------get uploaded students-----------------------------
@@ -981,8 +973,6 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 // pending students
 
 exports.getPendingStudents = catchAsyncErrors(async (req, res, next) => {
@@ -998,12 +988,10 @@ exports.getPendingStudents = catchAsyncErrors(async (req, res, next) => {
     pending.push(student);
   }
 
-
   // const pendingStudents = await College.findById(req.user.id).select("pendingStudents").populate({
   //   path: "pendingStudents",
   // });
-console.log(pending);
-
+  console.log(pending);
 
   res.status(200).json({
     success: true,
@@ -1011,57 +999,52 @@ console.log(pending);
   });
 });
 
-
- 
-
 // approve students
 
 exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
+  try {
+    console.log(req.body, "approve students");
+    const { studentId } = req.body;
+    const CollegeId = req.user.id;
 
-try {
-  console.log(req.body, "approve students")
-  const { studentId } = req.body;
-  const CollegeId = req.user.id;
+    const college = await College.findById(CollegeId);
 
-  const college = await College.findById(CollegeId);
+    if (!college) {
+      return next(new ErrorHandler("College not found", 404));
+    }
 
-  if (!college) {
-    return next(new ErrorHandler("College not found", 404));
-    
+    const student = await Student.findById(studentId.studentId);
+
+    // for (let i = 0; i < college.pendingStudents.length; i++) {
+    //   const student = await Student.findById(college.pendingStudents[i]);
+
+    //   if (students.includes(student.id)) {
+    //     student.college = CollegeId;
+    //     await student.save();
+    //   }
+    // }
+
+    if (!student) {
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    college.pendingStudents = college.pendingStudents.filter(
+      (id) => id.toString() !== studentId.studentId
+    );
+    console.log(college.pendingStudents);
+
+    college.students = college.students.concat(student);
+
+    console.log(college.students);
+    await college.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Students approved successfully",
+    });
+  } catch (error) {
+    console.log(error);
   }
-
-  const student = await Student.findById(studentId.studentId);
-
-  // for (let i = 0; i < college.pendingStudents.length; i++) {
-  //   const student = await Student.findById(college.pendingStudents[i]);
-
-  //   if (students.includes(student.id)) {
-  //     student.college = CollegeId;
-  //     await student.save();
-  //   }
-  // }
-
-  if (!student) {
-    return next(new ErrorHandler("Student not found", 404));
-  }
-
-  college.pendingStudents = college.pendingStudents.filter(
-    (id) => id.toString() !== studentId.studentId
-  );
-  console.log(college.pendingStudents);
-
-  college.students = college.students.concat(student);
-
-  console.log(college.students);
-  await college.save();
-
-  res.status(200).json({
-    success: true,
-    message: "Students approved successfully",
-  });
-} catch (error) {
-  console.log(error);
-}
 });
 
 // ------------------------------get students-----------------------------
@@ -1076,10 +1059,9 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   // const uploadedStudents = await UploadedStudents.find({ college_id: id });
   // const invitedStudents = await Invitation.find({ sender: id });
 
-  const uploadedStudents =  await Invitation.find({ sender: id });
+  const uploadedStudents = await Invitation.find({ sender: id });
 
   // console.log(uploadedStudents , "uploaded students" , id)
-
 
   const pending = [];
   for (let i = 0; i < college.pendingStudents.length; i++) {
@@ -1090,7 +1072,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     success: true,
     approvedStudents: approvedStudents.students,
     uploadedStudents,
-    pendingStudents : pending
+    pendingStudents: pending,
     // invitedStudents,
   });
 });
