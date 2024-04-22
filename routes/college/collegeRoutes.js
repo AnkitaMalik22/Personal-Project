@@ -60,16 +60,17 @@ const {
   deleteMail,
   deleteCollegeMail,
 } = require("../../controllers/college/inbox/inboxController");
+const { qrWare } = require("../../middlewares/qrWare");
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
 
 router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);
-router.route("/2fa/getSecretQr").get(isAuthenticatedCollege, generateQr);
+router.route("/2fa/getSecretQr").get(generateQr);
 router.route("/2fa/verifyQr").post(isAuthenticatedCollege, verifyQr);
 router.route("/register").post(registerCollege);
 router.route("/login").post(loginCollege);
-router.route("/me").get(isAuthenticatedCollege, getCollegeDetails);
+router.route("/me").get(isAuthenticatedCollege, qrWare, getCollegeDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update").put(isAuthenticatedCollege, updatePassword);
@@ -153,7 +154,6 @@ router.post(
   getPlacedStudents
 );
 
-
 // ======================== INBOX ROUTES =======================================
 
 router.route("/inbox/delete/:id").delete(isAuthenticatedCollege, deleteMail);
@@ -162,18 +162,15 @@ router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
 router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
 router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
 router.route("/inbox/Mail").get(isAuthenticatedCollege, getEmail);
-router.route("/inbox/bookmark/:id").post(isAuthenticatedCollege, addMailBookmark);
-router.route("/inbox/bookmark/:id").delete(isAuthenticatedCollege, deleteBookmarkedMail);
-router.route("/inbox/bookmarks").get(isAuthenticatedCollege, getBookmarkedMails);
+router
+  .route("/inbox/bookmark/:id")
+  .post(isAuthenticatedCollege, addMailBookmark);
+router
+  .route("/inbox/bookmark/:id")
+  .delete(isAuthenticatedCollege, deleteBookmarkedMail);
+router
+  .route("/inbox/bookmarks")
+  .get(isAuthenticatedCollege, getBookmarkedMails);
 router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteCollegeMail);
-
-
-
-
-
-
-
-
-
 
 module.exports = router;
