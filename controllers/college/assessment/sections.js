@@ -415,6 +415,37 @@ exports.getTopics = async (req, res) => {
   }
 };
 
+exports.getTopicsQB = async (req, res) => {
+  try {
+    const collegeId = req.user.id;
+    const query = req.query.level;
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ error: "College not found" });
+    }
+    console.log(query, "query");
+
+    let topics;
+
+    topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
+    // console.log(topics, "topics");
+
+    // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
+
+    return res.status(200).json({
+      message: "Topics found",
+      topics,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get topics",
+      error: error.message,
+    });
+  }
+};
+
 // ----------------------------- ADD QUESTIONS ------------------------------------
 
 exports.uploadVideo = async (req, res) => {
