@@ -8,7 +8,7 @@ const { isAuthenticatedStudent,isAuthenticatedCollege,isAuthenticatedCompany, au
 
 const { createAssessment, getAllAssessments, getAssessmentById, updateAssessmentById,deleteAssessmentById,startAssessment,endAssessment,inviteStudentsToTest } = assessmentsController;
 const { getAllQuestions, getQuestionById, createQuestion, updateQuestionById, deleteQuestionById  ,getAllRecentQuestions} = questionsController;
-const { getSectionsByAssessmentId, getSectionById, createSection, updateSection, deleteSection } = sectionsController;
+const { getSectionsByAssessmentId, getSectionById, createSection, updateSection, deleteSections } = sectionsController;
 const { setAnswer, getAnswerByQuestionId ,setAnswerIndex,addMarksLongAnswerStudent,updateMarksLongAnswerStudent, setLongAnswerStudent, getLongAnswerStudent, setAnswerIndexStudent, getAnswerUsingIndex, checkAnswerIndexStudent, addMarksMCQ, updateMarksMCQ } = answersController;
 
 const { addBookmark, getBookmarkById, getAllBookmarks,removeBookmark } = require('../../controllers/college/assessment/bookmark');
@@ -34,7 +34,7 @@ router.post('/sections/create', isAuthenticatedCollege || isAuthenticatedCompany
 router.get('/sections/assessmentId',isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, getSectionsByAssessmentId);
 router.get('/section/:id',isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent, getSectionById);
 router.put('/section/:id', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), updateSection);
-router.delete('/sections/:id',isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), deleteSection);
+router.post('/sections',isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), deleteSections);
 
 // Questions Routes
 router.post('/questions/create/:sectionId', isAuthenticatedCollege || isAuthenticatedCompany,authorizeRoles('college','company'), createQuestion);

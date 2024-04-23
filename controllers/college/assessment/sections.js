@@ -144,40 +144,49 @@ exports.updateSection = catchAsyncErrors(async (req, res, next) => {
 
 // ===================================================| Delete Section by ID |===============================================================
 
-exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
+exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { id } = req.params;
+    // const { id } = req.params;
+    const ids = req.body.data;
 
     const userId = req.user.id;
     const role = req.user.role;
 
-    let section = await Section.findById(id);
-    if (!section) {
-      return res.status(404).json({ error: "Section not found" });
-    }
+    
 
     // Check if the user is authorized to delete the section
 
-    if (role === "college") {
-      if (section.college != userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    } else if (role === "company") {
-      if (section.company != userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    } else {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    // if (role === "college") {
+    //   if (section.college != userId) {
+    //     return res.status(401).json({ error: "Unauthorized" });
+    //   }
+    // } else if (role === "company") {
+    //   if (section.company != userId) {
+    //     return res.status(401).json({ error: "Unauthorized" });
+    //   }
+    // } else {
+    //   return res.status(401).json({ error: "Unauthorized" });
+    // }
 
     // Delete the section
-    await Section.findByIdAndDelete(id);
+for (let i = 0; i < ids.length; i++) {
+  let section = await Section.findById(ids[i]);
+  if (section) {
+    // return res.status(404).json({ error: "Section not found" });
+    await Section.findByIdAndDelete(ids[i]);
+  }
 
-    const assessment = await Assessment.findById(section.AssessmentId);
-    assessment.sections.pull(id);
-    await assessment.save();
 
-    res.json({ message: "Section deleted successfully" });
+}
+
+
+    // const assessment = await Assessment.findById(section.AssessmentId);
+    // assessment.sections.pull(id);
+    // await assessment.save();
+
+    const sections = await Section.find({ college: userId});
+
+    res.json({ message: "Section deleted successfully" , sections });
   } catch (error) {
     console.error("Error deleting section:", error);
     res.status(500).json({ error: "Internal Server Error" });
