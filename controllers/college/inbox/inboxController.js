@@ -165,10 +165,11 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
           path: "to",
           select: "FirstName LastName Email CollegeName avatar",
         },
-      })
+      });
 
     const total = mail.emailsReceived.length;
     mail.emailsReceived = mail.emailsReceived.slice(skip, limit);
+    mail.emailsSent = mail.emailsSent.slice(skip, limit);
 
     res.status(200).send({ success: true, mail, total });
   } catch (error) {
@@ -301,7 +302,7 @@ exports.addMailBookmark = catchAsyncErrors(async (req, res, next) => {
   const userId = req.user.id;
 
   const mail = await Mail.findById(req.params.id);
-  console.log(mail , req.params.id)
+  console.log(mail, req.params.id);
 
   if (!mail) {
     return next(new ErrorHandler("Mail not found", 404));
@@ -350,7 +351,7 @@ exports.getBookmarkedMails = catchAsyncErrors(async (req, res, next) => {
 exports.deleteBookmarkedMail = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
 
-  const bookmarkedMail = await BookmarkedMail.findOne({mail : id });
+  const bookmarkedMail = await BookmarkedMail.findOne({ mail: id });
 
   if (!bookmarkedMail) {
     return next(new ErrorHandler("Bookmarked Mail not found", 404));
