@@ -144,40 +144,49 @@ exports.updateSection = catchAsyncErrors(async (req, res, next) => {
 
 // ===================================================| Delete Section by ID |===============================================================
 
-exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
+exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { id } = req.params;
+    // const { id } = req.params;
+    const ids = req.body.data;
 
     const userId = req.user.id;
     const role = req.user.role;
 
-    let section = await Section.findById(id);
-    if (!section) {
-      return res.status(404).json({ error: "Section not found" });
-    }
+    
 
     // Check if the user is authorized to delete the section
 
-    if (role === "college") {
-      if (section.college != userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    } else if (role === "company") {
-      if (section.company != userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    } else {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    // if (role === "college") {
+    //   if (section.college != userId) {
+    //     return res.status(401).json({ error: "Unauthorized" });
+    //   }
+    // } else if (role === "company") {
+    //   if (section.company != userId) {
+    //     return res.status(401).json({ error: "Unauthorized" });
+    //   }
+    // } else {
+    //   return res.status(401).json({ error: "Unauthorized" });
+    // }
 
     // Delete the section
-    await Section.findByIdAndDelete(id);
+for (let i = 0; i < ids.length; i++) {
+  let section = await Section.findById(ids[i]);
+  if (section) {
+    // return res.status(404).json({ error: "Section not found" });
+    await Section.findByIdAndDelete(ids[i]);
+  }
 
-    const assessment = await Assessment.findById(section.AssessmentId);
-    assessment.sections.pull(id);
-    await assessment.save();
 
-    res.json({ message: "Section deleted successfully" });
+}
+
+
+    // const assessment = await Assessment.findById(section.AssessmentId);
+    // assessment.sections.pull(id);
+    // await assessment.save();
+
+    const sections = await Section.find({ college: userId});
+
+    res.json({ message: "Section deleted successfully" , sections });
   } catch (error) {
     console.error("Error deleting section:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -399,6 +408,37 @@ exports.getTopics = async (req, res) => {
     }
 
     console.log(topics, "topics");
+
+    // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
+
+    return res.status(200).json({
+      message: "Topics found",
+      topics,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get topics",
+      error: error.message,
+    });
+  }
+};
+
+exports.getTopicsQB = async (req, res) => {
+  try {
+    const collegeId = req.user.id;
+    const query = req.query.level;
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ error: "College not found" });
+    }
+    console.log(query, "query");
+
+    let topics;
+
+    topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
+    // console.log(topics, "topics");
 
     // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
 

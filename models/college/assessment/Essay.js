@@ -17,6 +17,11 @@ const essaySchema = new Schema({
   },
       Title: String,
       Duration : String,
+      QuestionLevel: {
+        type: String,
+        default: "beginner",
+        enum: ["beginner", "intermediate", "advanced"],
+      },
     //   ---------------------------------
       Answer: {
         type: String,

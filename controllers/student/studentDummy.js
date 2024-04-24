@@ -244,6 +244,10 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
     student.studentResponses.push(studentResponse._id);
     assessment.studentResponses.push(studentResponse._id);
 
+  if(student.avgPercentage ){
+    assessment.avgPercentage = (assessment.avgPercentage + percentage) / assessment.studentResponses.length;
+    }
+
     await student.save({ validateBeforeSave: false });
     await assessment.save({ validateBeforeSave: false });
     await studentResponse.save({ validateBeforeSave: false });

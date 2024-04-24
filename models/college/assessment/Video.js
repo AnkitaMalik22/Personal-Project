@@ -12,7 +12,11 @@ const videoSchema = new Schema({
   },
   // ---------- req.body -------------
  
-
+  QuestionLevel: {
+    type: String,
+    default: "beginner",
+    enum: ["beginner", "intermediate", "advanced"],
+  },
 
 
 // questions:[{

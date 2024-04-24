@@ -245,30 +245,32 @@ const deleteAssessmentById = catchAsyncErrors(async (req, res, next) => {
   if (!a) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
-  if (a.createdByCompany) {
-    if (a.company != req.user.id) {
-      return next(
-        new ErrorHandler(
-          `You are not authorized to delete this assessment`,
-          401
-        )
-      );
-    }
-  }
+  // if (a.createdByCompany) {
+  //   if (a.company != req.user.id) {
+  //     return next(
+  //       new ErrorHandler(
+  //         `You are not authorized to delete this assessment`,
+  //         401
+  //       )
+  //     );
+  //   }
+  // }
 
-  if (a.college != req.user.id) {
-    return next(
-      new ErrorHandler(`You are not authorized to delete this assessment`, 401)
-    );
-  }
+  // if (a.college != req.user.id) {
+  //   return next(
+  //     new ErrorHandler(`You are not authorized to delete this assessment`, 401)
+  //   );
+  // }
 
   const assessment = await Assessments.findByIdAndDelete(id);
+  const assessments = await Assessments.find({ createdBy: req.user.id });
+
 
   // if (!assessment) {
   //   return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   // }
 
-  res.json({ message: "Assessment deleted successfully" });
+  res.json({ message: "Assessment deleted successfully" , assessments});
 });
 
 // ===================================================| Start Assessment by ID |========================================================

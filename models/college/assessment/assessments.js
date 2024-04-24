@@ -128,6 +128,10 @@ const assessmentsSchema = new Schema({
       ref: "Student",
     },
   ],
+  avgPercentage: {
+    type: Number,
+    default: 0,
+  },
 
 // ----------------------------------
 createdAt: {
