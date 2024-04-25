@@ -6,6 +6,7 @@ const { Student } = require("../../../models/student/studentModel");
 const Section = require("../../../models/college/assessment/sections");
 const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
 const sendEmail = require("../../../utils/sendEmail");
+const Credit = require("../../../models/college/account/creditModel")
 
 // =========================================================================================================================================
 
@@ -15,6 +16,22 @@ const sendEmail = require("../../../utils/sendEmail");
 
 const createAssessment = catchAsyncErrors(async (req, res, next) => {
   const { role, id } = req.user;
+
+
+let credit = await Credit.findOne({
+    college: id,
+  });
+
+if(credit && credit.credit > 0)
+{  credit.credit -=1 ; }else{
+  console.log("you cont have credits")
+  return next(
+    new ErrorHandler(
+      `You don't have enough credits to create assessment!`,
+      400
+    ))
+
+}
 
   const college = await College.findById(id);
   if (!college) {
@@ -95,6 +112,10 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     await recentQuestion.save();
   }
 
+
+
+
+  await credit.save();
   await college.save();
   await assessment.save();
 
@@ -256,11 +277,11 @@ const deleteAssessmentById = catchAsyncErrors(async (req, res, next) => {
   //   }
   // }
 
-  // if (a.college != req.user.id) {
-  //   return next(
-  //     new ErrorHandler(`You are not authorized to delete this assessment`, 401)
-  //   );
-  // }
+  if (a.createdBy != req.user.id) {
+    return next(
+      new ErrorHandler(`You are not authorized to delete this assessment`, 401)
+    );
+  }
 
   const assessment = await Assessments.findByIdAndDelete(id);
   const assessments = await Assessments.find({ createdBy: req.user.id });
