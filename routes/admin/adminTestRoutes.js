@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 
-const { viewAllQuestionsInTopic, addQuestionsToTopic ,createTopic,viewAllTopics ,viewAllTopicByAdmin, updateTopic, getTopicById} = require('../../controllers/admin/adminControllers');
+const { viewAllQuestionsInTopic, addQuestionsToTopic ,createTopic,viewAllTopics ,viewAllTopicByAdmin, updateTopic, getTopicById, addCredit,getCredit} = require('../../controllers/admin/adminControllers');
 const { isAuthenticatedCollege } = require('../../middlewares/auth');
 
 router.post('/create-topic', createTopic);
@@ -19,7 +19,8 @@ router.get ('/get-all-topics',viewAllTopics);
 
 router.get ('/get-all-questions/:topicId', viewAllQuestionsInTopic);
 
-
+router.post('/add-credit/:id',addCredit);
+router.get('/get-credit/:id',getCredit);
 
 
 

@@ -6,6 +6,7 @@ const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
 const Company = require("../../models/company/companyModel");
+const Credit = require("../../models/college/account/creditModel")
 
 const Job = require("../../models/company/jobModel");
 const Invitation = require("../../models/student/inviteModel");
@@ -520,10 +521,14 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
   try {
     const college = await College.findById(req.user.id);
+    let credit = await Credit.findOne({
+      college: college,
+    });
 
     return res.status(200).json({
       success: true,
       college,
+      credit
     });
   } catch (error) {
     next(error);

@@ -3,10 +3,75 @@ const Question = require("../../models/college/assessment/questions");
 const findAnswer = require("../../models/college/assessment/findAnswer");
 const Essay = require("../../models/college/assessment/Essay");
 const Video = require("../../models/college/assessment/Video");
+const ErrorHandler = require("../../utils/errorhandler");
+const College = require("../../models/college/collegeModel");
+const Credit = require("../../models/college/account/creditModel");
 
 //  ADMIN CAN CREATE TOPICS AND ADD QUESTIONS
 
 // 1. Create a new topic
+
+// ----------------- ADD CREDIT TO COLLEGE ------------------
+
+const addCredit = async (req, res) => {
+  try {
+    const college = await College.findById(req.params.id);
+    if (!college) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+  let credit = await Credit.findOne({
+      college: college,
+    });
+
+    if (!credit) {
+      // return res.status(404).json({ message: "Credit not found" });
+      credit = new Credit({
+        college : college
+      })
+    }
+
+    credit.credit = req.body.credit;
+    credit.limit = req.body.limit;
+
+    await credit.save();
+    // send notification to college 
+
+    return res.status(201).json({
+      message: "Credit added successfully",
+      credit,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to add credit",
+      error: error.message,
+    });
+  }
+};
+
+
+const getCredit =async(req,res)=>{
+  try{
+    const credit = await Credit.findOne({
+      college : req.params.id
+    });
+    if(!credit) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.status(200).json({
+      message: "Credit Fetched Successfully",
+      credit,
+    });
+  
+  }catch(error){
+    return res.status(500).json({
+      message: "Unable to fetch credit",
+      error: error.message,
+    });
+  }
+
+}
+
 
 const createTopic = async (req, res) => {
   try {
@@ -38,7 +103,7 @@ const getTopicById = async (req, res) => {
       .populate("findAnswers")
       .populate("essay")
       .populate("video")
-      .populate("compiler")
+      .populate("compiler");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
@@ -94,8 +159,7 @@ const updateTopic = async (req, res) => {
 
 const addQuestionsToTopic = async (req, res) => {
   try {
-
-    const { topicId,type } = req.params;
+    const { topicId, type } = req.params;
 
     // const { Title, Options, Answer, AnswerIndex, QuestionType, Status, TotalMarks } = req.body;
     let section;
@@ -129,14 +193,14 @@ const addQuestionsToTopic = async (req, res) => {
         question = await Question.create(questions[i]);
         section.questions.push(question._id);
       } else if (type === "findAnswer") {
-         question =await findAnswer.create(questions[i]);
-         section.findAnswers.push(question._id);
+        question = await findAnswer.create(questions[i]);
+        section.findAnswers.push(question._id);
       } else if (type === "essay") {
-       question = await Essay.create(questions[i]);
+        question = await Essay.create(questions[i]);
         section.essay.push(question._id);
         console.log(section.essay);
       } else if (type === "video") {
-    question = await Video.create(questions[i]);
+        question = await Video.create(questions[i]);
         section.video.push(question._id);
       }
 
@@ -166,7 +230,11 @@ const addQuestionsToTopic = async (req, res) => {
 
 const viewAllTopics = async (req, res) => {
   try {
-    const sections = await Section.find().populate("questions").populate("findAnswers").populate("essay").populate("video");
+    const sections = await Section.find()
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video");
     return res.status(200).json({
       message: "All topics",
       sections,
@@ -199,7 +267,11 @@ const viewAllTopicByAdmin = async (req, res) => {
 const viewAllQuestionsInTopic = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const section = await Section.findById(topicId).populate("questions").populate("findAnswers").populate("essay").populate("video");
+    const section = await Section.findById(topicId)
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
@@ -218,6 +290,8 @@ const viewAllQuestionsInTopic = async (req, res) => {
 };
 
 module.exports = {
+  addCredit,
+  getCredit,
   createTopic,
   getTopicById,
   updateTopic,
