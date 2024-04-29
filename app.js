@@ -98,6 +98,7 @@ const io = new socketIo.Server(server, {
       "https://deploy-preview-8--mellifluous-conkies-ba7b88.netlify.app",
       "https://skillaccessclient.netlify.app",
       "https://skillaccessprod.netlify.app",
+      "https://skillaccess.vercel.app",
     ],
   },
 });
