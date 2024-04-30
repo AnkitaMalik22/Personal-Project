@@ -550,7 +550,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   await college.save({ validateBeforeSave: false });
 
   // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/password/reset/${resetToken}`;
-  const resetPasswordUrl = `https://skillaccessclient.netlify.app/password/reset/${resetToken}`;
+  const resetPasswordUrl = `https://skillaccess.vercel.app/password/reset/${resetToken}`;
 
   const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
 
@@ -856,7 +856,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       sendEmail({
         email: Email,
         subject: "Invitation to join College",
-        message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccessclient.netlify.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+        message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
         // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       });
     } else {
