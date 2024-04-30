@@ -179,6 +179,10 @@ const collegeSchema = new mongoose.Schema({
   ],
 
   // --------------------
+  selectedPlan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "PaymentPlan",
+  },
 
   subscription :   {
       type: mongoose.Schema.Types.ObjectId,

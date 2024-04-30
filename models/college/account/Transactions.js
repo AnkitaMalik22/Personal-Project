@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const paymentSchema = new mongoose.Schema({
+const TransactionSchema = new mongoose.Schema({
   planName: {
     type: String,
     required: true
@@ -21,19 +21,18 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  active: {
-    type: Boolean,
-    default: false
+  Date : {
+    type: Date,
+    default: Date.now
   },
-  members :[
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'College'
-    }
+  user :{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'College'
+  }
   
-  ]
+
 });
 
-const PaymentPlan = mongoose.model('PaymentPlan', paymentSchema);
+const Transaction = mongoose.model('Transaction', TransactionSchema);
 
-module.exports = PaymentPlan;
+module.exports = Transaction;
