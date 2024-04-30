@@ -62,6 +62,22 @@ const selectPlanCollege = async (req, res) => {
     await newPlan.save();
     await college.save();
 
+    const credit = await Credit.findOne({
+      college: req.user.id,
+    });
+    if (!credit) {
+      credit = new Credit({
+        college: college,
+        credit: newPlan.credit,
+        limit: newPlan.limit,
+      });
+    }else{
+      credit.credit = newPlan.credit;
+      credit.limit = newPlan.limit;
+    }
+
+    await credit.save();
+
     return res.status(200).json({
       message: "Plan selection updated successfully",
       plan: newPlan
@@ -70,6 +86,49 @@ const selectPlanCollege = async (req, res) => {
     console.log(error);
     return res.status(500).json({
       message: "Unable to select plan",
+      error: error.message,
+    });
+  }
+};
+
+const cancelPlanCollege = async (req, res) => {
+  try {
+    // Find the college by user ID
+    const college = await College.findById(req.user.id);
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    // Retrieve the plan ID from request parameters
+    const planId = req.params.id;
+    const plan = await PaymentPlan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    // Remove the college from the plan's members list
+    plan.members = plan.members.filter(member => member.toString() !== college._id.toString());
+    await plan.save();
+
+    // Remove the plan from the college's selected plan
+    college.selectedPlan = null;
+    await college.save();
+    
+    const credit = await Credit.findOne({
+      college: req.user.id,
+    });
+
+    credit.credit = 0;
+    credit.limit = 0;
+    await credit.save();
+
+
+    return res.status(200).json({
+      message: "Plan cancelled successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to cancel plan",
       error: error.message,
     });
   }
@@ -425,5 +484,6 @@ module.exports = {
   addPlansAdmin,
   selectPlanCollege,
   getAllPlans,
-  getAllTransactions
+  getAllTransactions,
+  cancelPlanCollege,
 };
