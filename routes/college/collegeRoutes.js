@@ -66,7 +66,7 @@ const { qrWare } = require("../../middlewares/qrWare");
 //inbox
 
 router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);
-router.route("/2fa/getSecretQr").get(generateQr);
+router.route("/2fa/getSecretQr/:id").get(generateQr);
 router.route("/2fa/verifyQr").post(isAuthenticatedCollege, verifyQr);
 router.route("/register").post(registerCollege);
 router.route("/login").post(loginCollege);

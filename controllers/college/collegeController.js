@@ -6,7 +6,7 @@ const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
 const Company = require("../../models/company/companyModel");
-const Credit = require("../../models/college/account/creditModel")
+const Credit = require("../../models/college/account/creditModel");
 
 const Job = require("../../models/company/jobModel");
 const Invitation = require("../../models/student/inviteModel");
@@ -19,7 +19,10 @@ const qrcode = require("qrcode");
 
 const { Vonage } = require("@vonage/server-sdk");
 const { SMS } = require("@vonage/messages");
+
+const Qr = require("../../models/college/qr/qr");
 const PaymentPlan = require("../../models/college/account/planModel");
+
 // Import the Student model
 
 // ================================================================================================================================
@@ -173,12 +176,41 @@ exports.generateQr = async (req, res, next) => {
       name: "Skillaccess",
     });
     // console.log(secret);
+    const user = await College.findById(req.params.id);
+    if (!user) return res.status(404).send("College not found");
+    const qr = await Qr.findOne({ user: req.params.id });
+    console.log(qr, "qrcode");
+    if (!qr) {
+      function generateQRCodeDataURL(secret) {
+        return new Promise((resolve, reject) => {
+          qrcode.toDataURL(secret.otpauth_url, (err, data) => {
+            if (err) {
+              reject(err); // Reject promise with error if qrcode.toDataURL encounters an error
+            } else {
+              resolve(data); // Resolve promise with data URL if qrcode.toDataURL is successful
+            }
+          });
+        });
+      }
+      const code = await generateQRCodeDataURL(secret);
+      // console.log(code);
 
-    qrcode.toDataURL(secret.otpauth_url, function (err, data) {
-      return res.status(200).json({ success: true, qr: data, secret: secret });
-    });
+      if (!code) {
+        return res.status(401).send("could not get code");
+      }
+      await Qr.create({
+        user: user._id,
+        code: code,
+        secret: secret,
+      });
+      return res.status(200).json({ success: true, qr: code, secret: secret });
+    } else {
+      return res
+        .status(200)
+        .json({ success: true, qr: qr.code, secret: qr.secret });
+    }
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -187,8 +219,10 @@ exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
+  const qr = await Qr.findOne({ user: college._id });
+  console.log(qr);
   let verified = speakeasy.totp.verify({
-    secret: req.body.secret,
+    secret: qr.secret.ascii,
     encoding: "ascii",
     token: parseInt(req.body.token),
   });
@@ -206,6 +240,9 @@ exports.selectAuth = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("College not found", 404));
   }
   college.authType = req.body.type;
+  if (req.body.type === "qr") {
+    college.qrVerify = true;
+  }
   await college.save({ validateBeforeSave: false });
   return res.status(200).json({ college });
 });
@@ -531,6 +568,7 @@ exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
       college,
       credit,
       balance
+
     });
   } catch (error) {
     next(error);
