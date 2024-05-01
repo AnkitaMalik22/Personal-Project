@@ -86,7 +86,7 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
       subject: req.body.Subject,
       replies: [],
     });
-    console.log(mail);
+
     const sender = await Inbox.findOneAndUpdate(
       { user: req.user.id }, // Find the document with the specified user ID
       {
