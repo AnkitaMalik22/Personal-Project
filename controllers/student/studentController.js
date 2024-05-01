@@ -151,7 +151,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-    const { Email, Password, FirstName, LastName, ip ,Major,From,To} = req.body;
+    const { Email, Password, FirstName, LastName, ip ,Major,From,To ,PhoneNumber} = req.body;
     const device = req.headers["user-agent"];
     // const CollegeId = req.params.CollegeId;
     const { CollegeId, inviteLink } = req.query;
@@ -208,7 +208,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
 
     const student = await Student.create({ ...req.body, CollegeId: CollegeId, avatar,
     
-    registrationLink: inviteLink, CollegeName: college.CollegeName});
+    registrationLink: inviteLink, CollegeName: college.CollegeName ,PhoneNumber});
 
     // student not approved yet
     college.pendingStudents.push(student._id);

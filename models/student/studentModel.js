@@ -191,7 +191,16 @@ loggedOut: { type: Boolean, default: false },
   Education: educationSchema,
   Skills: skillsSchema,
   Portfolio: portfolioSchema,
-  Cv: Buffer,
+  Cv: {
+    public_id: {
+      type: String,
+    },
+    url: {
+      type: String,
+    }
+    
+
+  },
   Certificates: [
     {
       type: {

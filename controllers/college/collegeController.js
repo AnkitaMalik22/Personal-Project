@@ -19,7 +19,10 @@ const qrcode = require("qrcode");
 
 const { Vonage } = require("@vonage/server-sdk");
 const { SMS } = require("@vonage/messages");
+
 const Qr = require("../../models/college/qr/qr");
+const PaymentPlan = require("../../models/college/account/planModel");
+
 // Import the Student model
 
 // ================================================================================================================================
@@ -556,14 +559,16 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
   try {
     const college = await College.findById(req.user.id);
-    let credit = await Credit.findOne({
+    let credit = await PaymentPlan.find({ members: { $in: [college._id] } }, { members: 0 });
+    const balance = await Credit.findOne({
       college: college,
     });
-
     return res.status(200).json({
       success: true,
       college,
       credit,
+      balance
+
     });
   } catch (error) {
     next(error);

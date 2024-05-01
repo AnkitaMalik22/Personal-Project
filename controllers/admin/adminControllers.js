@@ -6,12 +6,195 @@ const Video = require("../../models/college/assessment/Video");
 const ErrorHandler = require("../../utils/errorhandler");
 const College = require("../../models/college/collegeModel");
 const Credit = require("../../models/college/account/creditModel");
+const PaymentPlan = require("../../models/college/account/planModel");
+const Transaction = require("../../models/college/account/Transactions");
 
 //  ADMIN CAN CREATE TOPICS AND ADD QUESTIONS
 
 // 1. Create a new topic
 
 // ----------------- ADD CREDIT TO COLLEGE ------------------
+
+
+const selectPlanCollege = async (req, res) => {
+  try {
+    // Find the college by user ID
+    const college = await College.findById(req.user.id);
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    // Retrieve the plan ID from request parameters
+    const planId = req.params.id;
+    const newPlan = await PaymentPlan.findById(planId);
+    if (!newPlan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    // Check if the college already has a different plan selected
+    if (college.selectedPlan && college.selectedPlan.toString() !== planId) {
+      const currentPlan = await PaymentPlan.findById(college.selectedPlan);
+      if (currentPlan) {
+        // Remove the college from the current plan's members list
+        currentPlan.members = currentPlan.members.filter(member => member.toString() !== college._id.toString());
+        await currentPlan.save();
+      }
+    }
+
+    // Assign the new plan to the college
+    if (!newPlan.members.includes(college._id)) {
+      newPlan.members.push(college._id);
+    }
+
+    // Update the college's selected plan
+    college.selectedPlan = newPlan._id;
+
+    const transaction = await Transaction.create({
+      user: college._id,
+      planName: newPlan.planName,
+      date : new Date(),
+      price: newPlan.price,
+      credit: newPlan.credit,
+      limit: newPlan.limit,
+      charges: newPlan.charges,
+    });
+  
+    await newPlan.save();
+    await college.save();
+
+    const credit = await Credit.findOne({
+      college: req.user.id,
+    });
+    if (!credit) {
+      credit = new Credit({
+        college: college,
+        credit: newPlan.credit,
+        limit: newPlan.limit,
+      });
+    }else{
+      credit.credit = newPlan.credit;
+      credit.limit = newPlan.limit;
+    }
+
+    await credit.save();
+
+    return res.status(200).json({
+      message: "Plan selection updated successfully",
+      plan: newPlan
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Unable to select plan",
+      error: error.message,
+    });
+  }
+};
+
+const cancelPlanCollege = async (req, res) => {
+  try {
+    // Find the college by user ID
+    const college = await College.findById(req.user.id);
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    // Retrieve the plan ID from request parameters
+    const planId = req.params.id;
+    const plan = await PaymentPlan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    // Remove the college from the plan's members list
+    plan.members = plan.members.filter(member => member.toString() !== college._id.toString());
+    await plan.save();
+
+    // Remove the plan from the college's selected plan
+    college.selectedPlan = null;
+    await college.save();
+    
+    const credit = await Credit.findOne({
+      college: req.user.id,
+    });
+
+    credit.credit = 0;
+    credit.limit = 0;
+    await credit.save();
+
+
+    return res.status(200).json({
+      message: "Plan cancelled successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to cancel plan",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+const addPlansAdmin = async (req, res) => {
+  try {
+    const { plans} = req.body;
+  for (let i = 0; i < plans.length; i++) {
+    const plan = new PaymentPlan(plans[i]);
+    await plan.save();
+
+  }
+  return res.status(201).json({
+    message: "Plans added successfully",
+
+  });
+    
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to add plan",
+      error: error.message,
+    });
+  }
+};
+
+const getAllPlans = async (req, res) => {
+  try {
+    const plans = await PaymentPlan.find();
+    return res.status(200).json({
+      message: "All plans",
+      plans,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get plans",
+      error: error.message,
+    });
+  }
+};
+
+
+const getAllTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.find({
+      user: req.user.id,
+    });
+    return res.status(200).json({
+      message: "All transactions",
+      transactions,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get transactions",
+      error: error.message,
+    });
+  }
+};
+
+
+    
+
 
 const addCredit = async (req, res) => {
   try {
@@ -298,4 +481,9 @@ module.exports = {
   addQuestionsToTopic,
   viewAllTopics,
   viewAllQuestionsInTopic,
+  addPlansAdmin,
+  selectPlanCollege,
+  getAllPlans,
+  getAllTransactions,
+  cancelPlanCollege,
 };
