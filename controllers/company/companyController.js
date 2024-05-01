@@ -24,7 +24,20 @@ exports.registerCompany = catchAsyncErrors(async (req, res, next) => {
   // console.log(company);
 
   // Send JWT token in response
-  sendToken(company, 201, res);
+const ip = '111 111 111 111'
+  // console.log("req ip = ",req.ip)
+  const device = req.headers["user-agent"];
+  console.log(device);
+
+  // Create a new college
+
+
+  // Log college details
+  // console.log(college);
+
+  // Send JWT token in response
+
+  sendToken(company, 201, res,ip, device);
 });
 
 // =================================================== LOGIN Company ===========================================================
