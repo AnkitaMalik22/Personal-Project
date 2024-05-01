@@ -526,7 +526,6 @@ exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
     const balance = await Credit.findOne({
       college: college,
     });
-
     return res.status(200).json({
       success: true,
       college,
