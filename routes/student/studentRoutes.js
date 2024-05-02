@@ -4,6 +4,7 @@ const router = require('express').Router();
 
 const { getAllStudents, getStudent, createStudent, loginStudent ,updateProfileStudent,resetPasswordStudent,forgotPasswordStudent, getStudentsByCollegeId, getStudentsByAssessmentId, getStudentsByJobId, logout, updateProfilePictureStudent, getResultByStudentId, getNewJobs, getRecommendedJobs, getYourAssessments} = require('../../controllers/student/studentController');
 const { isAuthenticatedStudent, isAuthenticatedCollege, authorizeRoles } = require('../../middlewares/studentAuth');
+const {  uploadCV, updatePersonalInfo, updateEducation } = require('../../controllers/student/profileController');
 
 
 
@@ -16,6 +17,10 @@ router.put('/update/avatar',isAuthenticatedStudent, updateProfilePictureStudent)
 router.put('/resetpassword', resetPasswordStudent);
 router.put('/forgotpassword', forgotPasswordStudent);
 router.post('/logout', logout);
+
+router.post('/profile/update/cv',isAuthenticatedStudent, uploadCV);
+router.put('/profile/update/personal',isAuthenticatedStudent, updatePersonalInfo);
+router.post('/profile/update/education',isAuthenticatedStudent, updateEducation);
 
 router.post('/college/get/all', isAuthenticatedCollege,authorizeRoles('college'), getStudentsByCollegeId);
 router.get('assessments/:id', getStudentsByAssessmentId);

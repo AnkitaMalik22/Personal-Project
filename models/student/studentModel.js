@@ -188,7 +188,30 @@ loggedOut: { type: Boolean, default: false },
   PhoneNumber: String,
   Address: String,
   Website: String,
-  Education: educationSchema,
+  // Education: educationSchema,
+  Education: [
+    {
+      School: String,
+      Description: String,
+      Degree: String,
+      StartDate: Date,
+      EndDate: Date,
+      Place : String,
+      Media:[
+        {
+          public_id: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+          file_name : {
+            type: String,
+          },
+        }
+      ]
+    },
+  ],
   Skills: skillsSchema,
   Portfolio: portfolioSchema,
   Cv: {
@@ -197,7 +220,10 @@ loggedOut: { type: Boolean, default: false },
     },
     url: {
       type: String,
-    }
+    },
+    file_name : {
+      type: String,
+    },
     
 
   },
