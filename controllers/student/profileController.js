@@ -147,3 +147,112 @@ exports.updateEducation = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+
+exports.updateSkills = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const data = req.body;
+    // console.log(data);
+    const student = await Student.findById(req.user.id);
+    if (!student) {
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    // Skills: {
+    //   SoftwareKnowledge: [{
+    //     type: String,
+    //   }],
+    //   Achievements: [
+    //     {
+    //       type: String,
+    //     },
+    //   ],
+    //   CodingKnowledge: [{type: String}],
+    //   Languages: [{type: String}],
+    // },
+
+    const { SoftwareKnowledge, Achievements, CodingKnowledge, Languages } = data;
+
+    student.Skills.SoftwareKnowledge = SoftwareKnowledge;
+    student.Skills.Achievements = Achievements;
+    student.Skills.CodingKnowledge = CodingKnowledge;
+    student.Skills.Languages = Languages;
+    await student.save();
+
+    res.status(200).json({
+      success: true,
+      user: student,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
+exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const data = req.body;
+    // console.log(data);
+    const student = await Student.findById(req.user.id);
+    if (!student) {
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    // const { Links } = data;
+    // console.log(Links);
+
+    // student.Links = Links;
+    student.Portfolio = data;
+    await student.save();
+
+    // console.log(data);
+
+    res.status(200).json({
+      success: true,
+      user: student,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+);
+
+
+exports.updateProfilePictureStudent= catchAsyncErrors(
+  async (req, res, next) => {
+    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: "avatars",
+      width: 150,
+      crop: "scale",
+    });
+
+    // const newCollegeData = req.body;
+
+    // console.log(avatar);
+
+    // const college = await College.findByIdAndUpdate(  req.body.id,
+    const student = await Student.findByIdAndUpdate(
+      req.user.id,
+
+      {
+        avatar: {
+          public_id: myCloud.public_id,
+          url: myCloud.secure_url,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false,
+      }
+    );
+    console.log(student);
+
+    res.status(200).json({
+      success: true,
+     student,
+    });
+  }
+);
+
+

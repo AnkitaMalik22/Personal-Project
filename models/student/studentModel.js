@@ -212,8 +212,30 @@ loggedOut: { type: Boolean, default: false },
       ]
     },
   ],
-  Skills: skillsSchema,
-  Portfolio: portfolioSchema,
+  // Skills: skillsSchema,
+  Skills: {
+    SoftwareKnowledge: [{
+      type: String,
+    }],
+    Achievements: [
+      {
+        type: String,
+      },
+    ],
+    CodingKnowledge: [{type: String}],
+    Languages: [{type: String}],
+  },
+  Links: [{
+    type: String,
+  
+  }],
+  // Portfolio: portfolioSchema,
+  Portfolio: [
+    {
+      type: String,
+    
+    }
+  ],
   Cv: {
     public_id: {
       type: String,

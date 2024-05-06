@@ -1,6 +1,6 @@
 const { Student } = require('../../models/student/studentModel');
 const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
-const sendToken = require('../../utils/jwtToken');
+const sendToken = require('../../utils/jwtTokenStudent');
 const ErrorHandler = require('../../utils/errorhandler');
 const crypto = require('crypto');
 
@@ -32,6 +32,7 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- GET A STUDENT ----------------------------------------------------------
 
 exports.getStudent = catchAsyncErrors(async (req, res, next) => {
+  console.log("student id", req.user.id)
 
   const student = await Student.findById(req.user.id);
 
@@ -255,6 +256,7 @@ exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
     }
   } else {
     
+   try{
     const { Email, Password, ip } = req.body;
     const device = req.headers["user-agent"];
 
@@ -276,7 +278,11 @@ exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
     }
 
     sendToken(student, 200, res, ip, device);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
+   }
 });
 
 // --------------------------------------------- FORGOT PASSWORD --------------------------------------------------------
@@ -481,14 +487,33 @@ exports.getStudentsBySkill = catchAsyncErrors(async (req, res, next) => {
 // ====================================================== LOGOUT  ===========================================================
 
 exports.logout = catchAsyncErrors(async (req, res, next) => {
-  res.cookie("token", null, {
-    expires: new Date(Date.now()),
-    httpOnly: true,
-  });
+  // res.cookie("token", null, {
+  //   expires: new Date(Date.now()),
+  //   httpOnly: true,
+  // });
 
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+  const token = req.header("auth-token");
+
+  student.loginActivity?.forEach((login) => {
+    console.log(login.token_id === token, login.token_id, token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+    }
+  });
+  student.qrVerify = false;
+  // console.log(student.loginActivity);
+
+  await student.save({ validateBeforeSave: false });
   res.status(200).json({
     success: true,
     message: "Logged Out",
+
+
   });
 });
 
