@@ -22,6 +22,9 @@ const { SMS } = require("@vonage/messages");
 
 const Qr = require("../../models/college/qr/qr");
 const PaymentPlan = require("../../models/college/account/planModel");
+const CollegeAssessInv = require("../../models/student/assessmentInvitation");
+const InvitedStudents = require("../../models/college/student/Invited");
+const ApprovedStudents = require("../../models/college/student/Approved");
 
 // Import the Student model
 
@@ -559,7 +562,10 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
   try {
     const college = await College.findById(req.user.id);
-    let credit = await PaymentPlan.find({ members: { $in: [college._id] } }, { members: 0 });
+    let credit = await PaymentPlan.find(
+      { members: { $in: [college._id] } },
+      { members: 0 }
+    );
     const balance = await Credit.findOne({
       college: college,
     });
@@ -567,8 +573,7 @@ exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
       success: true,
       college,
       credit,
-      balance
-
+      balance,
     });
   } catch (error) {
     next(error);
@@ -851,6 +856,9 @@ exports.updateProfilePictureCollege = catchAsyncErrors(
 // ===============================================================================================================
 
 //------------------------ Upload Students----------------------------
+//method : POST
+//for adding students from students module
+//takes an array of students and sends and ivitation mail to them
 
 exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
@@ -861,6 +869,21 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const CollegeId = req.user.id;
 
   const college = await College.findById(CollegeId);
+  console.log(college._id);
+  let invited = await InvitedStudents.findOneAndUpdate(
+    {
+      college: college._id,
+    },
+    {
+      $set: { college: college._id },
+    },
+    {
+      upsert: true,
+      new: true,
+    }
+  );
+
+  console.log(invited);
 
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
@@ -877,36 +900,74 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     //   Email,
     // });
 
-    const student = await Invitation.findOne({
-      recipientEmail: Email,
-    });
+    // const student = await Invitation.findOne({
+    //   recipientEmail: Email,
+    // });
+    let student = false;
 
+    if (invited.students) {
+      student = invited.students.some((student) => student.Email === Email);
+    }
+
+    const link = crypto.randomBytes(20).toString("hex");
+    // const curr = await Student.findOne({ Email: Email });
     if (!student) {
-      const invite = await Invitation.create({
-        FirstName,
-        LastName,
-        Email,
-        sender: CollegeId,
-        recipientEmail: Email,
-        invitationLink: crypto.randomBytes(20).toString("hex"),
-      });
+      // const invite = await Invitation.create({
+      //   FirstName,
+      //   LastName,
+      //   Email,
+      //   sender: CollegeId,
+      //   recipientEmail: Email,
+      //   invitationLink: crypto.randomBytes(20).toString("hex"),
+      // });
 
       // console.log(invite);
+      // const stu = await Student.create({
+      //   Email: Email,
+      //   Password: "strong@12HHH",
+      //   registrationLink: link,
+      // });
+      invited.students.push({
+        Email: Email,
+        link: link,
+        // student: stu._id,
+      });
 
       sendEmail({
         email: Email,
         subject: "Invitation to join College",
-        message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+// <<<<<<< sidd333
+        message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}`,
+// =======
+//         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+// >>>>>>> master
         // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       });
+
+      await invited.save();
     } else {
-      allDuplicateEmails.push(Email);
+      invited.students.forEach((student, i) => {
+        if (student.Email === Email) {
+          invited.students[i].link = link;
+        }
+      });
+      const stu = await Student.findOneAndUpdate(
+        { Email: Email },
+        { registrationLink: link }
+      );
+      sendEmail({
+        email: Email,
+        subject: "Invitation to join College",
+        message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}`,
+        // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+      });
+      await invited.save();
     }
     // student.invited = true;
     // await student.save();
   }
 
-  console.log(allDuplicateEmails);
+  // console.log(allDuplicateEmails);
 
   if (allDuplicateEmails.length == students.length) {
     console.log("all duplicate emails");
@@ -943,7 +1004,7 @@ exports.getUploadedStudents = catchAsyncErrors(async (req, res) => {
 });
 
 // -------------------------- // INVITE STUDENTS------------------------------
-
+//not in use 2nd may
 exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
   // const { studentId } = req.body;
   // const college = await College.findById(req.user.id);
@@ -1045,7 +1106,7 @@ exports.getPendingStudents = catchAsyncErrors(async (req, res, next) => {
 });
 
 // approve students
-
+//in use
 exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     console.log(req.body, "approve students");
@@ -1072,16 +1133,50 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+    let sId = studentId.studentId;
 
-    college.pendingStudents = college.pendingStudents.filter(
-      (id) => id.toString() !== studentId.studentId
+    const approvedStudents = await ApprovedStudents.findOne({
+      college: CollegeId,
+    });
+    if (approvedStudents) {
+      if (!approvedStudents.students.includes(sId)) {
+        await ApprovedStudents.findOneAndUpdate(
+          { college: CollegeId },
+          {
+            $push: { students: sId },
+            $set: { collegeId: CollegeId },
+          },
+          { new: true, upsert: true }
+        );
+      }
+    } else {
+      await ApprovedStudents.create({ college: CollegeId, students: [sId] });
+    }
+
+    // const approvedStudents = await ApprovedStudents.findOneAndUpdate(
+    //   { college: CollegeId, "students.studentId": { $ne: studentId } }, // Check for duplicates before pushing
+    //   {
+    //     $addToSet: { students: { studentId } }, // Use $addToSet to avoid duplicates
+    //     $set: { collegeId: CollegeId },
+    //   },
+    //   { new: true, upsert: true }
+    // );
+    await InvitedStudents.findOneAndUpdate(
+      { college: CollegeId },
+      {
+        $pull: { students: { student: sId } },
+      }
     );
-    console.log(college.pendingStudents);
 
-    college.students = college.students.concat(student);
+    // college.pendingStudents = college.pendingStudents.filter(
+    //   (id) => id.toString() !== studentId.studentId
+    // );
+    // console.log(college.pendingStudents);
 
-    console.log(college.students);
-    await college.save();
+    // college.students = college.students.concat(student);
+
+    // console.log(college.students);
+    // await college.save();
 
     res.status(200).json({
       success: true,
@@ -1097,26 +1192,38 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   const id = req.user.id;
 
-  const college = await College.findById(id);
-  const approvedStudents = await College.findById(id).populate({
-    path: "students",
-  });
+  // const college = await College.findById(id);
+  // const approvedStudents = await College.findById(id).populate({
+  //   path: "students",
+  // });
   // const uploadedStudents = await UploadedStudents.find({ college_id: id });
   // const invitedStudents = await Invitation.find({ sender: id });
 
-  const uploadedStudents = await Invitation.find({ sender: id });
+  // const uploadedStudents = await Invitation.find({ sender: id });
+  const invitedStudents = await InvitedStudents.findOne({ college: id });
+  const approvedStudents = await ApprovedStudents.findOne({
+    college: id,
+  }).populate("students");
 
   // console.log(uploadedStudents , "uploaded students" , id)
 
   const pending = [];
-  for (let i = 0; i < college.pendingStudents.length; i++) {
-    const student = await Student.findById(college.pendingStudents[i]);
-    pending.push(student);
+  const approved = [];
+
+  console.log(invitedStudents);
+  if (invitedStudents) {
+    for (let i = 0; i < invitedStudents.students.length; i++) {
+      const student = await Student.findOne({
+        Email: invitedStudents.students[i].Email,
+      });
+      pending.push(student);
+    }
   }
+
   res.status(200).json({
     success: true,
-    approvedStudents: approvedStudents.students,
-    uploadedStudents,
+    approvedStudents: approvedStudents ? approvedStudents.students : [],
+    uploadedStudents: [],
     pendingStudents: pending,
     // invitedStudents,
   });
