@@ -3,34 +3,32 @@
 const ErrorHander = require("../utils/errorhandler");
 const catchAsyncErrors = require("./catchAsyncErrors");
 const jwt = require("jsonwebtoken");
-const College = require("../models/college/collegeModel");
-const Company = require("../models/company/companyModel");
 const { Student } = require("../models/student/studentModel");
 const BlacklistToken = require("../models/college/blacklistToken");
 
-const isAuthenticatedUser = (model) => {
+const isAuthenticatedUser= () => {
+
   return catchAsyncErrors(async (req, res, next) => {
     const token = req.header("auth-token");
+
+    // console.log(token, "token");
+ 
     if (!token) {
       return next(new ErrorHander("Please Login to access this resource", 401));
     }
-    const allBlacklistedTokens = await BlacklistToken.find();
-    // console.log(allBlacklistedTokens);
-    // console.log("Token value:", token);
-    // const isBlacklisted = await BlacklistToken.findOne({ token : token});
-    // console.log(isBlacklisted); //  null
-    let isBlacklisted = false;
-    allBlacklistedTokens.forEach((blacklistedToken) => {
-      // console.log(blacklistedToken.token === token ," blaclisted token");
-      if (blacklistedToken.token === token) {
-        isBlacklisted = true;
-      }
-    });
-    if (isBlacklisted) {
-      return next(
-        new ErrorHander("Token is blacklisted. Please login again", 401)
-      );
-    }
+    // const allBlacklistedTokens = await BlacklistToken.find();
+
+    // let isBlacklisted = false;
+    // allBlacklistedTokens.forEach((blacklistedToken) => {
+    //   if (blacklistedToken.token === token) {
+    //     isBlacklisted = true;
+    //   }
+    // });
+    // if (isBlacklisted) {
+    //   return next(
+    //     new ErrorHander("Token is blacklisted. Please login again", 401)
+    //   );
+    // }
     const decodedData = jwt.verify(token, process.env.JWT_SECRET);
     // console.log(decodedData);
     // let college = await College.findById(decodedData.id);
@@ -60,14 +58,16 @@ const isAuthenticatedUser = (model) => {
     //   req.user = user;
     //   next();
     // }
+
+
     req.user = user;
     next();
   });
 };
 // Usage
 exports.isAuthenticatedStudent = isAuthenticatedUser(Student);
-exports.isAuthenticatedCollege = isAuthenticatedUser(College);
-exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
+// exports.isAuthenticatedCollege = isAuthenticatedUser(College);
+// exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
 
 exports.authorizeRoles = (...roles) => {
   return (req, res, next) => {
