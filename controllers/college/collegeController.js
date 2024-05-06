@@ -936,7 +936,11 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       sendEmail({
         email: Email,
         subject: "Invitation to join College",
+// <<<<<<< sidd333
         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}`,
+// =======
+//         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+// >>>>>>> master
         // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       });
 
@@ -1061,7 +1065,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     sendEmail({
       email: student.Email,
       subject: "Invitation to join College",
-      message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: http://localhost:3000/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+      message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
       // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
     });
 

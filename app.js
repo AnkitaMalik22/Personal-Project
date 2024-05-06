@@ -44,6 +44,7 @@ app.use(
       "https://skillaccessprod.netlify.app",
       "https://checkout.stripe.com",
       "https://skillaccess.vercel.app",
+      "https://skillaccess-student.vercel.app"
     ],
     credentials: true,
     
@@ -102,6 +103,7 @@ const io = new socketIo.Server(server, {
       "https://skillaccessclient.netlify.app",
       "https://skillaccessprod.netlify.app",
       "https://skillaccess.vercel.app",
+      "https://skillaccess-student.vercel.app"
       
     ],
   },

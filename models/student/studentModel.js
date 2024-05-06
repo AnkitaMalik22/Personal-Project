@@ -188,16 +188,64 @@ loggedOut: { type: Boolean, default: false },
   PhoneNumber: String,
   Address: String,
   Website: String,
-  Education: educationSchema,
-  Skills: skillsSchema,
-  Portfolio: portfolioSchema,
+  // Education: educationSchema,
+  Education: [
+    {
+      School: String,
+      Description: String,
+      Degree: String,
+      StartDate: Date,
+      EndDate: Date,
+      Place : String,
+      Media:[
+        {
+          public_id: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+          file_name : {
+            type: String,
+          },
+        }
+      ]
+    },
+  ],
+  // Skills: skillsSchema,
+  Skills: {
+    SoftwareKnowledge: [{
+      type: String,
+    }],
+    Achievements: [
+      {
+        type: String,
+      },
+    ],
+    CodingKnowledge: [{type: String}],
+    Languages: [{type: String}],
+  },
+  Links: [{
+    type: String,
+  
+  }],
+  // Portfolio: portfolioSchema,
+  Portfolio: [
+    {
+      type: String,
+    
+    }
+  ],
   Cv: {
     public_id: {
       type: String,
     },
     url: {
       type: String,
-    }
+    },
+    file_name : {
+      type: String,
+    },
     
 
   },

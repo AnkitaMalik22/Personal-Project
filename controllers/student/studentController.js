@@ -1,3 +1,4 @@
+// <<<<<<< sidd333
 const { Student } = require("../../models/student/studentModel");
 const catchAsyncErrors = require("../../middlewares/catchAsyncErrors");
 const sendToken = require("../../utils/jwtToken");
@@ -11,6 +12,24 @@ const axios = require("axios");
 const cloudinary = require("cloudinary");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
+// =======
+// const { Student } = require('../../models/student/studentModel');
+// const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
+// const sendToken = require('../../utils/jwtTokenStudent');
+// const ErrorHandler = require('../../utils/errorhandler');
+// const crypto = require('crypto');
+
+// const College = require('../../models/college/collegeModel');
+// const Job = require('../../models/company/jobModel');
+// const Invitation = require('../../models/student/inviteModel');
+// const axios = require('axios');
+// const cloudinary = require('cloudinary');
+
+
+
+
+
+// >>>>>>> master
 
 // ============================================= STUDENT CONTROLLERS ====================================================
 
@@ -28,6 +47,7 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- GET A STUDENT ----------------------------------------------------------
 
 exports.getStudent = catchAsyncErrors(async (req, res, next) => {
+
   const student = await Student.findById(req.user.id);
 
   console.log(req.user);
@@ -298,6 +318,11 @@ exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
+// <<<<<<< sidd333
+// =======
+    
+   try{
+// >>>>>>> master
     const { Email, Password, ip } = req.body;
     const device = req.headers["user-agent"];
 
@@ -319,7 +344,11 @@ exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
     }
 
     sendToken(student, 200, res, ip, device);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
+   }
 });
 
 // --------------------------------------------- FORGOT PASSWORD --------------------------------------------------------
@@ -526,14 +555,33 @@ exports.getStudentsBySkill = catchAsyncErrors(async (req, res, next) => {
 // ====================================================== LOGOUT  ===========================================================
 
 exports.logout = catchAsyncErrors(async (req, res, next) => {
-  res.cookie("token", null, {
-    expires: new Date(Date.now()),
-    httpOnly: true,
-  });
+  // res.cookie("token", null, {
+  //   expires: new Date(Date.now()),
+  //   httpOnly: true,
+  // });
 
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+  const token = req.header("auth-token");
+
+  student.loginActivity?.forEach((login) => {
+    console.log(login.token_id === token, login.token_id, token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+    }
+  });
+  student.qrVerify = false;
+  // console.log(student.loginActivity);
+
+  await student.save({ validateBeforeSave: false });
   res.status(200).json({
     success: true,
     message: "Logged Out",
+
+
   });
 });
 
