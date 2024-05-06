@@ -15,7 +15,6 @@ const Transaction = require("../../models/college/account/Transactions");
 
 // ----------------- ADD CREDIT TO COLLEGE ------------------
 
-
 const selectPlanCollege = async (req, res) => {
   try {
     // Find the college by user ID
@@ -36,7 +35,9 @@ const selectPlanCollege = async (req, res) => {
       const currentPlan = await PaymentPlan.findById(college.selectedPlan);
       if (currentPlan) {
         // Remove the college from the current plan's members list
-        currentPlan.members = currentPlan.members.filter(member => member.toString() !== college._id.toString());
+        currentPlan.members = currentPlan.members.filter(
+          (member) => member.toString() !== college._id.toString()
+        );
         await currentPlan.save();
       }
     }
@@ -52,17 +53,17 @@ const selectPlanCollege = async (req, res) => {
     const transaction = await Transaction.create({
       user: college._id,
       planName: newPlan.planName,
-      date : new Date(),
+      date: new Date(),
       price: newPlan.price,
       credit: newPlan.credit,
       limit: newPlan.limit,
       charges: newPlan.charges,
     });
-  
+
     await newPlan.save();
     await college.save();
 
-    const credit = await Credit.findOne({
+    let credit = await Credit.findOne({
       college: req.user.id,
     });
     if (!credit) {
@@ -71,7 +72,7 @@ const selectPlanCollege = async (req, res) => {
         credit: newPlan.credit,
         limit: newPlan.limit,
       });
-    }else{
+    } else {
       credit.credit = newPlan.credit;
       credit.limit = newPlan.limit;
     }
@@ -80,7 +81,7 @@ const selectPlanCollege = async (req, res) => {
 
     return res.status(200).json({
       message: "Plan selection updated successfully",
-      plan: newPlan
+      plan: newPlan,
     });
   } catch (error) {
     console.log(error);
@@ -107,13 +108,15 @@ const cancelPlanCollege = async (req, res) => {
     }
 
     // Remove the college from the plan's members list
-    plan.members = plan.members.filter(member => member.toString() !== college._id.toString());
+    plan.members = plan.members.filter(
+      (member) => member.toString() !== college._id.toString()
+    );
     await plan.save();
 
     // Remove the plan from the college's selected plan
     college.selectedPlan = null;
     await college.save();
-    
+
     const credit = await Credit.findOne({
       college: req.user.id,
     });
@@ -121,7 +124,6 @@ const cancelPlanCollege = async (req, res) => {
     credit.credit = 0;
     credit.limit = 0;
     await credit.save();
-
 
     return res.status(200).json({
       message: "Plan cancelled successfully",
@@ -134,22 +136,16 @@ const cancelPlanCollege = async (req, res) => {
   }
 };
 
-
-
-
 const addPlansAdmin = async (req, res) => {
   try {
-    const { plans} = req.body;
-  for (let i = 0; i < plans.length; i++) {
-    const plan = new PaymentPlan(plans[i]);
-    await plan.save();
-
-  }
-  return res.status(201).json({
-    message: "Plans added successfully",
-
-  });
-    
+    const { plans } = req.body;
+    for (let i = 0; i < plans.length; i++) {
+      const plan = new PaymentPlan(plans[i]);
+      await plan.save();
+    }
+    return res.status(201).json({
+      message: "Plans added successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Unable to add plan",
@@ -173,7 +169,6 @@ const getAllPlans = async (req, res) => {
   }
 };
 
-
 const getAllTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
@@ -183,7 +178,6 @@ const getAllTransactions = async (req, res) => {
       message: "All transactions",
       transactions,
     });
-
   } catch (error) {
     return res.status(500).json({
       message: "Unable to get transactions",
@@ -192,10 +186,6 @@ const getAllTransactions = async (req, res) => {
   }
 };
 
-
-    
-
-
 const addCredit = async (req, res) => {
   try {
     const college = await College.findById(req.params.id);
@@ -203,22 +193,22 @@ const addCredit = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-  let credit = await Credit.findOne({
+    let credit = await Credit.findOne({
       college: college,
     });
 
     if (!credit) {
       // return res.status(404).json({ message: "Credit not found" });
       credit = new Credit({
-        college : college
-      })
+        college: college,
+      });
     }
 
     credit.credit = req.body.credit;
     credit.limit = req.body.limit;
 
     await credit.save();
-    // send notification to college 
+    // send notification to college
 
     return res.status(201).json({
       message: "Credit added successfully",
@@ -232,29 +222,25 @@ const addCredit = async (req, res) => {
   }
 };
 
-
-const getCredit =async(req,res)=>{
-  try{
+const getCredit = async (req, res) => {
+  try {
     const credit = await Credit.findOne({
-      college : req.params.id
+      college: req.params.id,
     });
-    if(!credit) {
+    if (!credit) {
       return res.status(404).json({ message: "User not found" });
     }
     return res.status(200).json({
       message: "Credit Fetched Successfully",
       credit,
     });
-  
-  }catch(error){
+  } catch (error) {
     return res.status(500).json({
       message: "Unable to fetch credit",
       error: error.message,
     });
   }
-
-}
-
+};
 
 const createTopic = async (req, res) => {
   try {
