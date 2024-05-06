@@ -140,7 +140,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       });
 
       // student not approved yet
-      college.pendingStudents.push(student._id);
+      // college.pendingStudents.push(student._id);
 
       await college.save();
 

@@ -198,11 +198,22 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Student not found", 404));
     }
 
+
+    const college = await College.findById(student.CollegeId);
+    if (!college) {
+      return next(new ErrorHandler("College not found", 404));
+    }
     // const { Links } = data;
     // console.log(Links);
 
     // student.Links = Links;
     student.Portfolio = data;
+    if(!student.completedProfile){
+      student.completedProfile = true;
+    }
+    college.pendingStudents.push(student._id);
+
+    await college.save();
     await student.save();
 
     // console.log(data);

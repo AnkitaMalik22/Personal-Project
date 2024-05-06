@@ -77,6 +77,10 @@ const ScoreSchema = new mongoose.Schema({
 
 //-------------------------------- Define Students Schema --------------------------------------------
 const studentSchema = new mongoose.Schema({
+  completedProfile: {
+    type: Boolean,
+    default: false,
+  },
   avatar: {
     public_id: {
       type: String,
