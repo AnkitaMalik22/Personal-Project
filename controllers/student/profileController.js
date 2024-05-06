@@ -9,6 +9,8 @@ const Job = require("../../models/company/jobModel");
 const Invitation = require("../../models/student/inviteModel");
 const axios = require("axios");
 const cloudinary = require("cloudinary");
+const UploadedStudents = require("../../models/student/uploadedStudents");
+const InvitedStudents = require("../../models/college/student/Invited");
 
 exports.uploadCV = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -113,17 +115,17 @@ exports.updateEducation = catchAsyncErrors(async (req, res, next) => {
     const allMedia = [];
 
     for (const media of Media) {
-        console.log(media);
-        const myCloud = await cloudinary.v2.uploader.upload(media, {
-            folder: "education",
-            width: 150,
-            crop: "scale",
-        });
-        allMedia.push({
-            public_id: myCloud.public_id,
-            url: myCloud.secure_url,
-            file_name: myCloud.original_filename,
-        });
+      console.log(media);
+      const myCloud = await cloudinary.v2.uploader.upload(media, {
+        folder: "education",
+        width: 150,
+        crop: "scale",
+      });
+      allMedia.push({
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+        file_name: myCloud.original_filename,
+      });
     }
 
     console.log(allMedia);
@@ -148,7 +150,6 @@ exports.updateEducation = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
 exports.updateSkills = catchAsyncErrors(async (req, res, next) => {
   try {
     const data = req.body;
@@ -171,7 +172,8 @@ exports.updateSkills = catchAsyncErrors(async (req, res, next) => {
     //   Languages: [{type: String}],
     // },
 
-    const { SoftwareKnowledge, Achievements, CodingKnowledge, Languages } = data;
+    const { SoftwareKnowledge, Achievements, CodingKnowledge, Languages } =
+      data;
 
     student.Skills.SoftwareKnowledge = SoftwareKnowledge;
     student.Skills.Achievements = Achievements;
@@ -188,7 +190,6 @@ exports.updateSkills = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
 exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
   try {
     const data = req.body;
@@ -197,7 +198,6 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
-
 
     const college = await College.findById(student.CollegeId);
     if (!college) {
@@ -208,10 +208,29 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
 
     // student.Links = Links;
     student.Portfolio = data;
-    if(!student.completedProfile){
+    if (!student.completedProfile) {
       student.completedProfile = true;
     }
-    college.pendingStudents.push(student._id);
+
+    const uploadedStudents = await UploadedStudents.findOneAndUpdate(
+      { college: CollegeId },
+      {
+        $push: { students: student._id },
+        $set: { college: CollegeId },
+      },
+      { new: true, upsert: true }
+    );
+    let invitedStudents = await InvitedStudents.findOne({
+      college: student.CollegeId,
+    });
+    invitedStudents.students.forEach((stu, i) => {
+      if (stu.Email === email) {
+        invitedStudents.students.splice(i, 1);
+      }
+    });
+    await invitedStudents.save();
+
+    // college.pendingStudents.push(student._id);
 
     await college.save();
     await student.save();
@@ -225,11 +244,9 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
   } catch (error) {
     console.log(error);
   }
-}
-);
+});
 
-
-exports.updateProfilePictureStudent= catchAsyncErrors(
+exports.updateProfilePictureStudent = catchAsyncErrors(
   async (req, res, next) => {
     const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
       folder: "avatars",
@@ -261,9 +278,7 @@ exports.updateProfilePictureStudent= catchAsyncErrors(
 
     res.status(200).json({
       success: true,
-     student,
+      student,
     });
   }
 );
-
-

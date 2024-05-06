@@ -12,6 +12,7 @@ const axios = require("axios");
 const cloudinary = require("cloudinary");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
+const UploadedStudents = require("../../models/student/uploadedStudents");
 // =======
 // const { Student } = require('../../models/student/studentModel');
 // const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
@@ -24,10 +25,6 @@ const ApprovedStudents = require("../../models/college/student/Approved");
 // const Invitation = require('../../models/student/inviteModel');
 // const axios = require('axios');
 // const cloudinary = require('cloudinary');
-
-
-
-
 
 // >>>>>>> master
 
@@ -47,7 +44,6 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- GET A STUDENT ----------------------------------------------------------
 
 exports.getStudent = catchAsyncErrors(async (req, res, next) => {
-
   const student = await Student.findById(req.user.id);
 
   console.log(req.user);
@@ -211,6 +207,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       // const invite = await Invitation.findOne({ invitationLink: inviteLink });
       let valid = true;
       const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
+
       // if (!invite) {
       //   return next(new ErrorHandler("Invalid invitation link", 400));
       // }
@@ -259,16 +256,9 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
         PhoneNumber,
       });
 
-      let invitedStudents = await InvitedStudents.findOne({
-        college: CollegeId,
-      });
-      invitedStudents.students.forEach((stu, i) => {
-        if (stu.Email === email) {
-          invitedStudents.students[i].student = student._id;
-        }
-      });
+      // uploadedStudents.students.push(student._id);
+      // await uploadedStudents.save();
 
-      await invitedStudents.save();
       // student not approved yet
       // college.pendingStudents.push(student._id);
       // await ApprovedStudents.findOneAndUpdate(
@@ -318,37 +308,37 @@ exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
       res.status(500).json({ message: "Internal Server Error" });
     }
   } else {
-// <<<<<<< sidd333
-// =======
-    
-   try{
-// >>>>>>> master
-    const { Email, Password, ip } = req.body;
-    const device = req.headers["user-agent"];
+    // <<<<<<< sidd333
+    // =======
 
-    if (!Email || !Password) {
-      return next(new ErrorHandler("Please Enter Email & Password", 400));
+    try {
+      // >>>>>>> master
+      const { Email, Password, ip } = req.body;
+      const device = req.headers["user-agent"];
+
+      if (!Email || !Password) {
+        return next(new ErrorHandler("Please Enter Email & Password", 400));
+      }
+
+      const student = await Student.findOne({ Email }).select("+Password");
+
+      if (!student) {
+        return next(new ErrorHandler("Invalid Email or Password", 401));
+      }
+
+      // Check if password is correct
+      const isPasswordMatched = await student.comparePassword(Password);
+
+      if (!isPasswordMatched) {
+        return next(new ErrorHandler("Invalid Email or Password", 401));
+      }
+
+      sendToken(student, 200, res, ip, device);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
     }
-
-    const student = await Student.findOne({ Email }).select("+Password");
-
-    if (!student) {
-      return next(new ErrorHandler("Invalid Email or Password", 401));
-    }
-
-    // Check if password is correct
-    const isPasswordMatched = await student.comparePassword(Password);
-
-    if (!isPasswordMatched) {
-      return next(new ErrorHandler("Invalid Email or Password", 401));
-    }
-
-    sendToken(student, 200, res, ip, device);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
   }
-   }
 });
 
 // --------------------------------------------- FORGOT PASSWORD --------------------------------------------------------
@@ -580,8 +570,6 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Logged Out",
-
-
   });
 });
 

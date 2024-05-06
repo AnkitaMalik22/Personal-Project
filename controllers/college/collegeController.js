@@ -936,11 +936,11 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       sendEmail({
         email: Email,
         subject: "Invitation to join College",
-// <<<<<<< sidd333
+        // <<<<<<< sidd333
         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}`,
-// =======
-//         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
-// >>>>>>> master
+        // =======
+        //         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
+        // >>>>>>> master
         // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       });
 
@@ -1167,6 +1167,12 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
         $pull: { students: { student: sId } },
       }
     );
+    await UploadedStudents.findOneAndUpdate(
+      { college: CollegeId },
+      {
+        $pull: { students: sId },
+      }
+    );
 
     // college.pendingStudents = college.pendingStudents.filter(
     //   (id) => id.toString() !== studentId.studentId
@@ -1196,7 +1202,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   // const approvedStudents = await College.findById(id).populate({
   //   path: "students",
   // });
-  // const uploadedStudents = await UploadedStudents.find({ college_id: id });
+  const uploadedStudents = await UploadedStudents.find({ college: id });
   // const invitedStudents = await Invitation.find({ sender: id });
 
   // const uploadedStudents = await Invitation.find({ sender: id });
@@ -1210,21 +1216,21 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   const pending = [];
   const approved = [];
 
-  console.log(invitedStudents);
-  if (invitedStudents) {
-    for (let i = 0; i < invitedStudents.students.length; i++) {
-      const student = await Student.findOne({
-        Email: invitedStudents.students[i].Email,
-      });
-      pending.push(student);
-    }
-  }
+  // console.log(invitedStudents);
+  // if (invitedStudents) {
+  //   for (let i = 0; i < invitedStudents.students.length; i++) {
+  //     const student = await Student.findOne({
+  //       Email: invitedStudents.students[i].Email,
+  //     });
+  //     pending.push(student);
+  //   }
+  // }
 
   res.status(200).json({
     success: true,
     approvedStudents: approvedStudents ? approvedStudents.students : [],
-    uploadedStudents: [],
-    pendingStudents: pending,
+    uploadedStudents: invitedStudents.students,
+    pendingStudents: uploadedStudents.students,
     // invitedStudents,
   });
 });
