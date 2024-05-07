@@ -16,24 +16,25 @@ const isAuthenticatedUser= () => {
     if (!token) {
       return next(new ErrorHander("Please Login to access this resource", 401));
     }
-    // const allBlacklistedTokens = await BlacklistToken.find();
+    // const blacklistedToken = await BlacklistToken.findOne({
+    //   token  : token
+    //       });
+    const allBlacklistedTokens = await BlacklistToken.find();
 
-    // let isBlacklisted = false;
-    // allBlacklistedTokens.forEach((blacklistedToken) => {
-    //   if (blacklistedToken.token === token) {
-    //     isBlacklisted = true;
-    //   }
-    // });
-    // if (isBlacklisted) {
-    //   return next(
-    //     new ErrorHander("Token is blacklisted. Please login again", 401)
-    //   );
-    // }
+    let isBlacklisted = false;
+    allBlacklistedTokens.forEach((blacklistedToken) => {
+      if (blacklistedToken.token === token) {
+        isBlacklisted = true;
+      }
+    });
+    if (isBlacklisted) {
+      return next(
+        new ErrorHander("Token is blacklisted. Please login again", 401)
+      );
+    }
     const decodedData = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log(decodedData);
-    // let college = await College.findById(decodedData.id);
     let user = await Student.findById(decodedData.id);
-    // console.log(user, "college");
+    // console.log(user);
     if (!user) {
       return next(
         new ErrorHander(
@@ -42,24 +43,6 @@ const isAuthenticatedUser= () => {
         )
       );
     }
-    // if (user.loginActivity.length > 0) {
-    //   for (const login of user.loginActivity) {
-    //     if (login.token_deleted === true) {
-    //       await BlacklistToken.create({ token });
-    //       break;
-    //     }
-    //   }
-    // }
-    // console.log(user);
-    // if (user.authType === "qr" && user.qrVerify === false) {
-    //   console.log
-    //   // throw new Error('This is an error message');
-    // } else {
-    //   req.user = user;
-    //   next();
-    // }
-
-
     req.user = user;
     next();
   });

@@ -31,7 +31,7 @@ if (existingLogin) {
   existingLogin.token_id = token;
   existingLogin.logged_in_at = Date.now();
 } else {
-  console.log('Token does not exist');
+  console.log('Token does not exist--- student');
   // Token doesn't exist, add a new entry
   user.loginActivity.push({
     ip,
@@ -40,6 +40,7 @@ if (existingLogin) {
     token_id: token,
     token_deleted: false,
   });
+  
 }
 
 

@@ -1,7 +1,7 @@
 // <<<<<<< sidd333
 const { Student } = require("../../models/student/studentModel");
 const catchAsyncErrors = require("../../middlewares/catchAsyncErrors");
-const sendToken = require("../../utils/jwtToken");
+const sendToken = require("../../utils/jwtTokenStudent");
 const ErrorHandler = require("../../utils/errorhandler");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
@@ -13,6 +13,7 @@ const cloudinary = require("cloudinary");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
 const UploadedStudents = require("../../models/student/uploadedStudents");
+const BlacklistToken = require("../../models/college/blacklistToken");
 // =======
 // const { Student } = require('../../models/student/studentModel');
 // const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
@@ -30,23 +31,13 @@ const UploadedStudents = require("../../models/student/uploadedStudents");
 
 // ============================================= STUDENT CONTROLLERS ====================================================
 
-// --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
-
-exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
-  const students = await Student.find();
-
-  res.status(200).json({
-    success: true,
-    students,
-  });
-});
-
-// --------------------------------------------- GET A STUDENT ----------------------------------------------------------
+// ====
+// --------------------------------------------- GET A STUDENT -------------------------------------------------------
 
 exports.getStudent = catchAsyncErrors(async (req, res, next) => {
   const student = await Student.findById(req.user.id);
 
-  console.log(req.user);
+  console.log(req.user.id);
 
   if (!student) {
     return next(new ErrorHandler("Student not found", 404));
@@ -58,7 +49,18 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-// =======================================================================================================================
+// --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
+
+exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
+  const students = await Student.find();
+
+  res.status(200).json({
+    success: true,
+    students,
+  });
+});
+
+
 
 // --------------------------------------------- CREATE A STUDENT --------------------------------------------------------
 
@@ -276,7 +278,6 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
     }
   }
 });
-
 // --------------------------------------------- LOGIN A STUDENT --------------------------------------------------------
 
 exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
@@ -478,6 +479,84 @@ exports.updateProfilePictureStudent = catchAsyncErrors(
     });
   }
 );
+// =================================================== ALL LOGGED IN USERS -- SAME USERID  ===========================================================
+
+exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  const loggedInUsers = student.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    loggedInUsers,
+  });
+});
+
+// logout a user
+
+exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
+  console.log("req.user.id", req.user.id);
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const token = req.params.token;
+
+  student.loginActivity.forEach((login) => {
+    console.log(login.token_id === token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+    }
+  });
+  student.qrVerify = false;
+
+  const blacklist_token = await BlacklistToken.create({
+    token: token,
+  });
+
+  console.log("Token blacklisted", blacklist_token);
+
+  await student.save({ validateBeforeSave: false });
+  const loggedInUsers = student.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    message: "Logged Out",
+    loggedInUsers,
+  });
+});
+
+// ===================================================   REMOVE LOGGEDOUT USERS ===========================================================
+
+exports.removeLoggedOutUsers = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const token = req.params.token;
+
+  // college.loginActivity = college.loginActivity.filter((login) => login.token_deleted === false);
+  student.loginActivity = student.loginActivity.filter(
+    (login) => login.token_id !== token
+  );
+
+  await student.save({ validateBeforeSave: false });
+
+  const loggedInUsers = student.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    loggedInUsers,
+  });
+});
 
 // ----------------------------------------- DELETE A STUDENT --------------------------------------------------------
 
@@ -567,6 +646,7 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
   // console.log(student.loginActivity);
 
   await student.save({ validateBeforeSave: false });
+
   res.status(200).json({
     success: true,
     message: "Logged Out",

@@ -65,11 +65,15 @@ exports.updatePersonalInfo = catchAsyncErrors(async (req, res, next) => {
 
   const student = await Student.findByIdAndUpdate(
     req.user.id,
-    {
-      PhoneNumber,
-      Website,
-      Address,
-    },
+    
+      req.body,
+    
+    // {
+    //   PhoneNumber,
+    //   Website,
+    //   Address,
+      
+    // },
     {
       new: true,
       runValidators: true,
@@ -200,6 +204,7 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
     }
 
     const college = await College.findById(student.CollegeId);
+    const CollegeId = student.CollegeId;
     if (!college) {
       return next(new ErrorHandler("College not found", 404));
     }
@@ -210,25 +215,28 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
     student.Portfolio = data;
     if (!student.completedProfile) {
       student.completedProfile = true;
+
+      
+      const uploadedStudents = await UploadedStudents.findOneAndUpdate(
+        { college: CollegeId },
+        {
+          $push: { students: student._id },
+          $set: { college: CollegeId },
+        },
+        { new: true, upsert: true }
+      );
+      let invitedStudents = await InvitedStudents.findOne({
+        college: student.CollegeId,
+      });
+      invitedStudents.students.forEach((stu, i) => {
+        if (stu.Email === student.Email) {
+          invitedStudents.students.splice(i, 1);
+        }
+      });
+      await invitedStudents.save();
     }
 
-    const uploadedStudents = await UploadedStudents.findOneAndUpdate(
-      { college: CollegeId },
-      {
-        $push: { students: student._id },
-        $set: { college: CollegeId },
-      },
-      { new: true, upsert: true }
-    );
-    let invitedStudents = await InvitedStudents.findOne({
-      college: student.CollegeId,
-    });
-    invitedStudents.students.forEach((stu, i) => {
-      if (stu.Email === email) {
-        invitedStudents.students.splice(i, 1);
-      }
-    });
-    await invitedStudents.save();
+  
 
     // college.pendingStudents.push(student._id);
 
