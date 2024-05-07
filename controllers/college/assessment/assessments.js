@@ -6,7 +6,8 @@ const { Student } = require("../../../models/student/studentModel");
 const Section = require("../../../models/college/assessment/sections");
 const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
 const sendEmail = require("../../../utils/sendEmail");
-const Credit = require("../../../models/college/account/creditModel")
+const Credit = require("../../../models/college/account/creditModel");
+const CollegeAssessInv = require("../../../models/student/assessmentInvitation");
 
 // =========================================================================================================================================
 
@@ -17,21 +18,21 @@ const Credit = require("../../../models/college/account/creditModel")
 const createAssessment = catchAsyncErrors(async (req, res, next) => {
   const { role, id } = req.user;
 
-
-let credit = await Credit.findOne({
+  let credit = await Credit.findOne({
     college: id,
   });
 
-if(credit && credit.credit > 0)
-{  credit.credit -=1 ; }else{
-  console.log("you cont have credits")
-  return next(
-    new ErrorHandler(
-      `You don't have enough credits to create assessment!`,
-      400
-    ))
-
-}
+  if (credit && credit.credit > 0) {
+    credit.credit -= 1;
+  } else {
+    console.log("you cont have credits");
+    return next(
+      new ErrorHandler(
+        `You don't have enough credits to create assessment!`,
+        400
+      )
+    );
+  }
 
   const college = await College.findById(id);
   if (!college) {
@@ -112,9 +113,6 @@ if(credit && credit.credit > 0)
     await recentQuestion.save();
   }
 
-
-
-
   await credit.save();
   await college.save();
   await assessment.save();
@@ -151,7 +149,7 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
     if (students) {
       for (let i = 0; i < students.length; i++) {
-        const { FirstName, LastName, Email } = students[i];
+        const { FirstName, LastName, Email, _id } = students[i];
 
         //   // send Email to attend the test
         //  if(assessment.invitedStudents.includes(Email)){
@@ -162,6 +160,18 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
         //   await assessment.save();
         //   }
 
+        await CollegeAssessInv.findOneAndUpdate(
+          { student: _id },
+          {
+            $set: { student: _id },
+            $push: {
+              assessments: { sender: CollegeId, assessment: assessmentId },
+            },
+          },
+          {
+            upsert: true,
+          }
+        );
         sendEmail({
           email: Email,
           subject: "Invitation to join Test",
@@ -286,12 +296,11 @@ const deleteAssessmentById = catchAsyncErrors(async (req, res, next) => {
   const assessment = await Assessments.findByIdAndDelete(id);
   const assessments = await Assessments.find({ createdBy: req.user.id });
 
-
   // if (!assessment) {
   //   return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   // }
 
-  res.json({ message: "Assessment deleted successfully" , assessments});
+  res.json({ message: "Assessment deleted successfully", assessments });
 });
 
 // ===================================================| Start Assessment by ID |========================================================

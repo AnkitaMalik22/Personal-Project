@@ -932,7 +932,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         link: link,
         FirstName: FirstName,
         LastName: LastName,
-        
+
         // student: stu._id,
       });
 
@@ -1199,31 +1199,31 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 // ------------------------------get students-----------------------------
 
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
-  try{
+  try {
     const id = req.user.id;
 
     // const college = await College.findById(id);
     // const approvedStudents = await College.findById(id).populate({
     //   path: "students",
     // });
-    const uploadedStudents = await UploadedStudents.findOne({ college: id }).populate(
-      "students"
-    );
-  
-    console.log(uploadedStudents.students, "uploaded students", id);
+    const uploadedStudents = await UploadedStudents.findOne({
+      college: id,
+    }).populate("students");
+
+    console.log(uploadedStudents?.students, "uploaded students", id);
     // const invitedStudents = await Invitation.find({ sender: id });
-  
+
     // const uploadedStudents = await Invitation.find({ sender: id });
     const invitedStudents = await InvitedStudents.findOne({ college: id });
     const approvedStudents = await ApprovedStudents.findOne({
       college: id,
     }).populate("students");
-  
+
     // console.log(uploadedStudents , "uploaded students" , id)
-  
+
     const pending = [];
     const approved = [];
-  
+
     // console.log(invitedStudents);
     // if (invitedStudents) {
     //   for (let i = 0; i < invitedStudents.students.length; i++) {
@@ -1233,21 +1233,22 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     //     pending.push(student);
     //   }
     // }
-  
+
     // const pendingStudents = await Student.find({
     //   college: id,
     //   completedProfile: false,
     // });
-    
-  
+
     res.status(200).json({
       success: true,
       approvedStudents: approvedStudents ? approvedStudents.students : [],
-      uploadedStudents: invitedStudents.students ? invitedStudents.students : [],
-      pendingStudents: uploadedStudents.students ? uploadedStudents.students : [],
+      uploadedStudents: invitedStudents.students
+        ? invitedStudents.students
+        : [],
+      pendingStudents: uploadedStudents ? uploadedStudents.students : [],
       // invitedStudents,
     });
-  }catch(error){
+  } catch (error) {
     console.log(error);
   }
 });
