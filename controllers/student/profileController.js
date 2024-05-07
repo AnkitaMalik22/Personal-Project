@@ -261,7 +261,6 @@ exports.updateProfilePictureStudent = catchAsyncErrors(
     // const college = await College.findByIdAndUpdate(  req.body.id,
     const student = await Student.findByIdAndUpdate(
       req.user.id,
-
       {
         avatar: {
           public_id: myCloud.public_id,
