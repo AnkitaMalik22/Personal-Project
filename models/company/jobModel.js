@@ -8,6 +8,8 @@ const jobSchema = new mongoose.Schema({
     ref: 'Company',
     required: true,
   },
+    coverPhoto: String,
+    logo: String,
   // Enrolled Students
   Student: [{
     type: mongoose.Schema.Types.ObjectId,
