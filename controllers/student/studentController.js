@@ -667,7 +667,7 @@ exports.getYourAssessments = catchAsyncErrors(async (req, res, next) => {
 
 //  -- New Jobs
 exports.getNewJobs = catchAsyncErrors(async (req, res, next) => {
-  const recentJobs = await Job.find().sort({ createdAt: -1 }).limit(5);
+  const recentJobs = await Job.find().populate('company').sort({ createdAt: -1 }).limit(5);
 
   res.status(200).json({
     success: true,
