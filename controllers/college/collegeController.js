@@ -1260,7 +1260,7 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
   // const college = await College.findById(req.user.id).populate({
   //   path: "jobs",
   // });
-  const jobs = await Job.find({});
+  const jobs = await Job.find({}).populate("company");
 
   res.status(200).json({
     success: true,

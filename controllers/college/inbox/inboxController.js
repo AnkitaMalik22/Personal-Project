@@ -73,6 +73,7 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     from = "College";
   } else {
     from = "Student";
+
   }
   try {
     const mail = await Mail.create({
