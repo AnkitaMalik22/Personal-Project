@@ -7,8 +7,26 @@ const collegeAssessInvSchema = new mongoose.Schema({
   assessments: [
     {
       active: { type: Boolean },
+      onGoingAssessment: { type: String },
+
+      completed: { type: Boolean },
+      completedAt: { type: Date },
+      startedAt: { type: Date },
       sender: { type: mongoose.Schema.Types.ObjectId, ref: "College" },
       assessment: { type: mongoose.Schema.Types.ObjectId, ref: "Assessments" },
+      response:{
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "StudentResponse"
+      },
+      percentage:{
+        type: Number  
+      },
+      level:{
+        type: Number
+      },
+      marks :{
+        type: Number
+      },
     },
   ],
 });

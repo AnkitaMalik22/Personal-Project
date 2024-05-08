@@ -68,12 +68,15 @@ const collegeTeamRoutes = require("./routes/college/teamRoutes.js");
 const qbRoutes = require("./routes/college/qbRoutes.js");
 const paymentRoutes = require("./routes/college/paymentRoutes.js");
 
+const studentTestRoutes = require("./routes/student/studentTestRoutes.js");
+
 // routes
 app.use("/api/college", collegeRoutes);
 app.use("/api/college/teams", collegeTeamRoutes);
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/studentDummy", studentDummyRoutes);
+app.use("/api/student/test", studentTestRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/qb", qbRoutes);
