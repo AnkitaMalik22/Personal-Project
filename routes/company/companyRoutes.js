@@ -36,7 +36,8 @@ router.delete('/jobs/:jobId', isAuthenticatedCompany,deleteJob);
 
 
 
-router.post('/jobs/:companyId', isAuthenticatedCompany, createJob);
+router.post('/jobs/:companyId', createJob);
+// router.post('/jobs/:companyId', isAuthenticatedCompany, createJob);
 router.post('/jobs/assessment/:jobId', isAuthenticatedCompany, createAssessmentForJob);
 router.get('/jobs/assessments/:comapnyId', isAuthenticatedCompany, getAllAssessmentsCompany);
 router.get('/jobs/assessments/student/:studentId', isAuthenticatedCompany, getAllAssessmentsStudent);

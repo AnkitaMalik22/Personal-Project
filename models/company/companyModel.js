@@ -104,6 +104,55 @@ const companySchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+
+  loginActivity: [
+    {
+      ip: String,
+      logged_in_at: Date,
+      logged_out_at: Date,
+      device: String,
+      token_id: String,
+      token_secret: String,
+      token_deleted: Boolean,
+    },
+  ],
+
+  otp: {
+    type: String,
+    default: null,
+  },
+  otpExpires: {
+    type: Date,
+    default: null,
+  },
+  otpVerified: {
+    type: Boolean,
+    default: false,
+  },
+  authType: {
+    type: String,
+    enum: ["otp", "qr", "none"],
+    default: "none",
+  },
+  emails: [
+    {
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "College",
+        // validate: [validateRef, "Invalid reference collection."],
+      },
+      message: String,
+      subject: String,
+    },
+  ],
+  emailsSent: [
+    {
+      to: String,
+      message: String,
+      subject: String,
+    },
+  ],
+
   
 });
 

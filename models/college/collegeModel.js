@@ -3,6 +3,14 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
+// Custom validator function to check if the reference belongs to one of the specified collections
+const validateRef = function (value) {
+  const allowedCollections = ["College", "Student"];
+  if (!allowedCollections.includes(value)) {
+    throw new Error("Invalid reference collection.");
+  }
+};
+
 const collegeSchema = new mongoose.Schema({
   qrVerify: {
     type: Boolean,
@@ -90,14 +98,14 @@ const collegeSchema = new mongoose.Schema({
   pendingStudents: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
+      ref: "Students",
     },
   ],
   //  students approved by college
   students: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
+      ref: "Students",
     },
   ],
   assessments: [
@@ -151,6 +159,45 @@ const collegeSchema = new mongoose.Schema({
     enum: ["otp", "qr", "none"],
     default: "none",
   },
+  emails: [
+    {
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "College",
+        // validate: [validateRef, "Invalid reference collection."],
+      },
+      message: String,
+      subject: String,
+    },
+  ],
+  emailsSent: [
+    {
+      to: String,
+      message: String,
+      subject: String,
+    },
+  ],
+
+  // --------------------
+  selectedPlan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "PaymentPlan",
+  },
+
+  subscription :   {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscription',
+    },
+    payments : [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subscription',
+      }
+    ],
+    planEndDate : {
+      type: Date,
+    },
+  
 });
 
 collegeSchema.pre("save", async function (next) {

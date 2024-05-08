@@ -15,6 +15,11 @@ const compilerSchema = new Schema({
       type:String,
       // required:true
   },
+  QuestionLevel: {
+    type: String,
+    default: "beginner",
+    enum: ["beginner", "intermediate", "advanced"],
+  },
     Duration : String,
       code: {
         type: String,

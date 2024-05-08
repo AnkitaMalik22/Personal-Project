@@ -77,7 +77,20 @@ const ScoreSchema = new mongoose.Schema({
 
 //-------------------------------- Define Students Schema --------------------------------------------
 const studentSchema = new mongoose.Schema({
-  avatar: String,
+  completedProfile: {
+    type: Boolean,
+    default: false,
+  },
+  avatar: {
+    public_id: {
+      type: String,
+      // required:true
+    },
+    url: {
+      type: String,
+      // required:true
+    },
+  },
   Email: {
     type: String,
     required: [true, "Please Enter Your Email"],
@@ -101,7 +114,7 @@ const studentSchema = new mongoose.Schema({
   },
   Password: {
     type: String,
-    required: [true, "Please Enter Your Password"],
+    // required: [true, "Please Enter Your Password"],
     minLength: [8, "Password should be greater than 8 characters"],
     select: false,
   },
@@ -179,10 +192,67 @@ loggedOut: { type: Boolean, default: false },
   PhoneNumber: String,
   Address: String,
   Website: String,
-  Education: educationSchema,
-  Skills: skillsSchema,
-  Portfolio: portfolioSchema,
-  Cv: Buffer,
+  // Education: educationSchema,
+  Education: [
+    {
+      School: String,
+      Description: String,
+      Degree: String,
+      StartDate: Date,
+      EndDate: Date,
+      Place : String,
+      Media:[
+        {
+          public_id: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+          file_name : {
+            type: String,
+          },
+        }
+      ]
+    },
+  ],
+  // Skills: skillsSchema,
+  Skills: {
+    SoftwareKnowledge: [{
+      type: String,
+    }],
+    Achievements: [
+      {
+        type: String,
+      },
+    ],
+    CodingKnowledge: [{type: String}],
+    Languages: [{type: String}],
+  },
+  Links: [{
+    type: String,
+  
+  }],
+  // Portfolio: portfolioSchema,
+  Portfolio: [
+    {
+      type: String,
+    
+    }
+  ],
+  Cv: {
+    public_id: {
+      type: String,
+    },
+    url: {
+      type: String,
+    },
+    file_name : {
+      type: String,
+    },
+    
+
+  },
   Certificates: [
     {
       type: {
@@ -217,6 +287,36 @@ loggedOut: { type: Boolean, default: false },
       ref: "Jobs",
     },
   ],
+// ---------------------
+  loginActivity: [
+    {
+      ip: String,
+      logged_in_at: Date,
+      logged_out_at: Date,
+      device: String,
+      token_id: String,
+      token_secret: String,
+      token_deleted: Boolean,
+    },
+  ],
+
+  otp: {
+    type: String,
+    default: null,
+  },
+  otpExpires: {
+    type: Date,
+    default: null,
+  },
+  otpVerified: {
+    type: Boolean,
+    default: false,
+  },
+  authType: {
+    type: String,
+    enum: ["otp", "qr", "none"],
+    default: "none",
+  },
 });
 
 // ============================== Schema END =============================

@@ -31,6 +31,11 @@ const findAnswerSchema = new Schema({
       Title: String,
       questions :[],
       Duration : String,
+      QuestionLevel: {
+        type: String,
+        default: "beginner",
+        enum: ["beginner", "intermediate", "advanced"],
+      },
     //   ---------------------------------
       Answer: {
         type: String,

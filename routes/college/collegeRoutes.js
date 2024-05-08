@@ -29,6 +29,8 @@ const {
   verifyOtp,
   checkExampleOtp,
   selectAuth,
+  getPendingStudents,
+  approveStudents,
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -45,14 +47,30 @@ const {
   addTopicstoAssessment,
   uploadVideo,
 } = require("../../controllers/college/assessment/sections");
+const {
+  sendEMail,
+  getEmail,
+  uploadAttachment,
+  sendReply,
+  searchMail,
+  addMailBookmark,
+  getBookmarkedMails,
+  deleteBookmarkedMail,
+
+  deleteMail,
+  deleteCollegeMail,
+} = require("../../controllers/college/inbox/inboxController");
+const { qrWare } = require("../../middlewares/qrWare");
 
 // const videoUpload = require("../../utils/upload.js");
+//inbox
+
 router.route("/selectAuth").post(isAuthenticatedCollege, selectAuth);
-router.route("/2fa/getSecretQr").get(isAuthenticatedCollege, generateQr);
+router.route("/2fa/getSecretQr/:id").get(generateQr);
 router.route("/2fa/verifyQr").post(isAuthenticatedCollege, verifyQr);
 router.route("/register").post(registerCollege);
 router.route("/login").post(loginCollege);
-router.route("/me").get(isAuthenticatedCollege, getCollegeDetails);
+router.route("/me").get(isAuthenticatedCollege, qrWare, getCollegeDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update").put(isAuthenticatedCollege, updatePassword);
@@ -86,6 +104,11 @@ router.get("/:id/students", isAuthenticatedCollege, getStudents);
 
 // invite students
 router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
+// approve students
+router.post("/student/approve", isAuthenticatedCollege, approveStudents);
+
+// pending students
+router.get("/students/pending", isAuthenticatedCollege, getPendingStudents);
 
 // getAll assessment of a particular college
 
@@ -130,4 +153,24 @@ router.post(
   isAuthenticatedCollege,
   getPlacedStudents
 );
+
+// ======================== INBOX ROUTES =======================================
+
+router.route("/inbox/delete/:id").delete(isAuthenticatedCollege, deleteMail);
+router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
+router.route("/inbox/reply").post(isAuthenticatedCollege, sendReply);
+router.route("/inbox/file").post(isAuthenticatedCollege, uploadAttachment);
+router.route("/inbox/sendMail/:role").post(isAuthenticatedCollege, sendEMail);
+router.route("/inbox/Mail").get(isAuthenticatedCollege, getEmail);
+router
+  .route("/inbox/bookmark/:id")
+  .post(isAuthenticatedCollege, addMailBookmark);
+router
+  .route("/inbox/bookmark/:id")
+  .delete(isAuthenticatedCollege, deleteBookmarkedMail);
+router
+  .route("/inbox/bookmarks")
+  .get(isAuthenticatedCollege, getBookmarkedMails);
+router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteCollegeMail);
+
 module.exports = router;

@@ -1,22 +1,57 @@
-const {Student} = require('../../models/student/studentModel');
-const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
-const sendToken = require('../../utils/jwtToken');
-const ErrorHandler = require('../../utils/errorhandler');
-const crypto = require('crypto');
+// <<<<<<< sidd333
+const { Student } = require("../../models/student/studentModel");
+const catchAsyncErrors = require("../../middlewares/catchAsyncErrors");
+const sendToken = require("../../utils/jwtTokenStudent");
+const ErrorHandler = require("../../utils/errorhandler");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const College = require("../../models/college/collegeModel");
+const Job = require("../../models/company/jobModel");
+const Invitation = require("../../models/student/inviteModel");
+const axios = require("axios");
+const cloudinary = require("cloudinary");
+const InvitedStudents = require("../../models/college/student/Invited");
+const ApprovedStudents = require("../../models/college/student/Approved");
+const UploadedStudents = require("../../models/student/uploadedStudents");
+const BlacklistToken = require("../../models/college/blacklistToken");
+// =======
+// const { Student } = require('../../models/student/studentModel');
+// const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
+// const sendToken = require('../../utils/jwtTokenStudent');
+// const ErrorHandler = require('../../utils/errorhandler');
+// const crypto = require('crypto');
 
-const College = require('../../models/college/collegeModel');
-const Job = require('../../models/company/jobModel');
-const Invitation = require('../../models/student/inviteModel');
+// const College = require('../../models/college/collegeModel');
+// const Job = require('../../models/company/jobModel');
+// const Invitation = require('../../models/student/inviteModel');
+// const axios = require('axios');
+// const cloudinary = require('cloudinary');
 
-
-
+// >>>>>>> master
 
 // ============================================= STUDENT CONTROLLERS ====================================================
+
+// ====
+// --------------------------------------------- GET A STUDENT -------------------------------------------------------
+
+exports.getStudent = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+
+  console.log(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    student,
+  });
+});
 
 // --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
 
 exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
-
   const students = await Student.find();
 
   res.status(200).json({
@@ -25,148 +60,286 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-// --------------------------------------------- GET A STUDENT ----------------------------------------------------------
-
-exports.getStudent = catchAsyncErrors(async (req, res, next) => {
-
-    const student = await Student.findById(req.user.id);
-
-    console.log(req.user)
-    
-    if (!student) {
-        return next(new ErrorHandler('Student not found', 404));
-    }
-    
-    res.status(200).json({
-        success: true,
-        student,
-    });
-    });
-
-// =======================================================================================================================
-
-
 
 
 // --------------------------------------------- CREATE A STUDENT --------------------------------------------------------
 
-
 exports.createStudent = catchAsyncErrors(async (req, res, next) => {
+  // STUDENT WILL REGISTER USING THE REGISTRATION LINK SENT TO THEIR EMAIL
 
-// const { Email, Password, ConfirmPassword ,CollegeName } = req.body;
+  if (req.body.googleAccessToken) {
+    console.log("googleAccessToken");
+    try {
+      const { googleAccessToken, ip } = req.body;
 
-// const college = await College.findOne({ 
-//   CollegeName: CollegeName
-// });
+      const response = await axios.get(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+          },
+        }
+      );
 
-// if (!college) {
-//   return next(new ErrorHandler('College not found', 404));
-// }
+      const {
+        given_name: FirstName,
+        family_name: LastName,
+        email: Email,
+        picture: profilePicture,
+      } = response.data;
+      const device = req.headers["user-agent"];
+      const { CollegeId, inviteLink } = req.query;
 
-// if (!Email || !Password || !ConfirmPassword) {
-//   return next(new ErrorHandler('Please Enter All Fields', 400));
-// }
+      const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
+        folder: "avatars",
+        width: 150,
+        crop: "scale",
+      });
 
-// if (Password !== ConfirmPassword) {
-//   return next(new ErrorHandler('Passwords do not match', 400));
-// }
+      const avatar = {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      };
 
-// const student = await Student.create({ ...req.body, CollegeId: college._id });
+      const existingUser = await Student.findOne({ Email });
 
-// college.students.push(student._id);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
 
-// await college.save();
+      const college = await College.findById(CollegeId);
 
-// console.log("Student Created Successfully");
+      // const inviteLink = req.params.inviteLink;
 
+      console.log(inviteLink, CollegeId);
 
-//   sendToken(student, 201, res);
+      if (!college) {
+        return next(new ErrorHandler("College not found", 404));
+      }
 
+      const invite = await Invitation.findOne({ invitationLink: inviteLink });
 
-// STUDENT WILL REGISTER USING THE REGISTRATION LINK SENT TO THEIR EMAIL 
+      if (!invite) {
+        return next(new ErrorHandler("Invalid invitation link", 400));
+      }
 
-const { Email, Password, FirstName, LastName, Major, From, To} = req.body;
+      if (invite.recipientEmail !== Email) {
+        return next(new ErrorHandler("Invalid email", 400));
+      }
 
-// const CollegeId = req.params.CollegeId;
-const { CollegeId, inviteLink } = req.query;
+      invite.status = "accepted";
 
-const college = await College.findById(CollegeId);
+      await invite.save();
 
-// const inviteLink = req.params.inviteLink;
+      const student = await Student.create({
+        FirstName,
+        LastName,
+        Email,
+        avatar,
+        CollegeId: CollegeId,
+        registrationLink: inviteLink,
+        CollegeName: college.CollegeName,
+      });
 
-console.log(inviteLink, CollegeId)
+      // student not approved yet
+      // college.pendingStudents.push(student._id);
 
-if (!college) {
-  return next(new ErrorHandler('College not found', 404));
-}
+      await college.save();
 
-if (!inviteLink || !Email || !Password || !FirstName || !LastName || !Major || !From || !To) {
-  return next(new ErrorHandler('Please Enter All Fields', 400));
-}
+      console.log("Student Created Successfully");
 
-const invite = await Invitation.findOne({ invitationLink: inviteLink });
+      sendToken(student, 201, res, ip, device);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  } else {
+    try {
+      const {
+        Email,
+        Password,
+        FirstName,
+        LastName,
+        ip,
+        Major,
+        From,
+        To,
+        PhoneNumber,
+      } = req.body;
+      const device = req.headers["user-agent"];
+      // const CollegeId = req.params.CollegeId;
+      const { CollegeId, inviteLink } = req.query;
 
-if (!invite) {
-  return next(new ErrorHandler('Invalid invitation link', 400));
-}
+      const college = await College.findById(CollegeId);
 
-// if (invite.status !== 'pending') {
-//   return next(new ErrorHandler('Invitation link has been expired', 400));
-// }
+      // const inviteLink = req.params.inviteLink;
 
-if (invite.recipientEmail !== Email) {
-  return next(new ErrorHandler('Invalid email', 400));
-}
+      console.log(inviteLink, CollegeId);
 
+      if (!college) {
+        return next(new ErrorHandler("College not found", 404));
+      }
 
-invite.status = 'accepted';
+      if (
+        (!inviteLink || !Password || !FirstName || !LastName,
+        !Major,
+        !From,
+        !To)
+      ) {
+        return next(new ErrorHandler("Please Enter All Fields", 400));
+      }
 
-await invite.save();
+      const passwordRegex = new RegExp(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+      );
+      if (!passwordRegex.test(Password)) {
+        return next(
+          new ErrorHandler(
+            "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+            400
+          )
+        );
+      }
 
-const student = await Student.create({ ...req.body, CollegeId: CollegeId });
+      const avatar = {
+        public_id: "avatars/wy3fbtukb75frndzgnxx",
+        url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png",
+      };
 
-// student not approved yet
-college.pendingStudents.push(student._id);
+      // const invite = await Invitation.findOne({ invitationLink: inviteLink });
+      let valid = true;
+      const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
 
-await college.save();
+      // if (!invite) {
+      //   return next(new ErrorHandler("Invalid invitation link", 400));
+      // }
+      let email;
+      valid = collegeInv.students.some((student) => {
+        if (student.link === inviteLink) {
+          email = student.Email;
+        }
+        return student.link === inviteLink;
+      });
+      if (!valid) {
+        return next(new ErrorHandler("Invalid invitation link", 400));
+      }
 
-console.log("Student Created Successfully");  
+      // if (invite.status !== 'pending') {
+      //   return next(new ErrorHandler('Invitation link has been expired', 400));
+      // }
 
-sendToken(student, 201, res);
+      // if (invite.recipientEmail !== Email) {
+      //   return next(new ErrorHandler('Invalid email', 400));
+      // }
 
+      // invite.status = "accepted";
+
+      // await invite.save();
+
+      // const student = await Student.create({
+      //   ...req.body,
+      //   CollegeId: CollegeId,
+      //   avatar,
+      //   Email: email,
+      //   registrationLink: inviteLink,
+      //   CollegeName: college.CollegeName,
+      //   PhoneNumber,
+      // });
+      // const procPass = await bcrypt.hash(req.body.Password, 10);
+
+      const student = await Student.create({
+        ...req.body,
+        Password: req.body.Password,
+        CollegeId: CollegeId,
+        avatar,
+        Email: email,
+        registrationLink: inviteLink,
+        CollegeName: college.CollegeName,
+        PhoneNumber,
+      });
+
+      // uploadedStudents.students.push(student._id);
+      // await uploadedStudents.save();
+
+      // student not approved yet
+      // college.pendingStudents.push(student._id);
+      // await ApprovedStudents.findOneAndUpdate(
+      //   { college: CollegeId },
+      //   { $push: { students: { Email: email, link: inviteLink } } ,{college:CollegeId} }
+      // );
+
+      await college.save();
+
+      console.log("Student Created Successfully");
+
+      sendToken(student, 201, res, ip, device);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 });
-
 // --------------------------------------------- LOGIN A STUDENT --------------------------------------------------------
 
 exports.loginStudent = catchAsyncErrors(async (req, res, next) => {
+  if (req.body.googleAccessToken) {
+    try {
+      const { googleAccessToken, ip } = req.body;
+      const device = req.headers["user-agent"];
 
-  const { Email, Password ,ConfirmPassword} = req.body;
+      const response = await axios.get(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+          },
+        }
+      );
 
+      const { email: Email } = response.data;
 
- 
-  if (!Email || !Password || !ConfirmPassword) {
-    return next(new ErrorHandler('Please Enter All Fields', 400));
+      const student = await Student.findOne({ Email });
+
+      if (!student) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      sendToken(student, 200, res, ip, device);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  } else {
+    // <<<<<<< sidd333
+    // =======
+
+    try {
+      // >>>>>>> master
+      const { Email, Password, ip } = req.body;
+      const device = req.headers["user-agent"];
+
+      if (!Email || !Password) {
+        return next(new ErrorHandler("Please Enter Email & Password", 400));
+      }
+
+      const student = await Student.findOne({ Email }).select("+Password");
+
+      if (!student) {
+        return next(new ErrorHandler("Invalid Email or Password", 401));
+      }
+
+      // Check if password is correct
+      const isPasswordMatched = await student.comparePassword(Password);
+
+      if (!isPasswordMatched) {
+        return next(new ErrorHandler("Invalid Email or Password", 401));
+      }
+
+      sendToken(student, 200, res, ip, device);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
   }
-
-
-  if (Password !== ConfirmPassword) {
-    return next(new ErrorHandler('Passwords do not match', 400));
-  }
-
-
-  const student = await Student.findOne({ Email }).select('+Password');
-
-  if (!student) {
-    return next(new ErrorHandler('Invalid email or password', 401));
-  }
-
-  const isPasswordMatched = await student.comparePassword(Password);
-
-  if (!isPasswordMatched) {
-    return next(new ErrorHandler('Invalid email or password', 401));
-  }
-
-  sendToken(student, 200, res);
 });
 
 // --------------------------------------------- FORGOT PASSWORD --------------------------------------------------------
@@ -175,7 +348,7 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
   const student = await Student.findOne({ Email: req.body.email });
 
   if (!student) {
-    return next(new ErrorHandler('Student not found', 404));
+    return next(new ErrorHandler("Student not found", 404));
   }
 
   // Get Reset Password Token
@@ -195,7 +368,10 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
 
 exports.resetPasswordStudent = catchAsyncErrors(async (req, res, next) => {
   // Creating token hash
-  const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
 
   const student = await Student.findOne({
     resetPasswordToken,
@@ -203,11 +379,16 @@ exports.resetPasswordStudent = catchAsyncErrors(async (req, res, next) => {
   });
 
   if (!student) {
-    return next(new ErrorHandler('Reset Password Token is invalid or has been expired', 400));
+    return next(
+      new ErrorHandler(
+        "Reset Password Token is invalid or has been expired",
+        400
+      )
+    );
   }
 
   if (req.body.password !== req.body.confirmPassword) {
-    return next(new ErrorHandler('Passwords do not match', 400));
+    return next(new ErrorHandler("Passwords do not match", 400));
   }
 
   student.Password = req.body.password;
@@ -250,138 +431,227 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 
 exports.updateProfileStudent = catchAsyncErrors(async (req, res, next) => {
   let student = await Student.findById(req.user.id);
-  
-    if (!student) {
-      return next(new ErrorHandler('Student not found', 404));
-    }
-  
-    student = await Student.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-      useFindAndModify: false,
-    });
-  
-    res.status(200).json({
-      success: true,
-      student,
-    });
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  student = await Student.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
   });
-
-// Update Profile Picture
-
-exports.updateProfilePictureStudent = catchAsyncErrors(async (req, res, next) => {
-  const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-    folder: "avatars",
-    width: 150,
-    crop: "scale",
-  });
-
-  const student = await Student.findByIdAndUpdate(  req.user.id,
-    {
-      avatar: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      },
-    },
-    {
-      new: true,
-      runValidators: true,
-      useFindAndModify: false,
-    }
-  );
 
   res.status(200).json({
     success: true,
     student,
   });
 });
-  
 
+// Update Profile Picture
 
-  
-// ----------------------------------------- DELETE A STUDENT --------------------------------------------------------
+exports.updateProfilePictureStudent = catchAsyncErrors(
+  async (req, res, next) => {
+    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: "avatars",
+      width: 150,
+      crop: "scale",
+    });
 
+    const student = await Student.findByIdAndUpdate(
+      req.user.id,
+      {
+        avatar: {
+          public_id: myCloud.public_id,
+          url: myCloud.secure_url,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false,
+      }
+    );
 
-exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
-
-    const student = await Student.findById(req.user.id);
-  
-    if (!student) {
-      return next(new ErrorHandler('Student not found', 404));
-    }
-  
-    await student.remove();
-  
     res.status(200).json({
       success: true,
-      message: 'Student deleted successfully',
+      student,
     });
+  }
+);
+// =================================================== ALL LOGGED IN USERS -- SAME USERID  ===========================================================
+
+exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  const loggedInUsers = student.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    loggedInUsers,
   });
+});
+
+// logout a user
+
+exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
+  console.log("req.user.id", req.user.id);
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const token = req.params.token;
+
+  student.loginActivity.forEach((login) => {
+    console.log(login.token_id === token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+    }
+  });
+  student.qrVerify = false;
+
+  const blacklist_token = await BlacklistToken.create({
+    token: token,
+  });
+
+  console.log("Token blacklisted", blacklist_token);
+
+  await student.save({ validateBeforeSave: false });
+  const loggedInUsers = student.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    message: "Logged Out",
+    loggedInUsers,
+  });
+});
+
+// ===================================================   REMOVE LOGGEDOUT USERS ===========================================================
+
+exports.removeLoggedOutUsers = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+
+  const token = req.params.token;
+
+  // college.loginActivity = college.loginActivity.filter((login) => login.token_deleted === false);
+  student.loginActivity = student.loginActivity.filter(
+    (login) => login.token_id !== token
+  );
+
+  await student.save({ validateBeforeSave: false });
+
+  const loggedInUsers = student.loginActivity;
+
+  res.status(200).json({
+    success: true,
+    loggedInUsers,
+  });
+});
+
+// ----------------------------------------- DELETE A STUDENT --------------------------------------------------------
+
+exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  await student.remove();
+
+  res.status(200).json({
+    success: true,
+    message: "Student deleted successfully",
+  });
+});
 
 //   --------------------------------------------- get students by college id --------------------------------------------
 
 exports.getStudentsByCollegeId = catchAsyncErrors(async (req, res, next) => {
-    const students = await Student.find({ CollegeId: req.user.id });
+  const students = await Student.find({ CollegeId: req.user.id });
 
-    console.log(students)
+  console.log(students);
 
-    res.status(200).json({
-        success: true,
-        students,
-        });
-
+  res.status(200).json({
+    success: true,
+    students,
+  });
 });
 
 // --------------------------------------------- get students by assessment id --------------------------------------------
 
 exports.getStudentsByAssessmentId = catchAsyncErrors(async (req, res, next) => {
-    const students = await Student.find({ Assessments: req.params.id });
+  const students = await Student.find({ Assessments: req.params.id });
 
-    res.status(200).json({
-        success: true,
-        students,
-        });
-
+  res.status(200).json({
+    success: true,
+    students,
+  });
 });
 
 // --------------------------------------------- get students by job id ------------------------------------------------
 
 exports.getStudentsByJobId = catchAsyncErrors(async (req, res, next) => {
-    const students = await Student.find({ Jobs: req.params.id });
+  const students = await Student.find({ Jobs: req.params.id });
 
-    res.status(200).json({
-        success: true,
-        students,
-        });
-
+  res.status(200).json({
+    success: true,
+    students,
+  });
 });
 
 // --------------------------------------------- get students by skill -------------------------------------------------
 
 exports.getStudentsBySkill = catchAsyncErrors(async (req, res, next) => {
-    const students = await Student.find({ Skills: req.params.skill });
+  const students = await Student.find({ Skills: req.params.skill });
 
-    res.status(200).json({
-        success: true,
-        students,
-        });
-
+  res.status(200).json({
+    success: true,
+    students,
+  });
 });
 
-  // ====================================================== LOGOUT  ===========================================================
+// ====================================================== LOGOUT  ===========================================================
 
 exports.logout = catchAsyncErrors(async (req, res, next) => {
-    res.cookie("token", null, {
-      expires: new Date(Date.now()),
-      httpOnly: true,
-    });
-  
-    res.status(200).json({
-      success: true,
-      message: "Logged Out",
-    });
+  // res.cookie("token", null, {
+  //   expires: new Date(Date.now()),
+  //   httpOnly: true,
+  // });
+
+  const student = await Student.findById(req.user.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+  const token = req.header("auth-token");
+
+  student.loginActivity?.forEach((login) => {
+    console.log(login.token_id === token, login.token_id, token);
+    if (login.token_id === token) {
+      login.token_deleted = true;
+    }
   });
-  
+  student.qrVerify = false;
+  // console.log(student.loginActivity);
+
+  await student.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged Out",
+  });
+});
 
 // ========================================================= DASHBOARD =======================================================
 
@@ -395,39 +665,38 @@ exports.getYourAssessments = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
 //  -- New Jobs
 exports.getNewJobs = catchAsyncErrors(async (req, res, next) => {
-  const recentJobs = await Job.find().sort({ createdAt: -1 }).limit(5);
+  const recentJobs = await Job.find().populate('company').sort({ createdAt: -1 }).limit(5);
 
   res.status(200).json({
     success: true,
-    jobs:recentJobs 
+    jobs: recentJobs,
   });
-})
+});
 
 // -- RECOMMENDED JOBS
 
 exports.getRecommendedJobs = catchAsyncErrors(async (req, res, next) => {
-  const  studentId  = req.user.id;
+  const studentId = req.user.id;
 
   // get the student's skills for the studentId
-  const student = await Student.findById(studentId).select('Skills');
+  const student = await Student.findById(studentId).select("Skills");
 
   if (!student) {
-    return next(new ErrorHandler('Student not found', 404));
+    return next(new ErrorHandler("Student not found", 404));
   }
 
   //using the student's software knowledge to find recommended jobs
-  const recommendedJobs = await Job.find({ 'Skills.SoftwareKnowledge': { $in: student.Skills.SoftwareKnowledge } });
+  const recommendedJobs = await Job.find({
+    "Skills.SoftwareKnowledge": { $in: student.Skills.SoftwareKnowledge },
+  });
 
   res.status(200).json({
     success: true,
     jobs: recommendedJobs,
   });
 });
-;
-
 // GET RESULT By Student ID
 
 exports.getResultByStudentId = catchAsyncErrors(async (req, res, next) => {
@@ -442,10 +711,3 @@ exports.getResultByStudentId = catchAsyncErrors(async (req, res, next) => {
     result: student.Score,
   });
 });
-
-
-
-
-
-
-

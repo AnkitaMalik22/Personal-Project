@@ -160,9 +160,14 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler('Student or Assessment not found', 404));
     }
 
-    if (!student.studentTests.includes(testId)) {
-        return next(new ErrorHandler('Test not started', 404));
-    }
+    // if (!student.studentTests.includes(testId)) {
+    //     return next(new ErrorHandler('Test not started', 404));
+    // }
+
+    // -------------------  add test  route is already there to add the test to the student -------------------
+
+    student.studentTests.push(testId);
+    // -------------------------------------------------------------------------------------------------------------
 
     if (assessment.studentResponses.includes(student._id)) {
         return next(new ErrorHandler('Test already submitted', 404));
@@ -238,6 +243,10 @@ exports.giveTest = catchAsyncErrors(async (req, res, next) => {
 
     student.studentResponses.push(studentResponse._id);
     assessment.studentResponses.push(studentResponse._id);
+
+  if(student.avgPercentage ){
+    assessment.avgPercentage = (assessment.avgPercentage + percentage) / assessment.studentResponses.length;
+    }
 
     await student.save({ validateBeforeSave: false });
     await assessment.save({ validateBeforeSave: false });

@@ -77,7 +77,7 @@ const assessmentsSchema = new Schema({
   level: {
     type: String,
     default: "beginner",
-    // enum: ["beginner", "intermediate", "advanced"],
+    // enum: ["beginner", "intermediate", "advanced" ,"adaptive"],
     // required: true,
   },
   type: {
@@ -121,6 +121,17 @@ const assessmentsSchema = new Schema({
       ref: "StudentResponse",
     },
   ],
+
+  invitedStudents: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+    },
+  ],
+  avgPercentage: {
+    type: Number,
+    default: 0,
+  },
 
 // ----------------------------------
 createdAt: {

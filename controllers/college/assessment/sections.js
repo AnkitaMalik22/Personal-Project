@@ -10,7 +10,7 @@ const Video = require("../../../models/college/assessment/Video");
 const Compiler = require("../../../models/college/assessment/Compiler");
 // const cloudinary = require("cloudinary");
 const cloudinary = require("cloudinary").v2;
-const path = require('path')
+const path = require("path");
 
 // ===================================================| Create Section |===================================================================
 
@@ -86,13 +86,18 @@ exports.getSectionsByAssessmentId = catchAsyncErrors(async (req, res, next) => {
 exports.getSectionById = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const section = await Section.findById(id);
+    const section = await Section.findById(id)
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video")
+      .populate("compiler");
 
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
     }
 
-    res.json(section);
+    res.status(200).json(section);
   } catch (error) {
     console.error("Error getting section:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -139,40 +144,49 @@ exports.updateSection = catchAsyncErrors(async (req, res, next) => {
 
 // ===================================================| Delete Section by ID |===============================================================
 
-exports.deleteSection = catchAsyncErrors(async (req, res, next) => {
+exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { id } = req.params;
+    // const { id } = req.params;
+    const ids = req.body.data;
 
     const userId = req.user.id;
     const role = req.user.role;
 
-    let section = await Section.findById(id);
-    if (!section) {
-      return res.status(404).json({ error: "Section not found" });
-    }
+    
 
     // Check if the user is authorized to delete the section
 
-    if (role === "college") {
-      if (section.college != userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    } else if (role === "company") {
-      if (section.company != userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-    } else {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    // if (role === "college") {
+    //   if (section.college != userId) {
+    //     return res.status(401).json({ error: "Unauthorized" });
+    //   }
+    // } else if (role === "company") {
+    //   if (section.company != userId) {
+    //     return res.status(401).json({ error: "Unauthorized" });
+    //   }
+    // } else {
+    //   return res.status(401).json({ error: "Unauthorized" });
+    // }
 
     // Delete the section
-    await Section.findByIdAndDelete(id);
+for (let i = 0; i < ids.length; i++) {
+  let section = await Section.findById(ids[i]);
+  if (section) {
+    // return res.status(404).json({ error: "Section not found" });
+    await Section.findByIdAndDelete(ids[i]);
+  }
 
-    const assessment = await Assessment.findById(section.AssessmentId);
-    assessment.sections.pull(id);
-    await assessment.save();
 
-    res.json({ message: "Section deleted successfully" });
+}
+
+
+    // const assessment = await Assessment.findById(section.AssessmentId);
+    // assessment.sections.pull(id);
+    // await assessment.save();
+
+    const sections = await Section.find({ college: userId});
+
+    res.json({ message: "Section deleted successfully" , sections });
   } catch (error) {
     console.error("Error deleting section:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -187,12 +201,17 @@ exports.createTopicCollege = async (req, res) => {
   try {
     const { Heading, Description, TotalQuestions, Time } = req.body;
     const collegeId = req.user.id;
-    console.log(collegeId, "collegeId")
+    console.log(collegeId, "collegeId");
     const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({ error: "College not found" });
     }
-    if (Heading === "" || Description === "" || TotalQuestions === "" || Time === "") {
+    if (
+      Heading === "" ||
+      Description === "" ||
+      TotalQuestions === "" ||
+      Time === ""
+    ) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -200,34 +219,32 @@ exports.createTopicCollege = async (req, res) => {
 
     let duplicateTopic = false;
 
-    topics && topics.forEach((topic) => {
-      if (topic.Heading === req.body.Heading) {
-        duplicateTopic = true;
-      }
-    });
+    topics &&
+      topics.forEach((topic) => {
+        if (topic.Heading === req.body.Heading) {
+          duplicateTopic = true;
+        }
+      });
 
     if (duplicateTopic) {
       return res.status(400).json({ error: "Topic already exists" });
     }
 
-      const section = await Section.create({
-        ...req.body,
-        Type: "",
-        college: collegeId,
-        createdByCollege: true,
-      });
-  
-      college.topics.push(section);
-  
-      await college.save();
-  
-      return res.status(201).json({
-        message: "Topic created successfully",
-        section,
-      });
-    
+    const section = await Section.create({
+      ...req.body,
+      Type: "",
+      college: collegeId,
+      createdByCollege: true,
+    });
 
-    
+    college.topics.push(section);
+
+    await college.save();
+
+    return res.status(201).json({
+      message: "Topic created successfully",
+      section,
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Unable to create topic",
@@ -349,23 +366,51 @@ exports.createTopicCollege = async (req, res) => {
 //   }
 // };
 
-
-
 // get only college topics
-
 
 exports.getTopics = async (req, res) => {
   try {
-
     const collegeId = req.user.id;
+    const query = req.query.level;
     const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({ error: "College not found" });
     }
+    console.log(query, "query");
 
     let topics;
 
-    topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+    if (query === "adaptive") {
+      topics = await Section.find({ college: collegeId }).populate("questions");
+    } else {
+      topics = await Section.find({ college: collegeId })
+        .populate({
+          path: "questions",
+          match: { QuestionLevel: query },
+        })
+        .populate({
+          path: "findAnswers",
+          match: { QuestionLevel: query },
+        })
+        .populate({
+          path: "essay",
+          match: { QuestionLevel: query },
+        })
+        .populate({
+          path: "video",
+          match: { QuestionLevel: query },
+        })
+        .populate({
+          path: "compiler",
+          match: { QuestionLevel: query },
+        })
+        .lean(); // Add the lean() method to populate the fields as plain JavaScript objects
+    }
+
+    console.log(topics, "topics");
+
+    // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
 
     return res.status(200).json({
       message: "Topics found",
@@ -379,7 +424,36 @@ exports.getTopics = async (req, res) => {
   }
 };
 
- 
+exports.getTopicsQB = async (req, res) => {
+  try {
+    const collegeId = req.user.id;
+    const query = req.query.level;
+    const college = await College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({ error: "College not found" });
+    }
+    console.log(query, "query");
+
+    let topics;
+
+    topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
+    // console.log(topics, "topics");
+
+    // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+
+
+    return res.status(200).json({
+      message: "Topics found",
+      topics,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get topics",
+      error: error.message,
+    });
+  }
+};
 
 // ----------------------------- ADD QUESTIONS ------------------------------------
 
@@ -406,8 +480,6 @@ exports.uploadVideo = async (req, res) => {
     //   mv: [Function: mv]
     // } file
 
-
-
     const uploadResult = await cloudinary.uploader.upload(file.tempFilePath, {
       folder: "videos",
       resource_type: "video",
@@ -424,12 +496,11 @@ exports.uploadVideo = async (req, res) => {
       error: error.message,
     });
   }
-}
+};
 
 exports.addQuestionsToTopicCollege = async (req, res) => {
   try {
     const { topicId, type } = req.params;
-
 
     const collegeId = req.user.id;
 
@@ -439,23 +510,21 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
 
     section = await Section.findById(topicId);
 
-    console.log( topicId, type)
+    console.log(topicId, type);
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
       });
     }
-    let id = section.college.toString()
+    let id = section.college.toString();
 
-    console.log(collegeId , id)
+    console.log(collegeId, id);
 
-    console.log(id === collegeId)
-
+    console.log(id === collegeId);
 
     if (id != collegeId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    
 
     // if (section.questions?.length >= section.TotalQuestions) {
     //   return res.status(400).json({
@@ -471,8 +540,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
       section = await Section.findById(topicId).populate("essay");
     } else if (type === "video") {
       section = await Section.findById(topicId).populate("video");
-    }
-    else if (type === "compiler") {
+    } else if (type === "compiler") {
       section = await Section.findById(topicId).populate("compiler");
     }
 
@@ -502,20 +570,18 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
         section.essay.push(question._id);
         console.log(section.essay);
       } else if (type === "video") {
-
         // const myCloud = await cloudinary.v2.uploader.upload_large(req.body.questions[i], {
         //   folder: "videos",
         //   resource_type : "video",
         // })
-        
+
         question = await Video.create({
           // video: myCloud.secure_url,
           // public_id: myCloud.public_id,
           ...req.body.questions[i],
         });
         section.video.push(question._id);
-      }
-      else if (type === "compiler") {
+      } else if (type === "compiler") {
         question = await Compiler.create(questions[i]);
         section.compiler.push(question._id);
       }
@@ -533,7 +599,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
       questions,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       message: "Unable to add question",
       error: error.message,
@@ -541,13 +607,11 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
   }
 };
 
-
 exports.addTopicstoAssessment = async (req, res) => {
   try {
     const { id } = req.params;
     const { topics } = req.body;
-    const assessment = await Assessment.findById
-    (id);
+    const assessment = await Assessment.findById(id);
     if (!assessment) {
       return res.status(404).json({ error: "Assessment not found" });
     }
@@ -559,25 +623,23 @@ exports.addTopicstoAssessment = async (req, res) => {
     if (assessment.college != collegeId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    
-  if (assessment.sections.length == 0){
-    assessment.sections = topics;
+
+    if (assessment.sections.length == 0) {
+      assessment.sections = topics;
+    } else {
+      assessment.sections.push(...topics);
+    }
+    await assessment.save();
+    return res.status(201).json({
+      message: "Topics added to assessment successfully",
+      assessment,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to add topics to assessment",
+      error: error.message,
+    });
   }
-  else{
-    assessment.sections.push(...topics);
-  }
-  await assessment.save();
-  return res.status(201).json({
-    message: "Topics added to assessment successfully",
-    assessment,
-  });
-}
-catch (error) {
-  return res.status(500).json({
-    message: "Unable to add topics to assessment",
-    error: error.message,
-  });
-}
-}
+};
 
 // ------------------------

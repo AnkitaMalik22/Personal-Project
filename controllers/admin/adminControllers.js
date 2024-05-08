@@ -3,10 +3,244 @@ const Question = require("../../models/college/assessment/questions");
 const findAnswer = require("../../models/college/assessment/findAnswer");
 const Essay = require("../../models/college/assessment/Essay");
 const Video = require("../../models/college/assessment/Video");
+const ErrorHandler = require("../../utils/errorhandler");
+const College = require("../../models/college/collegeModel");
+const Credit = require("../../models/college/account/creditModel");
+const PaymentPlan = require("../../models/college/account/planModel");
+const Transaction = require("../../models/college/account/Transactions");
 
 //  ADMIN CAN CREATE TOPICS AND ADD QUESTIONS
 
 // 1. Create a new topic
+
+// ----------------- ADD CREDIT TO COLLEGE ------------------
+
+const selectPlanCollege = async (req, res) => {
+  try {
+    // Find the college by user ID
+    const college = await College.findById(req.user.id);
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    // Retrieve the plan ID from request parameters
+    const planId = req.params.id;
+    const newPlan = await PaymentPlan.findById(planId);
+    if (!newPlan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    // Check if the college already has a different plan selected
+    if (college.selectedPlan && college.selectedPlan.toString() !== planId) {
+      const currentPlan = await PaymentPlan.findById(college.selectedPlan);
+      if (currentPlan) {
+        // Remove the college from the current plan's members list
+        currentPlan.members = currentPlan.members.filter(
+          (member) => member.toString() !== college._id.toString()
+        );
+        await currentPlan.save();
+      }
+    }
+
+    // Assign the new plan to the college
+    if (!newPlan.members.includes(college._id)) {
+      newPlan.members.push(college._id);
+    }
+
+    // Update the college's selected plan
+    college.selectedPlan = newPlan._id;
+
+    const transaction = await Transaction.create({
+      user: college._id,
+      planName: newPlan.planName,
+      date: new Date(),
+      price: newPlan.price,
+      credit: newPlan.credit,
+      limit: newPlan.limit,
+      charges: newPlan.charges,
+    });
+
+    await newPlan.save();
+    await college.save();
+
+    let credit = await Credit.findOne({
+      college: req.user.id,
+    });
+    if (!credit) {
+      credit = new Credit({
+        college: college,
+        credit: newPlan.credit,
+        limit: newPlan.limit,
+      });
+    } else {
+      credit.credit = newPlan.credit;
+      credit.limit = newPlan.limit;
+    }
+
+    await credit.save();
+
+    return res.status(200).json({
+      message: "Plan selection updated successfully",
+      plan: newPlan,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Unable to select plan",
+      error: error.message,
+    });
+  }
+};
+
+const cancelPlanCollege = async (req, res) => {
+  try {
+    // Find the college by user ID
+    const college = await College.findById(req.user.id);
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    // Retrieve the plan ID from request parameters
+    const planId = req.params.id;
+    const plan = await PaymentPlan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    // Remove the college from the plan's members list
+    plan.members = plan.members.filter(
+      (member) => member.toString() !== college._id.toString()
+    );
+    await plan.save();
+
+    // Remove the plan from the college's selected plan
+    college.selectedPlan = null;
+    await college.save();
+
+    const credit = await Credit.findOne({
+      college: req.user.id,
+    });
+
+    credit.credit = 0;
+    credit.limit = 0;
+    await credit.save();
+
+    return res.status(200).json({
+      message: "Plan cancelled successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to cancel plan",
+      error: error.message,
+    });
+  }
+};
+
+const addPlansAdmin = async (req, res) => {
+  try {
+    const { plans } = req.body;
+    for (let i = 0; i < plans.length; i++) {
+      const plan = new PaymentPlan(plans[i]);
+      await plan.save();
+    }
+    return res.status(201).json({
+      message: "Plans added successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to add plan",
+      error: error.message,
+    });
+  }
+};
+
+const getAllPlans = async (req, res) => {
+  try {
+    const plans = await PaymentPlan.find();
+    return res.status(200).json({
+      message: "All plans",
+      plans,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get plans",
+      error: error.message,
+    });
+  }
+};
+
+const getAllTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.find({
+      user: req.user.id,
+    });
+    return res.status(200).json({
+      message: "All transactions",
+      transactions,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get transactions",
+      error: error.message,
+    });
+  }
+};
+
+const addCredit = async (req, res) => {
+  try {
+    const college = await College.findById(req.params.id);
+    if (!college) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let credit = await Credit.findOne({
+      college: college,
+    });
+
+    if (!credit) {
+      // return res.status(404).json({ message: "Credit not found" });
+      credit = new Credit({
+        college: college,
+      });
+    }
+
+    credit.credit = req.body.credit;
+    credit.limit = req.body.limit;
+
+    await credit.save();
+    // send notification to college
+
+    return res.status(201).json({
+      message: "Credit added successfully",
+      credit,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to add credit",
+      error: error.message,
+    });
+  }
+};
+
+const getCredit = async (req, res) => {
+  try {
+    const credit = await Credit.findOne({
+      college: req.params.id,
+    });
+    if (!credit) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.status(200).json({
+      message: "Credit Fetched Successfully",
+      credit,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to fetch credit",
+      error: error.message,
+    });
+  }
+};
 
 const createTopic = async (req, res) => {
   try {
@@ -37,7 +271,8 @@ const getTopicById = async (req, res) => {
       .populate("questions")
       .populate("findAnswers")
       .populate("essay")
-      .populate("video");
+      .populate("video")
+      .populate("compiler");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
@@ -93,8 +328,7 @@ const updateTopic = async (req, res) => {
 
 const addQuestionsToTopic = async (req, res) => {
   try {
-
-    const { topicId,type } = req.params;
+    const { topicId, type } = req.params;
 
     // const { Title, Options, Answer, AnswerIndex, QuestionType, Status, TotalMarks } = req.body;
     let section;
@@ -128,14 +362,14 @@ const addQuestionsToTopic = async (req, res) => {
         question = await Question.create(questions[i]);
         section.questions.push(question._id);
       } else if (type === "findAnswer") {
-         question =await findAnswer.create(questions[i]);
-         section.findAnswers.push(question._id);
+        question = await findAnswer.create(questions[i]);
+        section.findAnswers.push(question._id);
       } else if (type === "essay") {
-       question = await Essay.create(questions[i]);
+        question = await Essay.create(questions[i]);
         section.essay.push(question._id);
         console.log(section.essay);
       } else if (type === "video") {
-    question = await Video.create(questions[i]);
+        question = await Video.create(questions[i]);
         section.video.push(question._id);
       }
 
@@ -165,7 +399,11 @@ const addQuestionsToTopic = async (req, res) => {
 
 const viewAllTopics = async (req, res) => {
   try {
-    const sections = await Section.find().populate("questions").populate("findAnswers").populate("essay").populate("video");
+    const sections = await Section.find()
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video");
     return res.status(200).json({
       message: "All topics",
       sections,
@@ -198,7 +436,11 @@ const viewAllTopicByAdmin = async (req, res) => {
 const viewAllQuestionsInTopic = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const section = await Section.findById(topicId).populate("questions").populate("findAnswers").populate("essay").populate("video");
+    const section = await Section.findById(topicId)
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video");
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
@@ -217,10 +459,17 @@ const viewAllQuestionsInTopic = async (req, res) => {
 };
 
 module.exports = {
+  addCredit,
+  getCredit,
   createTopic,
   getTopicById,
   updateTopic,
   addQuestionsToTopic,
   viewAllTopics,
   viewAllQuestionsInTopic,
+  addPlansAdmin,
+  selectPlanCollege,
+  getAllPlans,
+  getAllTransactions,
+  cancelPlanCollege,
 };
