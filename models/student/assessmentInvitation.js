@@ -27,6 +27,20 @@ const collegeAssessInvSchema = new mongoose.Schema({
       marks :{
         type: Number
       },
+      negativeCount:{
+        type : Number,
+        default: 0
+      },
+      L1marks:{
+        type: Number
+      },
+      L2marks:{
+        type: Number
+      },
+      L3marks:{
+        type: Number
+      },
+      
     },
   ],
 });

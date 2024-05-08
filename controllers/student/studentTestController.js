@@ -11,6 +11,7 @@ const axios = require("axios");
 const cloudinary = require("cloudinary");
 const InvitedStudents = require("../../models/college/student/Invited");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
+const StudentResponse = require("../../models/student/studentResponse");
 
 // student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
 //   email: { type: String },
@@ -154,6 +155,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
   student.OnGoingAssessment = testId;
   student.active = true;
   student.startedAt = Date.now();
+  
 
   await student.save();
 
@@ -170,8 +172,12 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     // }, timeout * 1000);
 
-    
+    const studentResponse = await StudentResponse.create({
+      studentId: studentId,
+      assessment: testId,
+    });
 
+    await studentResponse.save();
     res.json({
       success: true,
       message: "Assessment started",
@@ -276,7 +282,135 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
 // --------------- send question to student ----------------
 //  send assessment > topic1 > question1
 // get the student response and save it in the  assessment.response.topic1.question1 = response
-// if answer is correct then save the marks in the assessment.marks = marks
-// if student completed 1/3 % of the topic and correct 1/3 % of the question then save the level = 1
+// if answer is correct then save the marks in the assessment.marks += 1
+// if answer is wrong then save the marks of the total marks in the assessment.marks -= 1
+// untill marks reached 1/3 correct rate send the next question if questions end then send the next topic questions level 1
+// if marks   1/3 all correct then send the next level 2 questions of the same topic
+// until level 2 questions mark reached 1/3 correct rate and all level2 ended send the next topic questions level 
+// 3 and so on untill all topics ended
+// if all topics ended then send the result of the assessment
+// if the student completed the assessment then save the completedAt date and time
+// if the student completed the assessment then save the percentage of the assessment
+// if the student completed the assessment then save the level of the assessment
+// if the student completed the assessment then save the marks of the assessment
+// if the student completed the assessment then save the assessment as completed
+// if the student completed the assessment then save the assessment as not active
+// if the student completed the assessment then save the assessment as not onGoingAssessment
+// for each question api call the client will send the response of the student
+// if level1 questions can't reach the marks send to next level 1
+
+
+exports.sendQuestion = catchAsyncErrors(async (req, res, next) => {
+  const { testId, studentId } = req.params;
+  const {topicId, questionId, response} = req.body;
+
+  // let topicL1marks = 0;
+  // let topicL2marks = 0;
+  // let topicL3marks = 0;
+
+  const student = await CollegeAssessInv.findOne({
+    student: studentId,
+    // "assessments.assessment": testId // Include testId in the query
+  }).populate("assessments.assessment");
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+
+  const assessment = student.assessments.find(
+    (assessment) => assessment._id.toString() === testId
+  );
+
+  if (!assessment) {
+    return next(new ErrorHandler("Test not found", 404));
+  }
+
+  const topic = assessment.assessment.topics.find(
+    (topic) => topic._id.toString() === topicId
+  );
+  const totalL1Marks = topic.questions.find(
+    (question) => question.level === 'beginner'
+  ).length;
+  const totalL2Marks = topic.questions.find(
+    (question) => question.level === 'intermediate'
+  ).length * 2;
+  const totalL3Marks = topic.questions.find(
+    (question) => question.level === 'advanced'
+  ).length * 3;
+
+  if (!topic) {
+    return next(new ErrorHandler("Topic not found", 404));
+  }
+
+  const question = topic.questions.find(
+    (question) => question._id.toString() === questionId
+  );
+
+  if (!question) {
+    return next(new ErrorHandler("Question not found", 404));
+  }
+
+  if(question.AnswerIndex === response){
+    assessment.marks += 1;
+  }
+  else{
+    if(assessment.negativeCount === 3){
+      assessment.marks -= 1;
+      assessment.negativeCount = 0;
+    }
+    else{
+      assessment.negativeCount += 1;
+    }
+  
+  }
+
+  
+
+
+  const totalQuestions = assessment.totalQuestionsCount;
+ 
+// total L1 correct rate 1/3% then send L2 questions
+
+if(assessment.marks === totalL1Marks / 3){
+  assessment.level = 2;
+  assessment.marks = 0;
+  assessment.totalL1Marks = totalL1Marks;
+  await student.save();
+  }
+
+// save the response of the student
+  const studentResponse = await studentResponse.findOne({
+    student: studentId,
+    assessment: testId,
+  });
+  const resTopic = studentResponse.response.find(
+    (topic) => topic._id.toString() === topicId
+  );
+  const resQuestion = resTopic.questions.find(
+    (question) => question._id.toString() === questionId
+  );
+  resQuestion.AnswerIndex = response;
+  await studentResponse.save();
+
+  await student.save();
+
+  // if(assessment.marks >= topic % 3){
+  // await student.save();
+  // }
+
+  res.json({
+    success: true,
+    message: "Question sent",
+    data: {
+      assessment,
+      student,
+    },
+  });
+});
+
+
+
+
 
 
