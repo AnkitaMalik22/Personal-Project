@@ -294,116 +294,11 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
 // if level1 questions can't reach the marks send to next level 1
 
 
-// exports.sendQuestion = catchAsyncErrors(async (req, res, next) => {
-//   const { testId, studentId } = req.params;
-//   const {topicId, questionId, response} = req.body;
-
-//   // let topicL1marks = 0;
-//   // let topicL2marks = 0;
-//   // let topicL3marks = 0;
-
-//   const student = await CollegeAssessInv.findOne({
-//     student: studentId,
-//     // "assessments.assessment": testId // Include testId in the query
-//   }).populate("assessments.assessment");
-
-//   if (!student) {
-//     return next(new ErrorHandler("Student not found", 404));
-//   }
-
-
-//   const assessment = student.assessments.find(
-//     (assessment) => assessment._id.toString() === testId
-//   );
-
-//   if (!assessment) {
-//     return next(new ErrorHandler("Test not found", 404));
-//   }
-
-//   const topic = assessment.assessment.topics.find(
-//     (topic) => topic._id.toString() === topicId
-//   );
-//   const totalL1Marks = topic.questions.find(
-//     (question) => question.level === 'beginner'
-//   ).length;
-//   const totalL2Marks = topic.questions.find(
-//     (question) => question.level === 'intermediate'
-//   ).length * 2;
-//   const totalL3Marks = topic.questions.find(
-//     (question) => question.level === 'advanced'
-//   ).length * 3;
-
-//   if (!topic) {
-//     return next(new ErrorHandler("Topic not found", 404));
-//   }
-
-//   const question = topic.questions.find(
-//     (question) => question._id.toString() === questionId
-//   );
-
-//   if (!question) {
-//     return next(new ErrorHandler("Question not found", 404));
-//   }
-
-//   if(question.AnswerIndex === response){
-//     assessment.marks += 1;
-//   }
-//   else{
-//     if(assessment.negativeCount === 3){
-//       assessment.marks -= 1;
-//       assessment.negativeCount = 0;
-//     }
-//     else{
-//       assessment.negativeCount += 1;
-//     }
-  
-//   }
-
-  
-
-
-//   const totalQuestions = assessment.totalQuestionsCount;
- 
-// // total L1 correct rate 1/3% then send L2 questions
-
-// if(assessment.marks === totalL1Marks / 3){
-//   assessment.level = 2;
-//   assessment.marks = 0;
-//   assessment.totalL1Marks = totalL1Marks;
-//   await student.save();
-//   }
-
-// // save the response of the student
-//   const studentResponse = await studentResponse.findOne({
-//     student: studentId,
-//     assessment: testId,
-//   });
-//   const resTopic = studentResponse.response.find(
-//     (topic) => topic._id.toString() === topicId
-//   );
-//   const resQuestion = resTopic.questions.find(
-//     (question) => question._id.toString() === questionId
-//   );
-//   resQuestion.AnswerIndex = response;
-//   await studentResponse.save();
-
-//   await student.save();
-
-//   // if(assessment.marks >= topic % 3){
-//   // await student.save();
-//   // }
-
-//   res.json({
-//     success: true,
-//     message: "Question sent",
-//     data: {
-//       assessment,
-//       student,
-//     },
-//   });
-// });
 
 exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
+  try {
+    
+  
   const { testId, studentId } = req.params;
   const { topicId, questionId, response,questionIndex,topicIndex } = req.body;
 
@@ -499,75 +394,74 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
   await student.save();
 
 
-
-
-  const totalL1Marks = Math.ceil(topic.questions.find(
+  const totalL1Marks = Math.ceil(topic.questions.filter(
     (question) => question.QuestionLevel === 'beginner'
-  ).length);
-  const totalL2Marks = Math.ceil(topic.questions.find(
+).length);
+
+const totalL2Marks = Math.ceil(topic.questions.filter(
     (question) => question.QuestionLevel === 'intermediate'
-  ).length)
-  //  * 2;
-  const totalL3Marks = Math.ceil(topic.questions.find(
+).length);
+
+const totalL3Marks = Math.ceil(topic.questions.filter(
     (question) => question.QuestionLevel === 'advanced'
-  ).length)
-  //  * 3;
+).length);
 
+let nextQuestion = null;
 
-  let nextQuestion = null;
+assessment.currentQuestionIndex = questionIndex;
+assessment.currentTopicIndex = topicIndex;
 
-  assessment.currentQuestionIndex = questionIndex;
-  assessment.currentTopicIndex = topicIndex;
-
-
-
-  if(assessment.topics.length === student.currentTopicIndex){
-    // all topics completed
+if (assessment.assessment.topics.length === student.currentTopicIndex) {
+    // All topics completed
+    console.log("All topics completed");
     assessment.active = false;
-  }
+}
 
-  if(topic.questions.length === student.currentQuestionIndex){
-    // move to next Topic --- student attended all questions l1,l2,l3
-    nextQuestion = topic[topicIndex+1].questions[0];
-  }
+if (topic.questions.length === student.currentQuestionIndex) {
+  console.log("All questions completed 1");
+    // Move to the next topic if the student has answered all questions for the current topic
+    const nextTopicIndex = topicIndex + 1;
+    if (nextTopicIndex < assessment.topics.length) {
+        nextQuestion = assessment.topics[nextTopicIndex].questions[0];
+    }
+}
 
-  if(topic.totalL1Question === currentQuestionIndex && totalL1Marks < topic.L1count){
-    nextQuestion = topic[topicIndex+1].questions[0];
-  }
-
-  if(topic.totalL2Question === currentQuestionIndex && totalL2Marks < topic.L2count){
-    nextQuestion = topic[topicIndex+1].questions[0];
-  }
-  
-
-
-  if(totalL1Marks >= topic.L1count && totalL2Marks >= topic.L2count && totalL3Marks >= topic.L3count){
-    // send next topic L1 questions
-    nextQuestion = topic[topicIndex+1].questions[0];
-
-
-  }
-  else if(totalL1Marks >= topic.L1count){
-    // send  same topic level 2 questions
-    // need to know the index of the next l2 question
-    nextQuestion = topic[topicIndex].questions[topic.totalL1Question+1];
-
-  }
-  else if(totalL2Marks >= topic.L2count){
-    // send same topic  level 3 questions
-  }
-  else if(totalL3Marks >= topic.L3count){
-
-    // send next topic level 1 questions
-
-  }
-  // if total L1 marks reached but not reached total L1 count then send the next topic L1 questions
-  // if total L2 marks reached but not reached total L2 count then send the next topic L1 questions
-  // if total L3 marks reached but not reached total L3 count then send the next topic L1 questions
+if (totalL1Marks >= topic.L1count && totalL2Marks >= topic.L2count && totalL3Marks >= topic.L3count) {
+  console.log("All questions completed 2");
+    // Send the next topic L1 questions if the student has achieved the required marks for all levels
+    const nextTopicIndex = topicIndex + 1;
+    if (nextTopicIndex < assessment.assessment.topics.length) {
+        nextQuestion = assessment.topics[nextTopicIndex].questions[0];
+    }
+} else if (totalL1Marks >= topic.L1count) {
+  console.log("All L1 questions completed ");
+    // Send the same topic level 2 questions if the student has achieved the required marks for level 1
+    const nextQuestionIndex = topic.totalL1Question + 1;
+    if (nextQuestionIndex < topic.questions.length) {
+        nextQuestion = topic.questions[nextQuestionIndex];
+    }
+} else if (totalL2Marks >= topic.L2count) {
+  console.log("All L2 questions completed ");
+    // Send the same topic level 3 questions if the student has achieved the required marks for level 2
+    const nextQuestionIndex =topic.totalL2Question +1;
+if (nextQuestionIndex < topic.questions.length) {
+  nextQuestion = topic.questions[nextQuestionIndex];
+}
+    
+} else if (totalL3Marks >= topic.L3count) {
+  console.log("All L3 questions completed ");
+    // Send the next topic level 1 questions if the student has achieved the required marks for level 3
+    const nextTopicIndex = topicIndex + 1;
+    if (nextTopicIndex < assessment.topics.length) {
+        nextQuestion = assessment.assessment.topics[nextTopicIndex].questions[0];
+    }
+}
 
 
 
-  
+// Return the next question to the client
+// return nextQuestion;
+
 
   // await studentResponse.save();
   res.json({
@@ -577,10 +471,13 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       totalL1Marks,
       totalL2Marks,
       totalL3Marks,
-     }
+     },
+     nextQuestion : nextQuestion
 });
 
-
+} catch (error) {
+    console.log("Error" , error)
+}
 
 });
 
