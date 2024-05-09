@@ -635,7 +635,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 
     // ---------------------------------All topics completed
 
-    if (assessment.assessment.topics.length === student.currentTopicIndex) {
+    if (assessment.assessment.topics.length < student.currentTopicIndex) {
       console.log("All topics completed");
       assessment.active = false;
       //send res
