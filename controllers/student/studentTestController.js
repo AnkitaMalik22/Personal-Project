@@ -11,6 +11,7 @@ const axios = require("axios");
 const cloudinary = require("cloudinary");
 const InvitedStudents = require("../../models/college/student/Invited");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
+const StudentResponse = require("../../models/student/studentResponse");
 
 // student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
 //   email: { type: String },
@@ -170,6 +171,12 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
   // }, timeout * 1000);
 
+  const studentResponse = await StudentResponse.create({
+    studentId: studentId,
+    assessment: testId,
+  });
+
+  await studentResponse.save();
   res.json({
     success: true,
     message: "Assessment started",
@@ -268,5 +275,444 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
 // --------------- send question to student ----------------
 //  send assessment > topic1 > question1
 // get the student response and save it in the  assessment.response.topic1.question1 = response
-// if answer is correct then save the marks in the assessment.marks = marks
-// if student completed 1/3 % of the topic and correct 1/3 % of the question then save the level = 1
+// if answer is correct then save the marks in the assessment.marks += 1
+// if answer is wrong then save the marks of the total marks in the assessment.marks -= 1
+// untill marks reached 1/3 correct rate send the next question if questions end then send the next topic questions level 1
+// if marks   1/3 all correct then send the next level 2 questions of the same topic
+// until level 2 questions mark reached 1/3 correct rate and all level2 ended send the next topic questions level
+// 3 and so on untill all topics ended
+// if all topics ended then send the result of the assessment
+// if the student completed the assessment then save the completedAt date and time
+// if the student completed the assessment then save the percentage of the assessment
+// if the student completed the assessment then save the level of the assessment
+// if the student completed the assessment then save the marks of the assessment
+// if the student completed the assessment then save the assessment as completed
+// if the student completed the assessment then save the assessment as not active
+// if the student completed the assessment then save the assessment as not onGoingAssessment
+// for each question api call the client will send the response of the student
+// if level1 questions can't reach the marks send to next level 1
+
+// exports.sendQuestion = catchAsyncErrors(async (req, res, next) => {
+//   const { testId, studentId } = req.params;
+//   const {topicId, questionId, response} = req.body;
+
+//   // let topicL1marks = 0;
+//   // let topicL2marks = 0;
+//   // let topicL3marks = 0;
+
+//   const student = await CollegeAssessInv.findOne({
+//     student: studentId,
+//     // "assessments.assessment": testId // Include testId in the query
+//   }).populate("assessments.assessment");
+
+//   if (!student) {
+//     return next(new ErrorHandler("Student not found", 404));
+//   }
+
+//   const assessment = student.assessments.find(
+//     (assessment) => assessment._id.toString() === testId
+//   );
+
+//   if (!assessment) {
+//     return next(new ErrorHandler("Test not found", 404));
+//   }
+
+//   const topic = assessment.assessment.topics.find(
+//     (topic) => topic._id.toString() === topicId
+//   );
+//   const totalL1Marks = topic.questions.find(
+//     (question) => question.level === 'beginner'
+//   ).length;
+//   const totalL2Marks = topic.questions.find(
+//     (question) => question.level === 'intermediate'
+//   ).length * 2;
+//   const totalL3Marks = topic.questions.find(
+//     (question) => question.level === 'advanced'
+//   ).length * 3;
+
+//   if (!topic) {
+//     return next(new ErrorHandler("Topic not found", 404));
+//   }
+
+//   const question = topic.questions.find(
+//     (question) => question._id.toString() === questionId
+//   );
+
+//   if (!question) {
+//     return next(new ErrorHandler("Question not found", 404));
+//   }
+
+//   if(question.AnswerIndex === response){
+//     assessment.marks += 1;
+//   }
+//   else{
+//     if(assessment.negativeCount === 3){
+//       assessment.marks -= 1;
+//       assessment.negativeCount = 0;
+//     }
+//     else{
+//       assessment.negativeCount += 1;
+//     }
+
+//   }
+
+//   const totalQuestions = assessment.totalQuestionsCount;
+
+// // total L1 correct rate 1/3% then send L2 questions
+
+// if(assessment.marks === totalL1Marks / 3){
+//   assessment.level = 2;
+//   assessment.marks = 0;
+//   assessment.totalL1Marks = totalL1Marks;
+//   await student.save();
+//   }
+
+// // save the response of the student
+//   const studentResponse = await studentResponse.findOne({
+//     student: studentId,
+//     assessment: testId,
+//   });
+//   const resTopic = studentResponse.response.find(
+//     (topic) => topic._id.toString() === topicId
+//   );
+//   const resQuestion = resTopic.questions.find(
+//     (question) => question._id.toString() === questionId
+//   );
+//   resQuestion.AnswerIndex = response;
+//   await studentResponse.save();
+
+//   await student.save();
+
+//   // if(assessment.marks >= topic % 3){
+//   // await student.save();
+//   // }
+
+//   res.json({
+//     success: true,
+//     message: "Question sent",
+//     data: {
+//       assessment,
+//       student,
+//     },
+//   });
+// });
+
+//ankita
+// exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
+//   try {
+
+//     const { testId, studentId } = req.params;
+//     const { topicId, questionId, response, questionIndex, topicIndex } =
+//       req.body;
+//     const student = await CollegeAssessInv.findOne({
+//       student: studentId,
+//     }).populate("assessments.assessment");
+//     if (!student) {
+//       return next(new ErrorHandler("Student not found", 404));
+//     }
+//     const assessment = student.assessments.find(
+//       (assessment) => assessment.assessment._id.toString() === testId
+//     );
+//     if (!assessment) {
+//       return next(new ErrorHandler("Test not found", 404));
+//     } // return res.send(assessment)
+//     const topic = assessment.assessment.topics.find(
+//       (topic) => topic._id.toString() === topicId
+//     );
+//     if (!topic) {
+//       return next(new ErrorHandler("Topic not found", 404));
+//     }
+//     const question = topic.questions.find(
+//       (question) => question._id.toString() === questionId
+//     );
+//     if (!question) {
+//       return next(new ErrorHandler("Question not found", 404));
+//     }
+//     if (question.AnswerIndex === response) {
+//       if (question.QuestionLevel === "beginner") {
+//         assessment.marks += 1;
+//       } else if (question.QuestionLevel === "intermediate") {
+//         assessment.marks += 2;
+//       } else if (question.QuestionLevel === "advanced") {
+//         assessment.marks += 3;
+//       }
+//     } else {
+//       if (assessment.negativeCount === 3) {
+//         assessment.marks -= 1;
+//         assessment.negativeCount = 0;
+//       } else {
+//         assessment.negativeCount += 1;
+//       }
+//     } // Save the student's response
+//     const studentResponse = await StudentResponse.findOneAndUpdate(
+//       {
+//         studentId,
+//         assessmentId: testId,
+//         "topics._id": topicId,
+//         "topics.questions._id": questionId,
+//       },
+//       {
+//         $set: {
+//           "topics.$.questions.$[ques].AnswerIndex": response,
+//         },
+//       },
+//       {
+//         arrayFilters: [{ "ques._id": questionId }],
+//         new: true,
+//       }
+//     ); // Check if the assessment needs to move to the next level
+//     if (assessment.marks === topic.questions.length / 3) {
+//       // Move to the next level
+//       assessment.level += 1;
+//       assessment.marks = 0;
+//     }
+//     await student.save();
+//     const totalL1Marks = Math.ceil(
+//       topic.questions.filter(
+//         (question) => question.QuestionLevel === "beginner"
+//       ).length
+//     );
+//     const totalL2Marks = Math.ceil(
+//       topic.questions.filter(
+//         (question) => question.QuestionLevel === "intermediate"
+//       ).length
+//     );
+//     const totalL3Marks = Math.ceil(
+//       topic.questions.filter(
+//         (question) => question.QuestionLevel === "advanced"
+//       ).length
+//     );
+//     let nextQuestion = null;
+//     assessment.currentQuestionIndex = questionIndex;
+//     assessment.currentTopicIndex = topicIndex;
+//     if (assessment.assessment.topics.length === student.currentTopicIndex) {
+//       // All topics completed
+//       console.log("All topics completed");
+//       assessment.active = false;
+//     }
+//     if (topic.questions.length === student.currentQuestionIndex) {
+//       console.log("All questions completed 1");
+//       // Move to the next topic if the student has answered all questions for the current topic
+//       const nextTopicIndex = topicIndex + 1;
+//       if (nextTopicIndex < assessment.topics.length) {
+//         nextQuestion = assessment.topics[nextTopicIndex].questions[0];
+//       }
+//     }
+//     if (
+//       totalL1Marks >= topic.L1count &&
+//       totalL2Marks >= topic.L2count &&
+//       totalL3Marks >= topic.L3count
+//     ) {
+//       console.log("All questions completed 2");
+//       // Send the next topic L1 questions if the student has achieved the required marks for all levels
+//       const nextTopicIndex = topicIndex + 1;
+//       if (nextTopicIndex < assessment.assessment.topics.length) {
+//         nextQuestion = assessment.topics[nextTopicIndex].questions[0];
+//       }
+//     } else if (totalL1Marks >= topic.L1count) {
+//       console.log("All L1 questions completed ");
+//       // Send the same topic level 2 questions if the student has achieved the required marks for level 1
+//       const nextQuestionIndex = topic.totalL1Question + 1;
+//       if (nextQuestionIndex < topic.questions.length) {
+//         nextQuestion = topic.questions[nextQuestionIndex];
+//       }
+//     } else if (totalL2Marks >= topic.L2count) {
+//       console.log("All L2 questions completed ");
+//       // Send the same topic level 3 questions if the student has achieved the required marks for level 2
+//       const nextQuestionIndex = topic.totalL2Question + 1;
+//       if (nextQuestionIndex < topic.questions.length) {
+//         nextQuestion = topic.questions[nextQuestionIndex];
+//       }
+//     } else if (totalL3Marks >= topic.L3count) {
+//       console.log("All L3 questions completed ");
+//       // Send the next topic level 1 questions if the student has achieved the required marks for level 3
+//       const nextTopicIndex = topicIndex + 1;
+//       if (nextTopicIndex < assessment.topics.length) {
+//         nextQuestion =
+//           assessment.assessment.topics[nextTopicIndex].questions[0];
+//       }
+//     } // Return the next question to the client
+//     // return nextQuestion;  // await studentResponse.save();
+//     res.json({
+//       success: true,
+//       message: "Question sent",
+//       data: {
+//         totalL1Marks,
+//         totalL2Marks,
+//         totalL3Marks,
+//       },
+//       nextQuestion: nextQuestion,
+//     });
+//   } catch (error) {
+//     console.log("Error", error);
+//   }
+// });
+
+// sidd333
+
+exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { testId, studentId } = req.params;
+
+    const { topicId, questionId, response } = req.body;
+    const student = await CollegeAssessInv.findOne({
+      student: studentId,
+    }).populate("assessments.assessment");
+    if (!student) {
+      return next(new ErrorHandler("Student not found", 404));
+    }
+    const assessment = student.assessments.find(
+      (assessment) => assessment.assessment._id.toString() === testId
+    );
+
+    const questionIndex = assessment.currentQuestionIndex;
+    const topicIndex = assessment.currentTopicIndex;
+
+    if (!assessment) {
+      return next(new ErrorHandler("Test not found", 404));
+    } // return res.send(assessment)
+    const topic = assessment.assessment.topics[topicIndex];
+    if (!topic) {
+      return next(new ErrorHandler("Topic not found", 404));
+    }
+    //find the question from topic
+    const question = topic.questions[questionIndex];
+    if (!question) {
+      return next(new ErrorHandler("Question not found", 404));
+    }
+
+    //----------------------------------------------------------handle marks -------------------------------------------------------------------------------//
+    if (question.AnswerIndex === response) {
+      if (question.QuestionLevel === "beginner") {
+        assessment.marks += 1;
+        assessment.L1Correct += 1;
+      } else if (question.QuestionLevel === "intermediate") {
+        assessment.marks += 2;
+        assessment.L2Correct += 1;
+      } else if (question.QuestionLevel === "advanced") {
+        assessment.marks += 3;
+        assessment.L3Correct += 1;
+      }
+    } else {
+      if (assessment.negativeCount === 3) {
+        assessment.marks -= 1;
+        assessment.negativeCount = 0;
+      } else {
+        assessment.negativeCount += 1;
+      }
+    }
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------//
+    // Save the student's response
+    // const studentResponse = await StudentResponse.findOneAndUpdate(
+    //   {
+    //     studentId,
+    //     assessmentId: testId,
+    //     "topics._id": topicId,
+    //     "topics.questions.id": questionId,
+    //   },
+    //   {
+    //     $set: {
+    //       "topics.$.questions.$[ques].AnswerIndex": response,
+    //     },
+    //   },
+    //   {
+    //     arrayFilters: [{ "ques.id": questionId }],
+    //     new: true,
+    //   }
+    // );
+    console.log();
+    let nextQuestion = topic.questions[0];
+    assessment.totalQuestionsAttempted += 1;
+
+    //check how many question have been attempted
+    // if (
+    //   assessment.totalQuestionsAttempted > assessment.assessment.totalL1Question
+    // ) {
+    //   // got to next topic
+    //   //if next topic does not exist end test
+    //   assessment.active = false;
+    // }
+
+    // ---------------------------------All topics completed
+
+    if (assessment.assessment.topics.length === student.currentTopicIndex) {
+      console.log("All topics completed");
+      assessment.active = false;
+      //send res
+    }
+    //--------------------------------------------------------------------------------------------
+
+    //-----------------check if student has attempted all questions from current topic --------------
+    if (
+      assessment.totalQuestionsAttempted > assessment.assessment.totalL1Question
+    ) {
+      console.log("All questions completed 1");
+      // Move to the next topic if the student has answered all questions for the current topic
+      const nextTopicIndex = topicIndex + 1;
+      if (nextTopicIndex < assessment.topics.length) {
+        nextQuestion = assessment.topics[nextTopicIndex].questions[0];
+        assessment.totalQuestionsAttempted = 0;
+        assessment.currentQuestionIndex = 0;
+      }
+    }
+    //------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+
+    // if (
+    //   totalL1Marks >= topic.L1count &&
+    //   totalL2Marks >= topic.L2count &&
+    //   totalL3Marks >= topic.L3count
+    // ) {
+    //   console.log("All questions completed 2");
+    //   // Send the next topic L1 questions if the student has achieved the required marks for all levels
+    //   const nextTopicIndex = topicIndex + 1;
+    //   if (nextTopicIndex < assessment.assessment.topics.length) {
+    //     nextQuestion = assessment.topics[nextTopicIndex].questions[0];
+    //   }
+    // } else
+    if (assessment.L1Correct >= topic.L1count) {
+      console.log("All L1 questions completed ");
+      // Send the same topic level 2 questions if the student has achieved the required marks for level 1
+      const nextQuestionIndex = topic.totalL1Question + 1;
+      if (nextQuestionIndex < topic.questions.length) {
+        nextQuestion = topic.questions[nextQuestionIndex];
+      }
+      assessment.currentQuestionIndex = nextQuestionIndex;
+    } else if (assessment.L2Correct >= topic.L2count) {
+      console.log("All L2 questions completed ");
+      // Send the same topic level 3 questions if the student has achieved the required marks for level 2
+      const nextQuestionIndex = topic.totalL2Question + 1;
+      if (nextQuestionIndex < topic.questions.length) {
+        nextQuestion = topic.questions[nextQuestionIndex];
+        assessment.currentQuestionIndex = nextQuestionIndex;
+      }
+    } else if (assessment.L3Correct >= topic.L3count) {
+      console.log("All L3 questions completed ");
+      // Send the next topic level 1 questions if the student has achieved the required marks for level 3
+      const nextTopicIndex = topicIndex + 1;
+      if (nextTopicIndex < assessment.topics.length) {
+        nextQuestion =
+          assessment.assessment.topics[nextTopicIndex].questions[0];
+        assessment.currentQuestionIndex = questionIndex + 1;
+      }
+    } else {
+      nextQuestion = topic.questions[questionIndex + 1];
+      assessment.currentQuestionIndex = questionIndex + 1;
+    }
+
+    // Return the next question to the client
+    // return nextQuestion;  // await studentResponse.save();
+
+    await student.save();
+    res.json({
+      success: true,
+      message: "Question sent",
+
+      questionIndex: questionIndex,
+      nextQuestion: nextQuestion,
+    });
+  } catch (error) {
+    console.log("Error", error);
+  }
+});
