@@ -45,6 +45,14 @@ const collegeAssessInvSchema = new mongoose.Schema({
         type: Number,
         default: 0
       },
+      currentTopicIndex :{
+        type: Number,
+        default: 0
+      },
+      currentQuestionIndex:{
+        type: Number,
+        default: 0
+      }
       
       
     },

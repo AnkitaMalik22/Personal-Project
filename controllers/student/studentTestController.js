@@ -522,7 +522,29 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 
   let nextQuestion = null;
 
+  assessment.currentQuestionIndex = questionIndex;
+  assessment.currentTopicIndex = topicIndex;
 
+
+
+  if(assessment.topics.length === student.currentTopicIndex){
+    // all topics completed
+    assessment.active = false;
+  }
+
+  if(topic.questions.length === student.currentQuestionIndex){
+    // move to next Topic --- student attended all questions l1,l2,l3
+    nextQuestion = topic[topicIndex+1].questions[0];
+  }
+
+  if(topic.totalL1Question === currentQuestionIndex && totalL1Marks < topic.L1count){
+    nextQuestion = topic[topicIndex+1].questions[0];
+  }
+
+  if(topic.totalL2Question === currentQuestionIndex && totalL2Marks < topic.L2count){
+    nextQuestion = topic[topicIndex+1].questions[0];
+  }
+  
 
 
   if(totalL1Marks >= topic.L1count && totalL2Marks >= topic.L2count && totalL3Marks >= topic.L3count){
@@ -534,7 +556,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
   else if(totalL1Marks >= topic.L1count){
     // send  same topic level 2 questions
     // need to know the index of the next l2 question
-    nextQuestion = topic[topicIndex].questions[questionIndex+1];
+    nextQuestion = topic[topicIndex].questions[topic.totalL1Question+1];
 
   }
   else if(totalL2Marks >= topic.L2count){

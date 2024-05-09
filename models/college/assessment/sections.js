@@ -114,6 +114,8 @@ compiler:[
 ],
 
 // -------------------------------------------------------- student test requirements---------
+
+// Count -> the students have to attend min L1count,l2count... questions correctly 
   L1count: {
     type: Number,
     default: 0,
