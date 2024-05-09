@@ -89,6 +89,8 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     createdBy: id,
     // college: id,
     // company: id,
+    startDate: req.body.startDate,
+    endDate: req.body.endDate,
     totalQuestionsCount: req.body.totalQuestions,
     totalTime: req.body.totalDuration,
     createdByCompany,
