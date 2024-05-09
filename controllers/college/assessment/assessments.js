@@ -82,10 +82,37 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   // calculate the total sections duration == test duration
   const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
 
+
+  
+let newTopics = topics.map((topic) => {
+  const L1count =Math.ceil( topic.questions.filter(
+    (question) => question.QuestionLevel === 'beginner'
+  ).length/3)
+  const L2count = Math.ceil(topic.questions.filter(
+    (question) => question.QuestionLevel === 'intermediate'
+  ).length /2)
+  const L3count = Math.ceil(
+    topic.questions.filter(
+      (question) => question.QuestionLevel === 'advanced'
+    ).length
+  )
+
+  return {
+    ...topic,
+   L1count,
+    L2count,
+    L3count,
+  };
+});
+
+    
+
+
   // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
 
   let assessment = await Assessments.create({
     ...req.body,
+    topics: newTopics,
     createdBy: id,
     // college: id,
     // company: id,
@@ -120,6 +147,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
   res.status(201).json({
     success: true,
     assessment,
+    newTopics,
   });
 });
 

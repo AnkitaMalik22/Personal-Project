@@ -25,7 +25,8 @@ const collegeAssessInvSchema = new mongoose.Schema({
         type: Number
       },
       marks :{
-        type: Number
+        type: Number,
+        default: 0
       },
       negativeCount:{
         type : Number,
@@ -40,6 +41,11 @@ const collegeAssessInvSchema = new mongoose.Schema({
       L3marks:{
         type: Number
       },
+      attempts :{
+        type: Number,
+        default: 0
+      },
+      
       
     },
   ],

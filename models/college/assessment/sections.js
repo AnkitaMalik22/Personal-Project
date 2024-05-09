@@ -113,9 +113,39 @@ compiler:[
   }
 ],
 
-// --------------------------------------------------------
-  
+// -------------------------------------------------------- student test requirements---------
+  L1count: {
+    type: Number,
+    default: 0,
+  },
+  L2count: {
+    type: Number,
+    default: 0,
+  },
+  L3count: {
+    type: Number,
+    default: 0,
+  },
 
+  totalL1Question:{
+    type: Number,
+    default: 0,
+  },
+  totalL2Question : {
+    type: Number,
+    default: 0,
+  },
+  totalL3Question :{
+    type: Number,
+    default: 0,
+  },
+
+  
+  // negativeCount: {
+  //   type: Number,
+  //   default: 0,
+  // },
+// --------------------------------------------------------------------------------------------
 
     // if this is an college assessment -section
     college: {
