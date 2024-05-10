@@ -12,6 +12,6 @@ const router = require("express").Router();
 
 router.get("/", isAuthenticatedStudent, getTestsForStudent);
 router.get("/:testId", isAuthenticatedStudent, getTestDetailsForStudent);
-router.get('/response/:testId/:studentId',sendResponse);
+router.get("/response/:testId/:studentId", sendResponse);
 
 module.exports = router;
