@@ -331,15 +331,15 @@ exports.getFilteredJobs = async (req, res, next) => {
     let query = {};
 
     if (req.query.seniorityLevel) {
-      query.SeniorityLevel = req.query.seniorityLevel;
+      query.SeniorityLevel = { $in: req.query.seniorityLevel };
     }
 
     if (req.query.location) {
-      query.JobLocation = req.query.location;
+      query.JobLocation = { $in: req.query.location };
     }
 
     if (req.query.employmentType) {
-      query.EmploymentType = req.query.employmentType;
+      query.EmploymentType = { $in: req.query.employmentType };
     }
 
     if (req.query.minSalary && req.query.maxSalary) {

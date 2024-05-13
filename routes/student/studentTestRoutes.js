@@ -1,6 +1,4 @@
-const {
-  sendResponse,
-} = require("../../controllers/student/studentTestController");
+const { sendResponse } = require('../../controllers/student/studentTestController');
 const {
   getTestDetailsForStudent,
   getTestsForStudent,
