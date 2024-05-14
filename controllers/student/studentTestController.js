@@ -140,65 +140,86 @@ exports.getTestDetailsForStudent = catchAsyncErrors(async (req, res, next) => {
 // });
 
 exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
-  const { testId, studentId, timeout } = req.params;
+  try {
+    const { testId, timeout } = req.params;
+    const { adaptive } = req.query;
+    const studentId = req.user.id;
+    console.log("test:" + testId + "student:" + studentId);
 
-  const student = await CollegeAssessInv.findOne({
-    student: studentId,
-    // "assessments.assessment": testId // Include testId in the query
-  }).populate("assessments.assessment");
+    const student = await CollegeAssessInv.findOne({
+      student: studentId,
+      // "assessments.assessment": testId // Include testId in the query
+    }).populate("assessments.assessment");
 
-  if (!student) {
-    return next(new ErrorHandler("Student not found", 404));
+    if (!student) {
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    const assessment = student.assessments.find(
+      (assessment) => assessment?.assessment?._id?.toString() === testId
+    );
+    console.log(assessment);
+
+    if (!assessment) {
+      return next(new ErrorHandler("Test not found", 404));
+    }
+
+    if (student.active) {
+      return next(new ErrorHandler("Assessment already started", 404));
+    }
+
+    student.OnGoingAssessment = testId;
+    assessment.active = true;
+    assessment.startedAt = Date.now();
+
+    await student.save();
+
+    // // Simulate a timeout
+    // setTimeout(() => {
+    //   student.OnGoingAssessment = null;
+    //   student.active = false;
+    //   student.completed = true;
+    //   student.completedAt = Date.now();
+    //   student.save();
+
+    //   res.status(200).json({ message: "Test Timeout completed" });
+
+    // }, timeout * 1000);
+
+    const studentResponse = await StudentResponse.create({
+      studentId: studentId,
+      assessmentId: testId,
+      topics: assessment.assessment.topics,
+    });
+
+    // await studentResponse.save();
+
+    // send the first question
+
+    if (adaptive) {
+      res.json({
+        success: true,
+        message: "Assessment started",
+        count: 1,
+        topic: { ...assessment.assessment.topics[0], questions: [] },
+        firstQuestion: assessment.assessment.topics[0].questions[0],
+        // studentResponse
+      });
+    } else {
+      res.json({
+        success: true,
+        message: "Assessment started",
+        data: {
+          assessment,
+          student,
+        },
+
+        // studentResponse
+      });
+    }
+  } catch (error) {
+    console.log(error);
   }
-
-  const assessment = student.assessments.find(
-    (assessment) => assessment._id.toString() === testId
-  );
-
-  if (!assessment) {
-    return next(new ErrorHandler("Test not found", 404));
-  }
-
-  if (student.active) {
-    return next(new ErrorHandler("Assessment already started", 404));
-  }
-
-  student.OnGoingAssessment = testId;
-  student.active = true;
-  student.startedAt = Date.now();
-
-  await student.save();
-
-  // // Simulate a timeout
-  // setTimeout(() => {
-  //   student.OnGoingAssessment = null;
-  //   student.active = false;
-  //   student.completed = true;
-  //   student.completedAt = Date.now();
-  //   student.save();
-
-  //   res.status(200).json({ message: "Test Timeout completed" });
-
-  // }, timeout * 1000);
-
-  const studentResponse = await StudentResponse.create({
-    studentId: studentId,
-    assessment: testId,
-  });
-
-  await studentResponse.save();
-
-  // send the first question
-
-  res.json({
-    success: true,
-    message: "Assessment started",
-    data: {
-      assessment,
-      student,
-    },
-    firstQuestion: assessment.topics[0].questions[0],
-  });
 });
 
 exports.endTestAfterTimeout = catchAsyncErrors(async (req, res, next) => {
@@ -269,11 +290,17 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Assessment already started", 404));
   }
 
-  student.OnGoingAssessment = null;
-  student.active = false;
-  student.completed = true;
+  assessment.OnGoingAssessment = null;
+  assessment.active = false;
+  assessment.completed = true;
   student.completedAt = Date.now();
+  assessment.currentQuestionIndex = 0;
+  assessment.currentTopicIndex = 0;
+  assessment.totalQuestionsAttempted = 0;
 
+  assessment.L1Correct = 0;
+  assessment.L2Correct = 0;
+  assessment.L3Correct = 0;
   await student.save();
 
   res.json({
@@ -286,298 +313,33 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-// --------------- send question to student ----------------
-//  send assessment > topic1 > question1
-// get the student response and save it in the  assessment.response.topic1.question1 = response
-// if answer is correct then save the marks in the assessment.marks += 1
-// if answer is wrong then save the marks of the total marks in the assessment.marks -= 1
-// untill marks reached 1/3 correct rate send the next question if questions end then send the next topic questions level 1
-// if marks   1/3 all correct then send the next level 2 questions of the same topic
-// until level 2 questions mark reached 1/3 correct rate and all level2 ended send the next topic questions level
-// 3 and so on untill all topics ended
-// if all topics ended then send the result of the assessment
-// if the student completed the assessment then save the completedAt date and time
-// if the student completed the assessment then save the percentage of the assessment
-// if the student completed the assessment then save the level of the assessment
-// if the student completed the assessment then save the marks of the assessment
-// if the student completed the assessment then save the assessment as completed
-// if the student completed the assessment then save the assessment as not active
-// if the student completed the assessment then save the assessment as not onGoingAssessment
-// for each question api call the client will send the response of the student
-// if level1 questions can't reach the marks send to next level 1
+// =============================================== ADAPTIVE || SEND STUDENT RESPONSE AND GET NEXT QUESTION ==============================
 
-// exports.sendQuestion = catchAsyncErrors(async (req, res, next) => {
-//   const { testId, studentId } = req.params;
-//   const {topicId, questionId, response} = req.body;
-
-//   // let topicL1marks = 0;
-//   // let topicL2marks = 0;
-//   // let topicL3marks = 0;
-
-//   const student = await CollegeAssessInv.findOne({
-//     student: studentId,
-//     // "assessments.assessment": testId // Include testId in the query
-//   }).populate("assessments.assessment");
-
-//   if (!student) {
-//     return next(new ErrorHandler("Student not found", 404));
-//   }
-
-//   const assessment = student.assessments.find(
-//     (assessment) => assessment._id.toString() === testId
-//   );
-
-//   if (!assessment) {
-//     return next(new ErrorHandler("Test not found", 404));
-//   }
-
-//   const topic = assessment.assessment.topics.find(
-//     (topic) => topic._id.toString() === topicId
-//   );
-//   const totalL1Marks = topic.questions.find(
-//     (question) => question.level === 'beginner'
-//   ).length;
-//   const totalL2Marks = topic.questions.find(
-//     (question) => question.level === 'intermediate'
-//   ).length * 2;
-//   const totalL3Marks = topic.questions.find(
-//     (question) => question.level === 'advanced'
-//   ).length * 3;
-
-//   if (!topic) {
-//     return next(new ErrorHandler("Topic not found", 404));
-//   }
-
-//   const question = topic.questions.find(
-//     (question) => question._id.toString() === questionId
-//   );
-
-//   if (!question) {
-//     return next(new ErrorHandler("Question not found", 404));
-//   }
-
-//   if(question.AnswerIndex === response){
-//     assessment.marks += 1;
-//   }
-//   else{
-//     if(assessment.negativeCount === 3){
-//       assessment.marks -= 1;
-//       assessment.negativeCount = 0;
-//     }
-//     else{
-//       assessment.negativeCount += 1;
-//     }
-
-//   }
-
-//   const totalQuestions = assessment.totalQuestionsCount;
-
-// // total L1 correct rate 1/3% then send L2 questions
-
-// if(assessment.marks === totalL1Marks / 3){
-//   assessment.level = 2;
-//   assessment.marks = 0;
-//   assessment.totalL1Marks = totalL1Marks;
-//   await student.save();
-//   }
-
-// // save the response of the student
-//   const studentResponse = await studentResponse.findOne({
-//     student: studentId,
-//     assessment: testId,
-//   });
-//   const resTopic = studentResponse.response.find(
-//     (topic) => topic._id.toString() === topicId
-//   );
-//   const resQuestion = resTopic.questions.find(
-//     (question) => question._id.toString() === questionId
-//   );
-//   resQuestion.AnswerIndex = response;
-//   await studentResponse.save();
-
-//   await student.save();
-
-//   // if(assessment.marks >= topic % 3){
-//   // await student.save();
-//   // }
-
-//   res.json({
-//     success: true,
-//     message: "Question sent",
-//     data: {
-//       assessment,
-//       student,
-//     },
-//   });
-// });
-
-//ankita
-// exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
-//   try {
-
-//     const { testId, studentId } = req.params;
-//     const { topicId, questionId, response, questionIndex, topicIndex } =
-//       req.body;
-//     const student = await CollegeAssessInv.findOne({
-//       student: studentId,
-//     }).populate("assessments.assessment");
-//     if (!student) {
-//       return next(new ErrorHandler("Student not found", 404));
-//     }
-//     const assessment = student.assessments.find(
-//       (assessment) => assessment.assessment._id.toString() === testId
-//     );
-//     if (!assessment) {
-//       return next(new ErrorHandler("Test not found", 404));
-//     } // return res.send(assessment)
-//     const topic = assessment.assessment.topics.find(
-//       (topic) => topic._id.toString() === topicId
-//     );
-//     if (!topic) {
-//       return next(new ErrorHandler("Topic not found", 404));
-//     }
-//     const question = topic.questions.find(
-//       (question) => question._id.toString() === questionId
-//     );
-//     if (!question) {
-//       return next(new ErrorHandler("Question not found", 404));
-//     }
-//     if (question.AnswerIndex === response) {
-//       if (question.QuestionLevel === "beginner") {
-//         assessment.marks += 1;
-//       } else if (question.QuestionLevel === "intermediate") {
-//         assessment.marks += 2;
-//       } else if (question.QuestionLevel === "advanced") {
-//         assessment.marks += 3;
-//       }
-//     } else {
-//       if (assessment.negativeCount === 3) {
-//         assessment.marks -= 1;
-//         assessment.negativeCount = 0;
-//       } else {
-//         assessment.negativeCount += 1;
-//       }
-//     } // Save the student's response
-//     const studentResponse = await StudentResponse.findOneAndUpdate(
-//       {
-//         studentId,
-//         assessmentId: testId,
-//         "topics._id": topicId,
-//         "topics.questions._id": questionId,
-//       },
-//       {
-//         $set: {
-//           "topics.$.questions.$[ques].AnswerIndex": response,
-//         },
-//       },
-//       {
-//         arrayFilters: [{ "ques._id": questionId }],
-//         new: true,
-//       }
-//     ); // Check if the assessment needs to move to the next level
-//     if (assessment.marks === topic.questions.length / 3) {
-//       // Move to the next level
-//       assessment.level += 1;
-//       assessment.marks = 0;
-//     }
-//     await student.save();
-//     const totalL1Marks = Math.ceil(
-//       topic.questions.filter(
-//         (question) => question.QuestionLevel === "beginner"
-//       ).length
-//     );
-//     const totalL2Marks = Math.ceil(
-//       topic.questions.filter(
-//         (question) => question.QuestionLevel === "intermediate"
-//       ).length
-//     );
-//     const totalL3Marks = Math.ceil(
-//       topic.questions.filter(
-//         (question) => question.QuestionLevel === "advanced"
-//       ).length
-//     );
-//     let nextQuestion = null;
-//     assessment.currentQuestionIndex = questionIndex;
-//     assessment.currentTopicIndex = topicIndex;
-//     if (assessment.assessment.topics.length === student.currentTopicIndex) {
-//       // All topics completed
-//       console.log("All topics completed");
-//       assessment.active = false;
-//     }
-//     if (topic.questions.length === student.currentQuestionIndex) {
-//       console.log("All questions completed 1");
-//       // Move to the next topic if the student has answered all questions for the current topic
-//       const nextTopicIndex = topicIndex + 1;
-//       if (nextTopicIndex < assessment.topics.length) {
-//         nextQuestion = assessment.topics[nextTopicIndex].questions[0];
-//       }
-//     }
-//     if (
-//       totalL1Marks >= topic.L1count &&
-//       totalL2Marks >= topic.L2count &&
-//       totalL3Marks >= topic.L3count
-//     ) {
-//       console.log("All questions completed 2");
-//       // Send the next topic L1 questions if the student has achieved the required marks for all levels
-//       const nextTopicIndex = topicIndex + 1;
-//       if (nextTopicIndex < assessment.assessment.topics.length) {
-//         nextQuestion = assessment.topics[nextTopicIndex].questions[0];
-//       }
-//     } else if (totalL1Marks >= topic.L1count) {
-//       console.log("All L1 questions completed ");
-//       // Send the same topic level 2 questions if the student has achieved the required marks for level 1
-//       const nextQuestionIndex = topic.totalL1Question + 1;
-//       if (nextQuestionIndex < topic.questions.length) {
-//         nextQuestion = topic.questions[nextQuestionIndex];
-//       }
-//     } else if (totalL2Marks >= topic.L2count) {
-//       console.log("All L2 questions completed ");
-//       // Send the same topic level 3 questions if the student has achieved the required marks for level 2
-//       const nextQuestionIndex = topic.totalL2Question + 1;
-//       if (nextQuestionIndex < topic.questions.length) {
-//         nextQuestion = topic.questions[nextQuestionIndex];
-//       }
-//     } else if (totalL3Marks >= topic.L3count) {
-//       console.log("All L3 questions completed ");
-//       // Send the next topic level 1 questions if the student has achieved the required marks for level 3
-//       const nextTopicIndex = topicIndex + 1;
-//       if (nextTopicIndex < assessment.topics.length) {
-//         nextQuestion =
-//           assessment.assessment.topics[nextTopicIndex].questions[0];
-//       }
-//     } // Return the next question to the client
-//     // return nextQuestion;  // await studentResponse.save();
-//     res.json({
-//       success: true,
-//       message: "Question sent",
-//       data: {
-//         totalL1Marks,
-//         totalL2Marks,
-//         totalL3Marks,
-//       },
-//       nextQuestion: nextQuestion,
-//     });
-//   } catch (error) {
-//     console.log("Error", error);
-//   }
-// });
-
-// sidd333
+// route  :/api/student/test/response/:testId
+// method :get
 
 exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { testId, studentId } = req.params;
-
-    const { topicId, questionId, response } = req.body;
+    const { testId } = req.params;
+    const { response } = req.body;
+    const studentId = req.user.id;
     const student = await CollegeAssessInv.findOne({
       student: studentId,
     }).populate("assessments.assessment");
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+
     const assessment = student.assessments.find(
-      (assessment) => assessment.assessment._id.toString() === testId
+      (assessment) => assessment.assessment?._id.toString() === testId
     );
+
+    // ------------------- assessment started  or not ---------------------
+
+    if (!assessment.active) {
+      return next(new ErrorHandler("Assessment not started", 404));
+    }
+    // ---------------------------------------------------------------------
 
     const questionIndex = assessment.currentQuestionIndex;
     const topicIndex = assessment.currentTopicIndex;
@@ -585,31 +347,48 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     if (!assessment) {
       return next(new ErrorHandler("Test not found", 404));
     } // return res.send(assessment)
-    const topic = assessment.assessment.topics[topicIndex];
+
+    // ========== IF NO NEXT TOPIC FOUND END THE TEST ==========
+    const topic = assessment.assessment?.topics[topicIndex];
     if (!topic) {
+      assessment.currentTopicIndex = 0;
+      assessment.currentQuestionIndex = 0;
+      assessment.active = false;
+
+      assessment.L1Correct = 0;
+      assessment.L2Correct = 0;
+      assessment.L3Correct = 0;
+      await student.save();
+
       // return next(new ErrorHandler("Topic not found", 404));
       return res.json({
         success: true,
         message: "Test Completed",
       });
     }
+    // ==========================================================
     //find the question from topic
     const question = topic.questions[questionIndex];
+    console.log(questionIndex);
     if (!question) {
       return next(new ErrorHandler("Question not found", 404));
     }
 
     //----------------------------------------------------------handle marks -------------------------------------------------------------------------------//
     if (question.AnswerIndex === response) {
+      console.log("Correct Answer");
       if (question.QuestionLevel === "beginner") {
         assessment.marks += 1;
         assessment.L1Correct += 1;
+        console.log("L1 correct", assessment.L1Correct);
       } else if (question.QuestionLevel === "intermediate") {
         assessment.marks += 2;
         assessment.L2Correct += 1;
+        console.log("L2 correct", assessment.L2Correct);
       } else if (question.QuestionLevel === "advanced") {
         assessment.marks += 3;
         assessment.L3Correct += 1;
+        console.log("L3 correct", assessment.L3Correct);
       }
     } else {
       if (assessment.negativeCount === 3) {
@@ -651,26 +430,37 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //   assessment.active = false;
     // }
 
-    // ---------------------------------All topics completed
-
-    //--------------------------------------------------------------------------------------------
+    // ---------------------------------      All topics completed ----------------------------------------------------------------------------------------
 
     //-----------------check if student has attempted all questions from current topic --------------
-    if (assessment.totalQuestionsAttempted > topic.totalL1Question) {
+    let check = false;
+    // totalL1question = l1correct + l2correct + l3correct
+    if (assessment.totalQuestionsAttempted >= topic.totalL1Question) {
       console.log(
-        "All questions completed 1",
+        "All questions completed ",
         assessment.totalQuestionsAttempted,
         topic.totalL1Question
       );
       // Move to the next topic if the student has answered all questions for the current topic
       const nextTopicIndex = topicIndex + 1;
-      if (nextTopicIndex < assessment.assessment.topics.length) {
+      if (nextTopicIndex < assessment.assessment?.topics.length) {
         nextQuestion =
-          assessment.assessment.topics[nextTopicIndex].questions[0];
+          assessment.assessment?.topics[nextTopicIndex].questions[0];
       }
       assessment.totalQuestionsAttempted = 0;
       assessment.currentQuestionIndex = 0;
-      assessment.currentTopicIndex += 1;
+      console.log("currentTopicIndex before", nextTopicIndex);
+      assessment.currentTopicIndex = nextTopicIndex;
+
+      console.log("currentTopicIndex after", assessment.currentTopicIndex);
+
+      // ----------------------
+      assessment.L1Correct = 0;
+      assessment.L2Correct = 0;
+      assessment.L3Correct = 0;
+      check = true; // reset the L1, L2, L3 correct count
+
+      // ----------------------------
     }
 
     //------------------------------------------------------------------------------------------------------
@@ -685,19 +475,6 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     }
     //------------------------------------------------------------------------------------------------------
 
-    // if (
-    //   totalL1Marks >= topic.L1count &&
-    //   totalL2Marks >= topic.L2count &&
-    //   totalL3Marks >= topic.L3count
-    // ) {
-    //   console.log("All questions completed 2");
-    //   // Send the next topic L1 questions if the student has achieved the required marks for all levels
-    //   const nextTopicIndex = topicIndex + 1;
-    //   if (nextTopicIndex < assessment.assessment.topics.length) {
-    //     nextQuestion = assessment.topics[nextTopicIndex].questions[0];
-    //   }
-    // } else
-
     if (
       assessment.L1Correct >= topic.L1count &&
       assessment.L2Correct < topic.L2count &&
@@ -711,14 +488,15 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       }
       assessment.currentQuestionIndex = nextQuestionIndex;
     } else if (
+      assessment.L1Correct >= topic.L1count &&
       assessment.L2Correct >= topic.L2count &&
       assessment.L3Correct < topic.L3count
     ) {
       console.log("All L2 questions completed ");
       // Send the same topic level 3 questions if the student has achieved the required marks for level 2
-      const nextQuestionIndex =
-        topic.totalL1Question + topic.totalL2Question + 1;
-      if (nextQuestionIndex < topic.questions.length) {
+      const nextQuestionIndex = topic.totalL1Question + topic.totalL2Question;
+      if (nextQuestionIndex <= topic.questions.length) {
+        console.log("Next question index", nextQuestionIndex);
         nextQuestion = topic.questions[nextQuestionIndex];
         assessment.currentQuestionIndex = nextQuestionIndex;
       }
@@ -729,9 +507,36 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       if (nextTopicIndex < assessment.assessment.topics.length) {
         nextQuestion =
           assessment.assessment.topics[nextTopicIndex].questions[0];
-        assessment.currentQuestionIndex = questionIndex + 1;
+        assessment.currentQuestionIndex = 0;
+        assessment.currentTopicIndex = nextTopicIndex;
+        assessment.totalQuestionsAttempted = 0;
+
+        assessment.L1Correct = 0;
+        assessment.L2Correct = 0;
+        assessment.L3Correct = 0;
+
+        console.log("Next topic index l3", nextTopicIndex);
       }
-    } else {
+      if (nextTopicIndex === assessment.assessment.topics.length) {
+        assessment.currentQuestionIndex = 0;
+        assessment.currentTopicIndex = 0;
+        assessment.totalQuestionsAttempted = 0;
+
+        assessment.L1Correct = 0;
+        assessment.L2Correct = 0;
+        assessment.L3Correct = 0;
+        assessment.active = false;
+        await student.save();
+
+        console.log("All topics completed");
+        return res.json({
+          success: true,
+          message: "Test Completed",
+        });
+      }
+    } else if (!check) {
+      //Check if topic switched or not
+      console.log("Next question");
       nextQuestion = topic.questions[questionIndex + 1];
       assessment.currentQuestionIndex = questionIndex + 1;
       console.log(assessment.currentQuestionIndex, questionIndex);
@@ -740,15 +545,88 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // Return the next question to the client
     // return nextQuestion;  // await studentResponse.save();
 
+    // question with no correct
+
+    // ======================================== STUDENT RESPONSE ==========================================
+    //FIND THE STUDENT RESPONSE
+    const studentResponse = await StudentResponse.findOne({
+      studentId: studentId,
+      assessmentId: testId,
+    });
+
+    // UPDATE THE STUDENT RESPONSE
+    studentResponse.topics[topicIndex].questions[
+      questionIndex
+    ].StudentAnswerIndex = response;
+
+    // for showing result to student -- show attemted=== true questions
+    studentResponse.topics[topicIndex].questions[
+      questionIndex
+    ].attempted = true;
+
+    console.log(
+      studentResponse.topics[topicIndex].questions[questionIndex]
+        .StudentAnswerIndex
+    );
+
+    await studentResponse.save();
+    // console.log(studentResponse);
+
+    // NOTE : SEND RESULT BY REMOVING QUESTIONS THAT HAS NO STUDENT ANS INDEX AS THE STUDENT HAS'NT ATTEMPTED
+
+    // ==========================| NEXT QUESTION CORRECT ANS REMOVE |========================================
+    nextQuestion = { ...nextQuestion, AnswerIndex: null };
+
     await student.save();
+    // ================================================== RESPONSE ==========================================
     res.json({
+      count: questionIndex + 1,
       success: true,
       message: "Question sent",
       questionIndex: questionIndex,
       nextQuestion: nextQuestion,
-      topic: topic.Heading,
+      topic: { Heading: topic.Heading, Type: topic.Type },
+      studentResponse:
+        studentResponse.topics[topicIndex].questions[questionIndex],
     });
+    // ==================================================================================================
   } catch (error) {
     console.log("Error", error);
   }
+});
+
+// ===============================================  NON ADAPTIVE || SEND STUDENT RESPONSE AND GET NEXT QUESTION ==============================
+
+// ================ get student result ===================
+
+exports.getStudentResult = catchAsyncErrors(async (req, res, next) => {
+  const { testId, studentId } = req.params;
+
+  const student = await StudentResponse.findOne({
+    studentId,
+    assessmentId: testId,
+  });
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  const response = student.topics.map((topic) => {
+    return topic.questions
+      .filter((question) => question.attempted === true)
+      .map((question) => {
+        return {
+          question: question.Title,
+          correctAnswer: question.AnswerIndex,
+          studentAnswer: question.StudentAnswerIndex,
+          marks: question.marks,
+        };
+      });
+  });
+
+  res.json({
+    success: true,
+    message: "Student Result",
+    response,
+  });
 });

@@ -24,6 +24,15 @@ const studentResponseSchema = new mongoose.Schema({
           //     ref: 'Question',
           //     // required: [true, 'Please enter question id']
           // },
+          id: {
+            type: String,
+            // required:true
+          },
+          QuestionLevel: {
+            type: String,
+            default: "beginner",
+            enum: ["beginner", "intermediate", "advanced"],
+          },
 
           Title: String,
           Options: {
@@ -122,6 +131,11 @@ const studentResponseSchema = new mongoose.Schema({
                 type: Number,
                 // required: [true, 'Please enter student answer index']
               },
+              attempted : {
+                type: Boolean,
+                default: false
+              },
+              
             },
           ],
           VideoLink: String,
