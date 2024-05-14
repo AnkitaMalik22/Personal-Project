@@ -49,6 +49,24 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+
+
+// --------------------------------------------- GET A STUDENT --ID -------------------------------------------------------
+
+exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.params.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    student,
+  });
+});
+
+
 // --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
 
 exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
