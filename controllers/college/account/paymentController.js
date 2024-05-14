@@ -64,8 +64,8 @@ const makePayment =  async (req, res) => {
         payment_method_types: ["card"],
         line_items: lineItems, // Add line_items property
         mode: "payment",
-        success_url: "https://skillaccess.vercel.app/collage/accounting",
-        cancel_url: "https://skillaccess.vercel.app/collage/dashboard",
+        success_url: "https://skillaccess-student.vercel.app/collage/accounting",
+        cancel_url: "https://skillaccess-student.vercel.app/collage/dashboard",
         customer_email: customerEmail,
         ...addressCollectionOptions, // Spread the address collection options
     });

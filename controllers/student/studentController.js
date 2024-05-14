@@ -356,12 +356,38 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
 
   await student.save({ validateBeforeSave: false });
 
+
+  const resetPasswordUrl = `https://skillaccess-student.vercel.app/password/reset/${resetToken}`;
+
+  const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
+
+  try {
+    // Send password reset email
+    await sendEmail({
+      email: student.Email,
+      subject: `Student Password Recovery`,
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Email sent to ${student.Email} successfully`,
+    });
+  } catch (error) {
+    student.resetPasswordToken = undefined;
+    student.resetPasswordExpire = undefined;
+
+    await student.save({ validateBeforeSave: false });
+
+    return next(new ErrorHandler(error.message, 500));
+  }
+
   // Send the reset token to the student's email (implement sendEmail function)
 
-  res.status(200).json({
-    success: true,
-    message: `Password reset token sent to ${student.Email} successfully`,
-  });
+  // res.status(200).json({
+  //   success: true,
+  //   message: `Password reset token sent to ${student.Email} successfully`,
+  // });
 });
 
 //--------------------------------------------- RESET PASSWORD --------------------------------------------------------
