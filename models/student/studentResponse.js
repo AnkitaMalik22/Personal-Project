@@ -11,6 +11,12 @@ const studentResponseSchema = new mongoose.Schema({
     ref: "Assessment",
     // required: [true, 'Please enter assessment id']
   },
+  testType:{
+    type: String,
+    default: "adaptive",
+    enum: ["adaptive", "non-adaptive"],
+
+  },
   topics: [
     {
       Type: String,
