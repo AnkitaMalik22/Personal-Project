@@ -12,6 +12,7 @@ const cloudinary = require("cloudinary");
 const InvitedStudents = require("../../models/college/student/Invited");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
 const StudentResponse = require("../../models/student/studentResponse");
+const Assessments = require("../../models/college/assessment/assessments");
 
 // student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
 //   email: { type: String },
@@ -147,6 +148,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     const assessment = student.assessments.find(
       (assessment) => assessment?.assessment?._id?.toString() === testId
     );
+
+    const  test = await Assessments.findById(testId);
     // console.log(assessment);
 
     if (!assessment) {
@@ -161,7 +164,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     assessment.active = true;
     assessment.startedAt = Date.now();
 
-    await student.save();
+    //  student.studentResponses.push(student._id);
+  
 
     // // Simulate a timeout
     // setTimeout(() => {
@@ -181,6 +185,15 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       topics: assessment.assessment.topics,
       testType: adaptive ? "adaptive" : "non-adaptive",
     });
+
+
+    assessment.response = studentResponse._id;
+    test.studentResponses.push(studentResponse._id);
+
+
+    await test.save();
+
+    await student.save();
 
     // await studentResponse.save();
 
@@ -1022,10 +1035,11 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
 
     await student.save();
     // ----------------------------------------------- SAVE STUDENT RESPONSE ------------------------------------------------
-    const studentResponse = await StudentResponse.findOne({
-      studentId: studentId,
-      assessmentId: testId,
-    });
+    // const studentResponse = await StudentResponse.findOne({
+    //   studentId: studentId,
+    //   assessmentId: testId,
+    // });
+    const studentResponse = await StudentResponse.findById(assessment.response);
    switch (type) {
    case "mcq":
     studentResponse.topics[topicIndex].questions[questionIndex].StudentAnswerIndex = response;
@@ -1121,6 +1135,8 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
 
 exports.getStudentResult = catchAsyncErrors(async (req, res, next) => {
   const { testId, studentId } = req.params;
+
+  // diff student response getting need to find by id 
 
   const student = await StudentResponse.findOne({
     studentId,
@@ -1238,6 +1254,7 @@ response = {...response,
   res.json({
     success: true,
     message: "Student Result",
+    studentResponseId : student._id,
     response,
    
   });
