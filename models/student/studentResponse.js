@@ -11,6 +11,12 @@ const studentResponseSchema = new mongoose.Schema({
     ref: "Assessment",
     // required: [true, 'Please enter assessment id']
   },
+  testType:{
+    type: String,
+    default: "adaptive",
+    enum: ["adaptive", "non-adaptive"],
+
+  },
   topics: [
     {
       Type: String,
@@ -24,6 +30,15 @@ const studentResponseSchema = new mongoose.Schema({
           //     ref: 'Question',
           //     // required: [true, 'Please enter question id']
           // },
+          id: {
+            type: String,
+            // required:true
+          },
+          QuestionLevel: {
+            type: String,
+            default: "beginner",
+            enum: ["beginner", "intermediate", "advanced"],
+          },
 
           Title: String,
           Options: {
@@ -76,6 +91,10 @@ const studentResponseSchema = new mongoose.Schema({
             type: String,
             // required: [true, 'Please enter student answer']
           },
+          marks: {
+            type: Number,
+            default: 0,
+          },
         },
       ],
       video: [
@@ -83,11 +102,20 @@ const studentResponseSchema = new mongoose.Schema({
           Duration: String,
           video: String,
           videoFile: String,
+          // calulate total from client and send
+          marks: {
+            type: Number,
+            default: 0,
+          },
           long: [
             {
               Title: String,
               studentAnswer: String,
               Duration: String,
+              marks: {
+                type: Number,
+                default: 0,
+              }
             },
           ],
           short: [
@@ -95,6 +123,10 @@ const studentResponseSchema = new mongoose.Schema({
               Title: String,
               studentAnswer: String,
               Duration: String,
+              marks: {
+                type: Number,
+                default: 0,
+              }
             },
           ],
           questions: [
@@ -122,6 +154,15 @@ const studentResponseSchema = new mongoose.Schema({
                 type: Number,
                 // required: [true, 'Please enter student answer index']
               },
+              attempted : {
+                type: Boolean,
+                default: false
+              },
+              marks: {
+                type: Number,
+                default: 0,
+              },
+              
             },
           ],
           VideoLink: String,
@@ -140,10 +181,15 @@ const studentResponseSchema = new mongoose.Schema({
       findAnswers: [
         {
           Title: String,
+          marks: {
+            type: Number,
+            default: 0,
+          },
           questions: [
             {
               question: String,
               studentAnswer: String,
+            
             },
           ],
           Duration: String,
