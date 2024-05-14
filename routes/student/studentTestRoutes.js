@@ -1,4 +1,4 @@
-const { sendResponse, startAssessment, sendResponseNonAdaptive } = require('../../controllers/student/studentTestController');
+const { sendResponse, startAssessment, sendResponseNonAdaptive, getStudentResult } = require('../../controllers/student/studentTestController');
 const {
   getTestDetailsForStudent,
   getTestsForStudent,
@@ -15,5 +15,6 @@ router.get("/:testId", isAuthenticatedStudent, getTestDetailsForStudent);
 router.post("/start/:testId/:studentId",isAuthenticatedStudent,startAssessment);
 router.get("/response/:testId/:studentId", sendResponse);
 router.get("/response/non-adaptive/:testId/:studentId", sendResponseNonAdaptive);
+router.get("/result/:testId/:studentId", getStudentResult);
 
 module.exports = router;

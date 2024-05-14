@@ -1021,31 +1021,76 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     // Handle student's response 
 
     await student.save();
-    // ------------
+    // ----------------------------------------------- SAVE STUDENT RESPONSE ------------------------------------------------
     const studentResponse = await StudentResponse.findOne({
       studentId: studentId,
       assessmentId: testId,
     });
-switch (type) {
-  case "mcq":
+   switch (type) {
+   case "mcq":
     studentResponse.topics[topicIndex].questions[questionIndex].StudentAnswerIndex = response;
+    console.log("mcq", studentResponse.topics[topicIndex].questions[questionIndex].StudentAnswerIndex);
     break;
-  case "findAnswer":
+   case "findAnswer":
+    // "response" : [
+    //   {
+        
+    //     "studentAnswer": "The capital of France is Paris"
+    //   },
+    //   {
+       
+    //     "studentAnswer": "The capital of Spain is Madrid"
+    //   }
+    // ]
     studentResponse.topics[topicIndex].findAnswers[questionIndex].questions.forEach((ques, index) => {
       ques.studentAnswer = response[index].studentAnswer;
     });
 
+    console.log("findAnswer", studentResponse.topics[topicIndex].findAnswers[questionIndex].questions);
+
     break;
-  case "essay":
+   case "essay":
+    // "response" : "The capital of France is Paris"
     studentResponse.topics[topicIndex].essay[questionIndex].studentAnswer = response;
     break;
-  case "video":
-    studentResponse.topics[topicIndex].video[questionIndex].long = response.long;
-    studentResponse.topics[topicIndex].video[questionIndex].short = response.short;
-    studentResponse.topics[topicIndex].video[questionIndex].mcq = response.mcq;
+   case "video":
+     // "response" : {
+    //   "long": [
+   //     "The capital of France is Paris",
+    //     "The capital of Spain is Madrid"
+    //   ],
+    //   "short": [
+    //     "The capital of France is Paris",
+    //     "The capital of Spain is Madrid"
+    //   ],
+    //   "mcq": [
+    //     0,
+    //     1
+    //   ]
+      
+    studentResponse.topics[topicIndex].video[questionIndex].long.forEach((long, index) => {
+      // long = response.long[index];
+      long.studentAnswer = response.long[index];
+    });
+    studentResponse.topics[topicIndex].video[questionIndex].short.forEach((short, index) => {
+      short.studentAnswer = response.short[index];
+    })
+    studentResponse.topics[topicIndex].video[questionIndex].questions.forEach((mcq, index) => {
+      mcq.StudentAnswerIndex = response.mcq[index];
+    });
+
 
     break;
   case "compiler":
+    // "response" : [
+    //   {
+    //     "studentOutput": "Hello World"
+    //   },
+    //   {
+    //     "studentOutput": "Hello World"
+    //   }
+    // ]
+
     studentResponse.topics[topicIndex].compiler[questionIndex].testcase.forEach((testcase, index) => {
       testcase.studentOutput = response[index];
     });
@@ -1055,7 +1100,7 @@ switch (type) {
 }
     await studentResponse.save();
   
-    // --------
+    // -----------------------------------------------END  SAVE STUDENT RESPONSE ------------------------------------------------
 
     res.json({
       success: true,
@@ -1072,7 +1117,7 @@ switch (type) {
   }
 });
 
-// ================ get student result ===================
+// ====================================== get student result ===================
 
 exports.getStudentResult = catchAsyncErrors(async (req, res, next) => {
   const { testId, studentId } = req.params;
@@ -1086,27 +1131,186 @@ exports.getStudentResult = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Student not found", 404));
   }
 
-  const response = student.topics.map((topic) => {
-    return topic.questions
-      .filter((question) => question.StudentAnswerIndex !== null)
-      .map((question) => {
+  const isAdaptive = student.testType === "adaptive";
+
+let  response = student.topics.map((topic) => {
+    switch(topic.Type) {
+
+       case "mcq":
         return {
-          question: question.Title,
-          correctAnswer: question.AnswerIndex,
-          studentAnswer: question.StudentAnswerIndex,
-          // marks: question.marks,
-        };
-      });
+          topic: topic.Heading,
+          type: "mcq",
+          questions: topic.questions
+        }
+        break;
+
+        case "findAnswer":
+          return {
+            topic: topic.Heading,
+            type: "findAnswer",
+            questions: topic.findAnswers
+      
+          }
+          break;
+        case "essay":
+          return {
+            topic: topic.Heading,
+            type: "essay",
+            questions: topic.essay
+          }
+          break;
+        case "video":
+          return {
+            topic: topic.Heading,
+            type: "video",
+            questions: topic.video  
+                
+               
+              
+          }
+          break;
+        case "compiler":
+          return {
+            topic: topic.Heading,
+            type: "compiler",
+            questions: topic.compiler
+          }
+          break;
+        default:
+          break;
+      }
+
+   
   });
 
-  // only calculating for mcq questions for now -- in adaptive test
+  // only calculating for mcq questions for now -- in adaptive 
+let mcqMarks = 0;
+let codingMarks = 0;
+let totalMCQandCodingQuestions = 0;
 
+  response.forEach((topic) => {
+    if (topic.type === "mcq") {
+      topic.questions.forEach((question) => {
+        if (question.AnswerIndex === question.StudentAnswerIndex) {
+          mcqMarks += 1;
+        }
+        totalMCQandCodingQuestions += 1;  
+      });
+    } else if (topic.type === "compiler") {
+      topic.questions.forEach((question) => {
+        if (question.testcase.every((testcase) => testcase.studentOutput === testcase.output)) {
+          codingMarks += 1;
+        }
+        totalMCQandCodingQuestions += 1;
+      });
+    }
+  }
+  );
+  // totalMCQandCodingQuestions = 
+  student.totalMarks = mcqMarks + codingMarks;
+
+
+  student.marks = mcqMarks + codingMarks;
+  const percentage = ((mcqMarks + codingMarks) / totalMCQandCodingQuestions) * 100;
+  student.percentage = percentage;
+  student.mcqMarks = mcqMarks;
+  student.codingMarks = codingMarks;
+  // student.totalMarks = totalMCQandCodingQuestions;
+
+  // student.studentResponses.push(student._id);
+  // assessment.studentResponses.push(student._id);
+
+// if(student.avgPercentage ){
+//   assessment.avgPercentage = (assessment.avgPercentage + percentage) / assessment.studentResponses.length;
+//   }
   // if student.testType === adaptive then send this
+
+
+
+response = {...response, 
+  mcqMarks,
+  codingMarks,
+  totalMCQandCodingQuestions,
+  percentage,
+  // student
+};
+
   res.json({
     success: true,
     message: "Student Result",
     response,
+   
   });
 
   // if student.testType === non-adaptive then send this
 });
+
+
+// ============================================ ADD MARKS TO NON ADAPTIVE TEST  ============================================
+exports.addMarks = catchAsyncErrors(async (req, res, next) => {
+  const { testId, studentId } = req.params;
+  
+  const { marks ,topicIndex,questionIndex } = req.body;
+
+  const student = await StudentResponse.findOne({
+    studentId,
+    assessmentId: testId,
+  });
+  const topic = student.topics[topicIndex];
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  switch(topic.Type) {
+    // case "mcq":
+    //   student.topics[topicIndex].questions[questionIndex].marks = marks;
+    //   break;
+    case "findAnswer":
+      student.topics[topicIndex].findAnswers[questionIndex].marks = marks;
+      break;
+    case "essay":
+      student.topics[topicIndex].essay[questionIndex].marks = marks;
+      break;
+    case "video":
+    // if(student.topics[topicIndex].video[questionIndex].long){
+    //   student.topics[topicIndex].video[questionIndex].long.marks = marks;
+    // }
+    // if(student.topics[topicIndex].video[questionIndex].short){
+    //   student.topics[topicIndex].video[questionIndex].short.marks = marks;
+    // }
+    // if(student.topics[topicIndex].video[questionIndex].questions){
+    //   student.topics[topicIndex].video[questionIndex].questions.marks = marks;
+    // }
+    student.topics[topicIndex].video[questionIndex].marks = marks;
+
+      break;
+    // case "compiler":
+    //   student.topics[topicIndex].compiler[questionIndex].marks = marks;
+    //   break;
+    default:
+      break;
+  }
+
+
+  await student.save();
+// const mcqMarks = student.topics[topicIndex].questions.forEach((question) => question.marks);
+// const codingMarks = student.topics[topicIndex].compiler.forEach((question) => question.marks);
+// const totalMCQandCodingQuestions = mcqMarks.length + codingMarks.length;
+const findAnswerMarks = student.topics[topicIndex].findAnswers.forEach((question) => question.marks);
+const essayMarks = student.topics[topicIndex].essay.forEach((question) => question.marks);
+const videoMarks = student.topics[topicIndex].video.forEach((question) => question.marks);
+
+const totalMarks =  findAnswerMarks + essayMarks + videoMarks + student.marks;
+
+
+  // await student.save();
+
+  res.json({
+    success: true,
+    message: "Marks added",
+    totalMarks: student.totalMarks,
+    student,
+  });
+}
+);
