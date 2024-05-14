@@ -8,7 +8,7 @@ const collegeAssessInvSchema = new mongoose.Schema({
     {
       active: { type: Boolean },
       onGoingAssessment: { type: String },
-
+      attempts: { type: Number, default: 0 },
       completed: { type: Boolean },
       completedAt: { type: Date },
       startedAt: { type: Date },

@@ -11,6 +11,7 @@ const studentResponseSchema = new mongoose.Schema({
     ref: "Assessment",
     // required: [true, 'Please enter assessment id']
   },
+  attempt: { type: Number, default: 1 },
   topics: [
     {
       Type: String,
@@ -131,11 +132,10 @@ const studentResponseSchema = new mongoose.Schema({
                 type: Number,
                 // required: [true, 'Please enter student answer index']
               },
-              attempted : {
+              attempted: {
                 type: Boolean,
-                default: false
+                default: false,
               },
-              
             },
           ],
           VideoLink: String,
