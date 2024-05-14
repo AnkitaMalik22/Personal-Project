@@ -38,6 +38,8 @@ const {
 const uploadedStudents = require("../../models/student/uploadedStudents");
 const {
   getAllStudents,
+
+  getStudentById,
 } = require("../../controllers/student/studentController");
 
 const {
@@ -61,6 +63,7 @@ const {
   deleteCollegeMail,
 } = require("../../controllers/college/inbox/inboxController");
 const { qrWare } = require("../../middlewares/qrWare");
+
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
@@ -101,6 +104,9 @@ router.get("/upload/students/get", isAuthenticatedCollege, getUploadedStudents);
 
 // get all registered students
 router.get("/:id/students", isAuthenticatedCollege, getStudents);
+
+// GET STUDENT DETAILS-- ID
+router.get("/student/:id", isAuthenticatedCollege,getStudentById);
 
 // invite students
 router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
