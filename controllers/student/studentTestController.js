@@ -151,10 +151,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       student: studentId,
       // "assessments.assessment": testId // Include testId in the query
     }).populate("assessments.assessment");
-    const student = await CollegeAssessInv.findOne({
-      student: studentId,
-      // "assessments.assessment": testId // Include testId in the query
-    }).populate("assessments.assessment");
+
 
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
@@ -541,7 +538,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       // console.log("All L1 questions completed ");
       // Send the same topic level 2 questions if the student has achieved the required marks for level 1
       const nextQuestionIndex = topic.totalL1Question + 1;
-      const nextQuestionIndex = topic.totalL1Question + 1;
+    
       if (nextQuestionIndex < topic.questions.length) {
         nextQuestion = topic.questions[nextQuestionIndex];
       }
@@ -550,12 +547,12 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       assessment.L1Correct >= topic.L1count &&
       assessment.L2Correct >= topic.L2count &&
       assessment.L3Correct < topic.L3count
-      assessment.L3Correct < topic.L3count
+
     ) {
       // console.log("All L2 questions completed ");
       // Send the same topic level 3 questions if the student has achieved the required marks for level 2
       const nextQuestionIndex = topic.totalL1Question + topic.totalL2Question;
-      const nextQuestionIndex = topic.totalL1Question + topic.totalL2Question;
+
       if (nextQuestionIndex <= topic.questions.length) {
         // console.log("Next question index", nextQuestionIndex);
         nextQuestion = topic.questions[nextQuestionIndex];
@@ -659,9 +656,12 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         studentResponse.topics[topicIndex].questions[questionIndex],
     });
     // ==================================================================================================
-  } catch (error) {
-    console.log("Error", error);
-  }
+  } 
+}
+catch (error) {
+  console.log("Error", error);
+}
+
 });
 
 // ===============================================  NON ADAPTIVE || SEND STUDENT RESPONSE AND GET NEXT QUESTION ==============================
