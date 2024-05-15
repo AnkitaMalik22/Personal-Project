@@ -38,6 +38,8 @@ const {
 const uploadedStudents = require("../../models/student/uploadedStudents");
 const {
   getAllStudents,
+
+  getStudentById,
 } = require("../../controllers/student/studentController");
 
 const {
@@ -61,6 +63,7 @@ const {
   deleteCollegeMail,
 } = require("../../controllers/college/inbox/inboxController");
 const { qrWare } = require("../../middlewares/qrWare");
+
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
@@ -102,6 +105,9 @@ router.get("/upload/students/get", isAuthenticatedCollege, getUploadedStudents);
 // get all registered students
 router.get("/:id/students", isAuthenticatedCollege, getStudents);
 
+// GET STUDENT DETAILS-- ID
+router.get("/student/:id", isAuthenticatedCollege,getStudentById);
+
 // invite students
 router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
 // approve students
@@ -135,18 +141,23 @@ router.post("/upload/video", isAuthenticatedCollege, uploadVideo);
 
 // dashboard
 
-router.post("/dashboard/jobs", isAuthenticatedCollege, getTotalJobs);
+// router.post("/dashboard/jobs", isAuthenticatedCollege, getTotalJobs);
+router.post("/dashboard/jobs",getTotalJobs);
 // router.get('/dashboard/students',isAuthenticatedCollege, getTotalStudents);
 router.post(
   "/dashboard/assessments",
   isAuthenticatedCollege,
   getAllAssessments
 );
-router.post("/dashboard/companies", isAuthenticatedCollege, getTotalCompanies);
+// router.post("/dashboard/companies", isAuthenticatedCollege, getTotalCompanies);
+router.post("/dashboard/companies", getTotalCompanies);
+// router.post(
+//   "/dashboard/companies/new",
+//   isAuthenticatedCollege,
+//   getRecentCompanies
+// );
 router.post(
-  "/dashboard/companies/new",
-  isAuthenticatedCollege,
-  getRecentCompanies
+  "/dashboard/companies/new", getRecentCompanies
 );
 router.post(
   "/dashboard/placed/students",

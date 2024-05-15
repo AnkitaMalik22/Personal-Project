@@ -12,6 +12,11 @@ const studentResponseSchema = new mongoose.Schema({
     // required: [true, 'Please enter assessment id']
   },
   attempt: { type: Number, default: 1 },
+  testType: {
+    type: String,
+    default: "adaptive",
+    enum: ["adaptive", "non-adaptive"],
+  },
   topics: [
     {
       Type: String,
@@ -86,6 +91,10 @@ const studentResponseSchema = new mongoose.Schema({
             type: String,
             // required: [true, 'Please enter student answer']
           },
+          marks: {
+            type: Number,
+            default: 0,
+          },
         },
       ],
       video: [
@@ -93,11 +102,20 @@ const studentResponseSchema = new mongoose.Schema({
           Duration: String,
           video: String,
           videoFile: String,
+          // calulate total from client and send
+          marks: {
+            type: Number,
+            default: 0,
+          },
           long: [
             {
               Title: String,
               studentAnswer: String,
               Duration: String,
+              marks: {
+                type: Number,
+                default: 0,
+              },
             },
           ],
           short: [
@@ -105,6 +123,10 @@ const studentResponseSchema = new mongoose.Schema({
               Title: String,
               studentAnswer: String,
               Duration: String,
+              marks: {
+                type: Number,
+                default: 0,
+              },
             },
           ],
           questions: [
@@ -136,6 +158,10 @@ const studentResponseSchema = new mongoose.Schema({
                 type: Boolean,
                 default: false,
               },
+              marks: {
+                type: Number,
+                default: 0,
+              },
             },
           ],
           VideoLink: String,
@@ -154,6 +180,10 @@ const studentResponseSchema = new mongoose.Schema({
       findAnswers: [
         {
           Title: String,
+          marks: {
+            type: Number,
+            default: 0,
+          },
           questions: [
             {
               question: String,

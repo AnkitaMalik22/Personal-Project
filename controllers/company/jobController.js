@@ -13,7 +13,7 @@ exports.getJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
   console.log(jobId);
 
-  const job = await Job.findById(jobId);
+  const job = await Job.findById(jobId).populate('company');
 
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));
@@ -348,7 +348,7 @@ exports.getFilteredJobs = async (req, res, next) => {
     }
 
     console.log(query);
-    const jobs = await Job.find(query);
+    const jobs = await Job.find(query).populate('company')
 
     res.status(200).json({
       success: true,

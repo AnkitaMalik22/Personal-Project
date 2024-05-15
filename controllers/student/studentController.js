@@ -49,6 +49,24 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+
+
+// --------------------------------------------- GET A STUDENT --ID -------------------------------------------------------
+
+exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.params.id);
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    student,
+  });
+});
+
+
 // --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
 
 exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
@@ -356,12 +374,38 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
 
   await student.save({ validateBeforeSave: false });
 
+
+  const resetPasswordUrl = `https://skillaccess-student.vercel.app/password/reset/${resetToken}`;
+
+  const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
+
+  try {
+    // Send password reset email
+    await sendEmail({
+      email: student.Email,
+      subject: `Student Password Recovery`,
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Email sent to ${student.Email} successfully`,
+    });
+  } catch (error) {
+    student.resetPasswordToken = undefined;
+    student.resetPasswordExpire = undefined;
+
+    await student.save({ validateBeforeSave: false });
+
+    return next(new ErrorHandler(error.message, 500));
+  }
+
   // Send the reset token to the student's email (implement sendEmail function)
 
-  res.status(200).json({
-    success: true,
-    message: `Password reset token sent to ${student.Email} successfully`,
-  });
+  // res.status(200).json({
+  //   success: true,
+  //   message: `Password reset token sent to ${student.Email} successfully`,
+  // });
 });
 
 //--------------------------------------------- RESET PASSWORD --------------------------------------------------------
