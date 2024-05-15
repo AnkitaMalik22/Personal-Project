@@ -1222,10 +1222,20 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 
     // remove from college approve students 
    
-    college.approveStudents = college.approveStudents.filter(std => std._id.toString() !== student._id.toString());
+    // college.approveStudents = college.approvedStudents.filter(std => std._id.toString() !== student._id.toString());
 
-
+    const approvedStudents = await ApprovedStudents.findOne({
+      college: req.user.id,
+    });
+    if (approvedStudents) {
+      if (approvedStudents.students.includes(student._id)) {
+        approvedStudents.students = approvedStudents.students.filter(
+          (std) => std.toString() !== student._id.toString()
+        );
+      }
+    } 
     await college.save();
+    await approvedStudents.save();
 
 
 
