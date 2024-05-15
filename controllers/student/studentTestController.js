@@ -256,7 +256,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         firstQuestion,
         data: {
           assessment,
-          student,
+          // student,
         },
         // studentResponse
       });

@@ -115,8 +115,14 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     // Find the assessment
     const testSections = await Assessments.findById(req.params.id).populate({
         path: 'studentResponses'
+    }).populate({
+        path: 'selectedStudents',
+        match: { $exists: true } // Add this line to ignore if the field doesn't exist
+    }).populate({
+        path: 'rejectedStudents',
+        match: { $exists: true } // Add this line to ignore if the field doesn't exist
     });
-    console.log (testSections, "testSections");
+    // console.log(testSections, "testSections");
     
     // Fetch all students
     const allStudents = await Student.find();
@@ -137,14 +143,17 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
         return student;
     });
 
-//   populatedStudents.forEach(student => {
-//     console.log(student.response, "student.response");
-//     }
-//     );
+
     
     res.status(200).json({
         success: true,
-        students: populatedStudents
+        // appeared students
+        // students: populatedStudents,
+        students : testSections.studentResponses,
+        // selected students
+        selectStudents: testSections.selectedStudents ? testSections.selectedStudents : [],
+        // rejected students
+        rejectedStudents: testSections.rejectedStudents ? testSections.rejectedStudents : []
     });
     
 });
