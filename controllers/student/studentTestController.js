@@ -211,7 +211,12 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     assessment.response = studentResponse._id;
     test.studentResponses.push(studentResponse._id);
+// -------------------------------------------------------
+    const std = await Student.findById(studentId);
+    std.studentResponses.push(studentResponse._id);
 
+    await std.save()
+// -------------------------------------------------------
     await test.save();
 
     await student.save();

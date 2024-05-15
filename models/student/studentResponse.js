@@ -11,6 +11,13 @@ const studentResponseSchema = new mongoose.Schema({
     ref: "Assessment",
     // required: [true, 'Please enter assessment id']
   },
+  status :{
+    // selected or rejected
+    type: 'String',
+    default: 'pending',
+    enum : ['pending','selected','rejected']
+  },
+
   attempt: { type: Number, default: 1 },
   testType: {
     type: String,
