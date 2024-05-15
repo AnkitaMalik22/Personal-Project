@@ -26,6 +26,7 @@ const CollegeAssessInv = require("../../models/student/assessmentInvitation");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
 const studentResponse = require("../../models/student/studentResponse");
+const Assessments = require("../../models/college/assessment/assessments");
 
 // Import the Student model
 
@@ -1223,6 +1224,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
    
     college.approveStudents = college.approveStudents.filter(std => std._id.toString() !== student._id.toString());
 
+
     await college.save();
 
 
@@ -1241,7 +1243,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 
     return res.status(200).json({
       sucess :"true",
-      message : "Student Rejected "
+      message : "Student Rejected"
 
     })
     
@@ -1440,3 +1442,51 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
 message : 'Student selected/rejected sucessfully'
   });
 });
+
+
+// =========================================== GET ALL SELECTED STUDENTS FOR THE TEST  ===========================================
+
+exports.getSelectedStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {testId} = req.params;
+
+  const assessment = await Assessments.findById(testId).populate('selectedStudents');
+
+  if(!assessment){
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    selectedStudents: assessment.selectedStudents,
+  });
+});
+
+
+
+// =========================================== GET ALL REJECTED STUDENTS FOR THE TEST  ===========================================
+
+exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {testId} = req.params;
+
+  const assessment = await Assessments.findById(testId).populate('rejectedStudents');
+
+  if(!assessment){
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    rejectedStudents: assessment.rejectedStudents,
+  });
+}
+);
+
+// =========================================== GET ALL STUDENTS FOR THE TEST  ===========================================
+
+// ALLL ATTEMPTED STUDENTS = studentresponses
+// ALL SELECTED STUDENTS = selectedStudents
+// ALL REJECTED STUDENTS = rejectedStudents
+
+// student tests => studentResponse 
