@@ -11,11 +11,18 @@ const studentResponseSchema = new mongoose.Schema({
     ref: "Assessment",
     // required: [true, 'Please enter assessment id']
   },
-  testType:{
+  status :{
+    // selected or rejected
+    type: 'String',
+    default: 'pending',
+    enum : ['pending','selected','rejected']
+  },
+
+  attempt: { type: Number, default: 1 },
+  testType: {
     type: String,
     default: "adaptive",
     enum: ["adaptive", "non-adaptive"],
-
   },
   topics: [
     {
@@ -115,7 +122,7 @@ const studentResponseSchema = new mongoose.Schema({
               marks: {
                 type: Number,
                 default: 0,
-              }
+              },
             },
           ],
           short: [
@@ -126,7 +133,7 @@ const studentResponseSchema = new mongoose.Schema({
               marks: {
                 type: Number,
                 default: 0,
-              }
+              },
             },
           ],
           questions: [
@@ -154,15 +161,14 @@ const studentResponseSchema = new mongoose.Schema({
                 type: Number,
                 // required: [true, 'Please enter student answer index']
               },
-              attempted : {
+              attempted: {
                 type: Boolean,
-                default: false
+                default: false,
               },
               marks: {
                 type: Number,
                 default: 0,
               },
-              
             },
           ],
           VideoLink: String,
@@ -189,7 +195,6 @@ const studentResponseSchema = new mongoose.Schema({
             {
               question: String,
               studentAnswer: String,
-            
             },
           ],
           Duration: String,

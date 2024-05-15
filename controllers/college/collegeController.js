@@ -25,6 +25,7 @@ const PaymentPlan = require("../../models/college/account/planModel");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
+const studentResponse = require("../../models/student/studentResponse");
 
 // Import the Student model
 
@@ -1124,6 +1125,7 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 
     const student = await Student.findById(studentId.studentId);
 
+
     // for (let i = 0; i < college.pendingStudents.length; i++) {
     //   const student = await Student.findById(college.pendingStudents[i]);
 
@@ -1136,6 +1138,11 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+
+    student.approved = true;
+    await student.save();
+
+
     let sId = studentId.studentId;
 
     const approvedStudents = await ApprovedStudents.findOne({
@@ -1195,6 +1202,54 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+
+
+// reject student 
+
+
+exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const student = await Student.findById(req.params.studentId);
+    if(!student){
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    await Student.findByIdAndDelete(req.params.studentId)
+
+    const college = await College.findById(req.user.id);
+
+    // remove from college approve students 
+   
+    college.approveStudents = college.approveStudents.filter(std => std._id.toString() !== student._id.toString());
+
+    await college.save();
+
+
+
+    const message = `
+    Hello ${student.FirstName}, 
+    We regret to inform you that your request has been rejected. 
+    Please register again using the previous registration link and ensure that you complete your profile accurately.
+    `
+    await sendEmail({
+      email: college.Email,
+      subject: `${college.CollegeName} Registration Rejection`,
+      message,
+    });
+
+
+    return res.status(200).json({
+      sucess :"true",
+      message : "Student Rejected "
+
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+})
 
 // ------------------------------get students-----------------------------
 
@@ -1343,5 +1398,45 @@ exports.getPlacedStudents = catchAsyncErrors(async (req, res, next) => {
     success: true,
     students: college.students,
     totalPlacedStudents: college.students.length,
+  });
+});
+
+
+
+// =========================================== select student for the assessment ==============================================
+
+//  College Assessment Inv > 
+
+exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
+
+
+  //student response id
+
+  const {responseId,testId} = req.params ;
+  const {status} = req.body;
+
+  const response = await studentResponse.findById(responseId);
+  const assessment = await Assessments.findById(testId);
+
+  if(!response){
+    return next(new ErrorHandler("Student response not found", 404));
+  }
+
+  response.status = status;
+
+
+  if(status == 'selected'){
+    assessment.selectedStudents.push(responseId);
+  }
+  else if(status == 'rejected'){
+    assessment.rejectedStudents.push(responseId);
+  }
+
+  await assessment.save();
+  await response.save();
+
+  res.status(200).json({
+    success: true,
+message : 'Student selected/rejected sucessfully'
   });
 });

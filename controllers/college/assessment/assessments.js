@@ -182,14 +182,14 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
       for (let i = 0; i < students.length; i++) {
         const { FirstName, LastName, Email, _id } = students[i];
 
-        //   // send Email to attend the test
-        //  if(assessment.invitedStudents.includes(Email)){
-        //   console.log("Student already invited")
-        //   // return next(new ErrorHandler("Student already invited", 404));
-        //   }else{
-        //   assessment.invitedStudents.push(Email);
-        //   await assessment.save();
-        //   }
+        // send Email to attend the test
+        if (assessment.invitedStudents.includes(_id)) {
+          console.log("Student already invited");
+          // return next(new ErrorHandler("Student already invited", 404));
+        } else {
+          assessment.invitedStudents.push(_id);
+          await assessment.save();
+        }
 
         await CollegeAssessInv.findOneAndUpdate(
           { student: _id },
