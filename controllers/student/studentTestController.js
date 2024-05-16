@@ -346,6 +346,35 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
   assessment.L3Correct = 0;
   await student.save();
 
+
+// --------------------- update the avgPercentage of the assessment -------------------
+
+  const test = await Assessments.findById(testId).populate("studentResponses");
+let avgPercentage = test.avgPercentage
+
+// duplicate student responses remove
+// let studentResponses = test.studentResponses.map((response) => response.studentId);
+
+let totalStudentResponses = test.studentResponses.length;
+let totalMarks = 0;
+
+assessment.studentResponses.forEach((response) => {
+  totalMarks += response.totalMarks;
+});
+
+avgPercentage = (totalMarks / (totalStudentResponses * test.totalQuestionsCount)) * 100;
+
+test.avgPercentage = avgPercentage;
+await test.save();
+
+// -----------------------------------------------------------------------------------
+
+
+
+
+
+
+
   res.json({
     success: true,
     message: "Assessment Ended",
