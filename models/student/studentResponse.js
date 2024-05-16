@@ -302,6 +302,13 @@ const studentResponseSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  completedAt: {
+    type: Date,
+  },
+  completed : {
+    type: Boolean,
+    default: false
+  }
 },{
   timestamps: true
 });

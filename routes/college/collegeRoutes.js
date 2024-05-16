@@ -35,6 +35,7 @@ const {
   selectStudentTest,
   getSelectedStudents,
   getRejectedStudents,
+  resultOverviewGraph,
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -199,5 +200,10 @@ router
   .route("/inbox/bookmarks")
   .get(isAuthenticatedCollege, getBookmarkedMails);
 router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteCollegeMail);
+
+// ===========================================================================
+
+router.route("/result/graph").get(isAuthenticatedCollege, resultOverviewGraph);
+
 
 module.exports = router;

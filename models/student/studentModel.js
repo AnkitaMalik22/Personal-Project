@@ -271,13 +271,17 @@ loggedOut: { type: Boolean, default: false },
     type: Boolean,
     default: false,
   },
+  PlacedAt: {
+    type: Date,
+  },
+
   CompanyPlaced: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
   },
   JobPlaced: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Jobs",
+    ref: "Job",
   },
   recommendedAssessments: [
     {
