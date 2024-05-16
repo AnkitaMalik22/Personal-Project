@@ -1517,28 +1517,71 @@ exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
 // get all students who selected the test
 // day , week , month , quarter , year
 
-// const resultOverviewGraph = async (req, res, next) => {
-//   const {testId} = req.params;
-//   const assessment = await Assessments.findById(testId);
+exports.resultOverviewGraph = async (req, res, next) => {
+  try {
+    const collegeId = req.user.id;
 
-//   if(!assessment){
-//     return next(new ErrorHandler("Assessment not found", 404));
-//   }
+    const assessments = await Assessments.find({createdBy: collegeId }).populate('selectedStudents').populate('rejectedStudents').populate('studentResponses');
 
-//   const attemptedStudents = await studentResponse.find({assessment : testId});
-//   const selectedStudents = await studentResponse.find({assessment : testId , status : 'selected'});
-//   const rejectedStudents = await studentResponse.find({assessment : testId , status : 'rejected'});
-//   const totalStudents = attemptedStudents.length;
+    if (!assessments.length) {
+      return res.status(404).json({ message: "No assessments found for this college" });
+    }
 
-//   const attemptedPercentage = (attemptedStudents.length / totalStudents) * 100;
-//   const selectedPercentage = (selectedStudents.length / totalStudents) * 100;
-//   const rejectedPercentage = (rejectedStudents.length / totalStudents) * 100;
+    const assessmentIds = assessments.map(assessment => assessment._id);
 
-//   // monthly basis data
+    const aggregateData = async (timeUnit) => {
+      const format = {
+        day: '%Y-%m-%d',
+        week: '%Y-%U',
+        month: '%Y-%m',
+        quarter: { $concat: [{ $substr: [{ $year: "$completedAt" }, 0, 4] }, '-Q', { $substr: [{ $ceil: { $divide: [{ $month: "$completedAt" }, 3] } }, 0, 1] }] },
+        year: '%Y'
+      }[timeUnit];
 
-//   const monthlyData = [];
+      const groupBy = {
+        day: { $dateToString: { format: format, date: "$completedAt" } },
+        week: { $concat: [{ $substr: [{ $year: "$completedAt" }, 0, 4] }, '-', 
+        { $cond: [{ $lte: [{ $week: "$completedAt" }, 9] }, { $concat: ['0', { $toString: { $week: "$completedAt" } }] }, { $toString: { $week: "$completedAt" } }] }] },
+        month: { $dateToString: { format: format, date: "$completedAt" } },
+        quarter: {
+          $concat: [
+              { $substr: [{ $year: "$completedAt" }, 0, 4] },
+              '-Q',
+              { $toString: { $ceil: { $divide: [{ $month: "$completedAt" }, 3] } } }
+          ]
+      },
+          year: { $dateToString: { format: format, date: "$completedAt" } }
+      }[timeUnit];
 
-  // get month wise data using createdAt
- 
+      const result = await studentResponse.aggregate([
+        { $match: { assessmentId: { $in: assessmentIds } } },
+        { $group: {
+          _id: groupBy,
+          totalStudentsAppeared: { $sum: 1 },
+          totalStudentsSelected: { $sum: { $cond: [{ $eq: ["$status", "selected"] }, 1, 0] } }
+        }},
+        { $sort: { _id: 1 } }
+      ]);
+      return result.map(item => ({
+        time: item._id,
+        totalStudentsAppeared: item.totalStudentsAppeared,
+        totalStudentsSelected: item.totalStudentsSelected
+      }));
+    };
+
+    const data = {
+      daily: await aggregateData('day'),
+      weekly: await aggregateData('week'),
+      monthly: await aggregateData('month'),
+      quarterly: await aggregateData('quarter'),
+      yearly: await aggregateData('year'),
+      assessmentIds : assessmentIds
+    };
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 
