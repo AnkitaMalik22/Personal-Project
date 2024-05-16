@@ -134,7 +134,14 @@ const assessmentsSchema = new Schema({
   },
 
 // -------------------------------- RESULTS --------------------------
-
+avgSelectedPercentage: {
+  type: Number,
+  default: 0,
+},
+avgRejectedPercentage: {
+  type: Number,
+  default: 0,
+},
 selectedStudents : [
   {
     type: mongoose.Schema.Types.ObjectId,

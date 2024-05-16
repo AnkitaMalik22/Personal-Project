@@ -1245,7 +1245,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
     Please register again using the previous registration link and ensure that you complete your profile accurately.
     `
     await sendEmail({
-      email: college.Email,
+      email: student.Email,
       subject: `${college.CollegeName} Registration Rejection`,
       message,
     });
@@ -1439,9 +1439,17 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
 
   if(status == 'selected'){
     assessment.selectedStudents.push(responseId);
+// calculate avgSelectedStudents percentage
+if(assessment.avgSelectedPercentage){ // if this field exits // check for old tests
+  assessment.avgSelectedPercentage = (assessment.selectedStudents.length / assessment.totalStudents) * 100;
+}
   }
   else if(status == 'rejected'){
     assessment.rejectedStudents.push(responseId);
+    if(assessment.avgRejectedPercentage){ // if this field exits // check for old tests
+      assessment.avgRejectedPercentage = (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
+    }
+
   }
 
   await assessment.save();
@@ -1500,3 +1508,37 @@ exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
 // ALL REJECTED STUDENTS = rejectedStudents
 
 // student tests => studentResponse 
+
+
+
+// =========================================== RESULT GRAPHS  ===========================================
+
+// get all students who attempted the test
+// get all students who selected the test
+// day , week , month , quarter , year
+
+// const resultOverviewGraph = async (req, res, next) => {
+//   const {testId} = req.params;
+//   const assessment = await Assessments.findById(testId);
+
+//   if(!assessment){
+//     return next(new ErrorHandler("Assessment not found", 404));
+//   }
+
+//   const attemptedStudents = await studentResponse.find({assessment : testId});
+//   const selectedStudents = await studentResponse.find({assessment : testId , status : 'selected'});
+//   const rejectedStudents = await studentResponse.find({assessment : testId , status : 'rejected'});
+//   const totalStudents = attemptedStudents.length;
+
+//   const attemptedPercentage = (attemptedStudents.length / totalStudents) * 100;
+//   const selectedPercentage = (selectedStudents.length / totalStudents) * 100;
+//   const rejectedPercentage = (rejectedStudents.length / totalStudents) * 100;
+
+//   // monthly basis data
+
+//   const monthlyData = [];
+
+  // get month wise data using createdAt
+ 
+
+

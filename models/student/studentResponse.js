@@ -298,6 +298,12 @@ const studentResponseSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+},{
+  timestamps: true
 });
 
 const studentResponse = mongoose.model(
