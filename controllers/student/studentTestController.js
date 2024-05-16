@@ -311,7 +311,9 @@ exports.endTestAfterTimeout = catchAsyncErrors(async (req, res, next) => {
 // ===================================================| End Assessment Manually by ID |========================================================
 
 exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
-  const { testId, studentId, timeout } = req.params;
+  const { testId,timeout } = req.params;
+
+  const studentId = req.user.id;
 
   const student = await CollegeAssessInv.findOne({
     student: studentId,
@@ -358,7 +360,7 @@ let avgPercentage = test.avgPercentage
 let totalStudentResponses = test.studentResponses.length;
 let totalMarks = 0;
 
-assessment.studentResponses.forEach((response) => {
+assessment.studentResponses?.forEach((response) => {
   totalMarks += response.totalMarks;
 });
 
@@ -371,7 +373,19 @@ await test.save();
 
 
 
+const studentResponse = await StudentResponse.findOne({
+  studentId: studentId,
+  assessmentId: testId,
+});
 
+if (!studentResponse) {
+  return next(new ErrorHandler("Student response not found", 404));
+}
+
+studentResponse.totalMarks = assessment.marks;
+studentResponse.completed = true;
+studentResponse.completedAt = Date.now();
+await studentResponse.save();
 
 
 
@@ -379,9 +393,13 @@ await test.save();
     success: true,
     message: "Assessment Ended",
     data: {
-      assessment,
-      student,
-    },
+      studentResponse : studentResponse,
+
+    }
+    // data: {
+    //   assessment,
+    //   student,
+    // },
   });
 });
 
