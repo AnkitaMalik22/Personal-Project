@@ -5,6 +5,10 @@ const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAl
 const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout, getCompany} = require('../../controllers/company/companyController');
 ;
 
+const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/company/placementController');
+
+
+
 
 // ============================================= Comapny ROUTES ====================================================
 
@@ -55,6 +59,16 @@ router.get('/jobs/:collegeId', getAllJobsCollege);
 router.get('/jobs/:studentId', isAuthenticatedStudent, getAllJobsStudent);
 
 router.get('/:companyId', getCompany);
+
+
+
+// ------------------------     PLACEMENTS     ----------------------------
+
+// PLACE STUDENT TO A JOB
+router.route("/jobs/:jobId/place/:studentId").post( placeStudentInJob);
+
+//  GET ALL RECENT PLACE STUDENTS OF COLLEGE
+router.route("/jobs/placements/:collegeId").get( getAllPlacedStudents);
 
 
 module.exports = router;
