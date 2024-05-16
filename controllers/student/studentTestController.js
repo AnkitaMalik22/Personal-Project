@@ -178,6 +178,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     assessment.startedAt = Date.now();
     assessment.attempts += 1;
     assessment.currentQuestionIndex = 0;
+    assessment.currentTopicIndex = 0;
+    assessment.totalQuestionsAttempted = 0;
     await student.save();
 
     // // Simulate a timeout
@@ -975,9 +977,9 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 // });
 exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { testId, studentId } = req.params;
+    const { testId } = req.params;
     const { response } = req.body;
-
+    const studentId = req.user.id;
     const student = await CollegeAssessInv.findOne({
       student: studentId,
     })
@@ -1006,6 +1008,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
 
     const topicIndex = assessment.currentTopicIndex;
     const topic = assessment.assessment?.topics[topicIndex];
+    const questionIndex = assessment.currentQuestionIndex;
 
     if (!topic) {
       assessment.currentTopicIndex = 0;
@@ -1020,84 +1023,48 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       });
     }
 
-    const questionIndex = assessment.currentQuestionIndex;
-    const type = topic.Type;
+    let type = topic.Type;
     let question = {};
 
-    switch (type) {
-      case "mcq":
-        question = topic.questions[questionIndex];
-        break;
-      case "findAnswer":
-        question = topic.findAnswers[questionIndex];
-        break;
-      case "essay":
-        question = topic.essay[questionIndex];
-        break;
-      case "video":
-        question = topic.video[questionIndex];
-        break;
-      case "compiler":
-        question = topic.compiler[questionIndex];
-        break;
-      default:
-        break;
+    // switch (type) {
+    //   case "mcq":
+    //     question = topic.questions[questionIndex];
+    //     break;
+    //   case "findAnswer":
+    //     question = topic.findAnswers[questionIndex];
+    //     break;
+    //   case "essay":
+    //     question = topic.essay[questionIndex];
+    //     break;
+    //   case "video":
+    //     question = topic.video[questionIndex];
+    //     break;
+    //   case "compiler":
+    //     question = topic.compiler[questionIndex];
+    //     break;
+    //   default:
+    //     break;
+    // }
+
+    if (type === "mcq") {
+      typeDir = "questions";
+    } else if (type === "findAnswer") {
+      typeDir = "findAnswers";
+    } else {
+      typeDir = type;
     }
 
-    if (!question) {
-      console.log("Question not found");
-      return res.json({
-        success: true,
-        message: "Test Completed -- No Next Question Found",
-      });
-    }
+    // if (!question) {
+    //   console.log("Question not found");
+    //   return res.json({
+    //     success: true,
+    //     message: "Test Completed -- No Next Question Found",
+    //   });
+    // }
 
     let nextQuestion = {};
-    const totalQuestions = topic.questions.length;
-
-    assessment.totalQuestionsAttempted += 1;
-
-    if (assessment.totalQuestionsAttempted >= totalQuestions) {
-      assessment.currentQuestionIndex = 0;
-      assessment.currentTopicIndex = topicIndex + 1;
-      assessment.totalQuestionsAttempted = 0;
-      console.log("Next topic");
-    } else {
-      switch (
-        type
-
-        // NO NEED TO SEND NEXT QUESTION IN NON ADAPTIVE STUDENT WILL GET NEXT QUESTION FROM CLIENT
-        // case "mcq":
-        //   nextQuestion = topic.questions[questionIndex + 1];
-        //   break;
-        // case "findAnswer":
-        //  nextQuestion = topic.findAnswers[questionIndex + 1];
-        //   break;
-        // case "essay":
-        //   nextQuestion = topic.essay[questionIndex + 1];
-        //   break;
-        // case "video":
-        //   nextQuestion = topic.video[questionIndex + 1];
-        //   break;
-        // case "compiler":
-        //   nextQuestion = topic.compiler[questionIndex + 1];
-        //   break;
-        // default:
-        //   break;
-      ) {
-      }
-
-      // console.log("Next question", nextQuestion);
-    }
-
-    // Handle student's response
-
-    await student.save();
-    // ----------------------------------------------- SAVE STUDENT RESPONSE ------------------------------------------------
-    // const studentResponse = await StudentResponse.findOne({
-    //   studentId: studentId,
-    //   assessmentId: testId,
-    // });
+    const totalQuestions = topic[typeDir].length;
+    console.log(type, "is");
     const studentResponse = await StudentResponse.findById(assessment.response);
     switch (type) {
       case "mcq":
@@ -1193,6 +1160,67 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     }
     await studentResponse.save();
 
+    //for one topic
+    assessment.totalQuestionsAttempted = assessment.totalQuestionsAttempted + 1;
+    console.log(assessment.totalQuestionsAttempted, totalQuestions);
+    if (assessment.totalQuestionsAttempted >= totalQuestions) {
+      assessment.currentQuestionIndex = 0;
+      assessment.currentTopicIndex = topicIndex + 1;
+      assessment.totalQuestionsAttempted = 0;
+      console.log("Next topic");
+
+      if (assessment.assessment.topics.length === topicIndex + 1) {
+        return res.status(200).json({ message: "test comp" });
+      }
+
+      type = assessment.assessment.topics[topicIndex + 1].Type;
+      if (type === "mcq") {
+        typeDir = "questions";
+      } else if (type === "findAnswer") {
+        typeDir = "findAnswers";
+      } else {
+        typeDir = type;
+      }
+      nextQuestion = assessment.assessment.topics[topicIndex + 1][typeDir][0];
+    } else {
+      assessment.currentQuestionIndex = questionIndex + 1;
+
+      nextQuestion =
+        assessment.assessment.topics[topicIndex][typeDir][questionIndex + 1];
+      // switch (
+
+      // NO NEED TO SEND NEXT QUESTION IN NON ADAPTIVE STUDENT WILL GET NEXT QUESTION FROM CLIENT
+      // case "mcq":
+      //   nextQuestion = topic.questions[questionIndex + 1];
+      //   break;
+      // case "findAnswer":
+      //  nextQuestion = topic.findAnswers[questionIndex + 1];
+      //   break;
+      // case "essay":
+      //   nextQuestion = topic.essay[questionIndex + 1];
+      //   break;
+      // case "video":
+      //   nextQuestion = topic.video[questionIndex + 1];
+      //   break;
+      // case "compiler":
+      //   nextQuestion = topic.compiler[questionIndex + 1];
+      //   break;
+      // default:
+      //   break;
+      // ) {
+
+      // console.log("Next question", nextQuestion);
+    }
+
+    // Handle student's response
+
+    await student.save();
+    // ----------------------------------------------- SAVE STUDENT RESPONSE ------------------------------------------------
+    // const studentResponse = await StudentResponse.findOne({
+    //   studentId: studentId,
+    //   assessmentId: testId,
+    // });
+
     // -----------------------------------------------END  SAVE STUDENT RESPONSE ------------------------------------------------
 
     res.json({
@@ -1200,7 +1228,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       message: "Question sent",
       questionIndex: questionIndex,
       topicIndex: topicIndex,
-      // nextQuestion: nextQuestion,
+      nextQuestion: nextQuestion,
       topic: topic.Heading,
       studentResponse: question,
       result: studentResponse,
