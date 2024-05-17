@@ -81,6 +81,10 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  approved :{
+    type: Boolean,
+    default: false,
+  },
   avatar: {
     public_id: {
       type: String,
@@ -267,13 +271,17 @@ loggedOut: { type: Boolean, default: false },
     type: Boolean,
     default: false,
   },
+  PlacedAt: {
+    type: Date,
+  },
+
   CompanyPlaced: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
   },
   JobPlaced: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Jobs",
+    ref: "Job",
   },
   recommendedAssessments: [
     {

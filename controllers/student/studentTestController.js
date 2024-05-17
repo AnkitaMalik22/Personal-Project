@@ -213,7 +213,12 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     assessment.response = studentResponse._id;
     test.studentResponses.push(studentResponse._id);
+// -------------------------------------------------------
+    const std = await Student.findById(studentId);
+    std.studentResponses.push(studentResponse._id);
 
+    await std.save()
+// -------------------------------------------------------
     await test.save();
 
     await student.save();
@@ -253,7 +258,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         firstQuestion,
         data: {
           assessment,
-          student,
+          // student,
         },
         // studentResponse
       });
@@ -308,7 +313,9 @@ exports.endTestAfterTimeout = catchAsyncErrors(async (req, res, next) => {
 // ===================================================| End Assessment Manually by ID |========================================================
 
 exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
-  const { testId, studentId, timeout } = req.params;
+  const { testId,timeout } = req.params;
+
+  const studentId = req.user.id;
 
   const student = await CollegeAssessInv.findOne({
     student: studentId,
@@ -343,13 +350,58 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
   assessment.L3Correct = 0;
   await student.save();
 
+
+// --------------------- update the avgPercentage of the assessment -------------------
+
+  const test = await Assessments.findById(testId).populate("studentResponses");
+let avgPercentage = test.avgPercentage
+
+// duplicate student responses remove
+// let studentResponses = test.studentResponses.map((response) => response.studentId);
+
+let totalStudentResponses = test.studentResponses.length;
+let totalMarks = 0;
+
+assessment.studentResponses?.forEach((response) => {
+  totalMarks += response.totalMarks;
+});
+
+avgPercentage = (totalMarks / (totalStudentResponses * test.totalQuestionsCount)) * 100;
+
+test.avgPercentage = avgPercentage;
+await test.save();
+
+// -----------------------------------------------------------------------------------
+
+
+
+const studentResponse = await StudentResponse.findOne({
+  studentId: studentId,
+  assessmentId: testId,
+});
+
+if (!studentResponse) {
+  return next(new ErrorHandler("Student response not found", 404));
+}
+
+studentResponse.totalMarks = assessment.marks;
+studentResponse.completed = true;
+studentResponse.completedAt = Date.now();
+await studentResponse.save();
+
+
+
   res.json({
     success: true,
     message: "Assessment Ended",
     data: {
-      assessment,
-      student,
-    },
+      studentResponse : studentResponse,
+
+    }
+    // data: {
+    //   assessment,
+    //   student,
+    // },
   });
 });
 

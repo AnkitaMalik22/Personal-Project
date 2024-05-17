@@ -31,6 +31,11 @@ const {
   selectAuth,
   getPendingStudents,
   approveStudents,
+  rejectStudent,
+  selectStudentTest,
+  getSelectedStudents,
+  getRejectedStudents,
+  resultOverviewGraph,
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -108,10 +113,22 @@ router.get("/:id/students", isAuthenticatedCollege, getStudents);
 // GET STUDENT DETAILS-- ID
 router.get("/student/:id", isAuthenticatedCollege,getStudentById);
 
+
+
+// REJECT | SELECT STUDENT ------ FOR TEST
+router.post("/test/status/:testId/:responseId", isAuthenticatedCollege, selectStudentTest)
+// GET ALL SELECTED STUDENTS------ FOR TEST
+router.get("/test/students/selected/:testId", isAuthenticatedCollege, getSelectedStudents)
+// GET ALL REJECTED STUDENTS------ FOR TEST
+router.get("/test/students/rejected/:testId", isAuthenticatedCollege, getRejectedStudents);
+
+
 // invite students
 router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
 // approve students
 router.post("/student/approve", isAuthenticatedCollege, approveStudents);
+// reject student
+router.post("/student/reject/:studentId", isAuthenticatedCollege, rejectStudent);
 
 // pending students
 router.get("/students/pending", isAuthenticatedCollege, getPendingStudents);
@@ -183,5 +200,10 @@ router
   .route("/inbox/bookmarks")
   .get(isAuthenticatedCollege, getBookmarkedMails);
 router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteCollegeMail);
+
+// ===========================================================================
+
+router.route("/result/graph").get(isAuthenticatedCollege, resultOverviewGraph);
+
 
 module.exports = router;

@@ -25,6 +25,8 @@ const PaymentPlan = require("../../models/college/account/planModel");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
+const studentResponse = require("../../models/student/studentResponse");
+const Assessments = require("../../models/college/assessment/assessments");
 
 // Import the Student model
 
@@ -1124,6 +1126,7 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 
     const student = await Student.findById(studentId.studentId);
 
+
     // for (let i = 0; i < college.pendingStudents.length; i++) {
     //   const student = await Student.findById(college.pendingStudents[i]);
 
@@ -1136,6 +1139,11 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+
+    student.approved = true;
+    await student.save();
+
+
     let sId = studentId.studentId;
 
     const approvedStudents = await ApprovedStudents.findOne({
@@ -1195,6 +1203,65 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+
+
+// reject student 
+
+
+exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const student = await Student.findById(req.params.studentId);
+    if(!student){
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    await Student.findByIdAndDelete(req.params.studentId)
+
+    const college = await College.findById(req.user.id);
+
+    // remove from college approve students 
+   
+    // college.approveStudents = college.approvedStudents.filter(std => std._id.toString() !== student._id.toString());
+
+    const approvedStudents = await ApprovedStudents.findOne({
+      college: req.user.id,
+    });
+    if (approvedStudents) {
+      if (approvedStudents.students.includes(student._id)) {
+        approvedStudents.students = approvedStudents.students.filter(
+          (std) => std.toString() !== student._id.toString()
+        );
+      }
+    } 
+    await college.save();
+    await approvedStudents.save();
+
+
+
+    const message = `
+    Hello ${student.FirstName}, 
+    We regret to inform you that your request has been rejected. 
+    Please register again using the previous registration link and ensure that you complete your profile accurately.
+    `
+    await sendEmail({
+      email: student.Email,
+      subject: `${college.CollegeName} Registration Rejection`,
+      message,
+    });
+
+
+    return res.status(200).json({
+      sucess :"true",
+      message : "Student Rejected"
+
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+})
 
 // ------------------------------get students-----------------------------
 
@@ -1345,3 +1412,176 @@ exports.getPlacedStudents = catchAsyncErrors(async (req, res, next) => {
     totalPlacedStudents: college.students.length,
   });
 });
+
+
+
+// =========================================== select student for the assessment ==============================================
+
+//  College Assessment Inv > 
+
+exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
+
+
+  //student response id
+
+  const {responseId,testId} = req.params ;
+  const {status} = req.body;
+
+  const response = await studentResponse.findById(responseId);
+  const assessment = await Assessments.findById(testId);
+
+  if(!response){
+    return next(new ErrorHandler("Student response not found", 404));
+  }
+
+  response.status = status;
+
+
+  if(status == 'selected'){
+    assessment.selectedStudents.push(responseId);
+// calculate avgSelectedStudents percentage
+if(assessment.avgSelectedPercentage){ // if this field exits // check for old tests
+  assessment.avgSelectedPercentage = (assessment.selectedStudents.length / assessment.totalStudents) * 100;
+}
+  }
+  else if(status == 'rejected'){
+    assessment.rejectedStudents.push(responseId);
+    if(assessment.avgRejectedPercentage){ // if this field exits // check for old tests
+      assessment.avgRejectedPercentage = (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
+    }
+
+  }
+
+  await assessment.save();
+  await response.save();
+
+  res.status(200).json({
+    success: true,
+message : 'Student selected/rejected sucessfully'
+  });
+});
+
+
+// =========================================== GET ALL SELECTED STUDENTS FOR THE TEST  ===========================================
+
+exports.getSelectedStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {testId} = req.params;
+
+  const assessment = await Assessments.findById(testId).populate('selectedStudents');
+
+  if(!assessment){
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    selectedStudents: assessment.selectedStudents,
+  });
+});
+
+
+
+// =========================================== GET ALL REJECTED STUDENTS FOR THE TEST  ===========================================
+
+exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {testId} = req.params;
+
+  const assessment = await Assessments.findById(testId).populate('rejectedStudents');
+
+  if(!assessment){
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    rejectedStudents: assessment.rejectedStudents,
+  });
+}
+);
+
+// =========================================== GET ALL STUDENTS FOR THE TEST  ===========================================
+
+// ALLL ATTEMPTED STUDENTS = studentresponses
+// ALL SELECTED STUDENTS = selectedStudents
+// ALL REJECTED STUDENTS = rejectedStudents
+
+// student tests => studentResponse 
+
+
+
+// =========================================== RESULT GRAPHS  ===========================================
+
+// get all students who attempted the test
+// get all students who selected the test
+// day , week , month , quarter , year
+
+exports.resultOverviewGraph = async (req, res, next) => {
+  try {
+    const collegeId = req.user.id;
+
+    const assessments = await Assessments.find({createdBy: collegeId }).populate('selectedStudents').populate('rejectedStudents').populate('studentResponses');
+
+    if (!assessments.length) {
+      return res.status(404).json({ message: "No assessments found for this college" });
+    }
+
+    const assessmentIds = assessments.map(assessment => assessment._id);
+
+    const aggregateData = async (timeUnit) => {
+      const format = {
+        day: '%Y-%m-%d',
+        week: '%Y-%U',
+        month: '%Y-%m',
+        quarter: { $concat: [{ $substr: [{ $year: "$completedAt" }, 0, 4] }, '-Q', { $substr: [{ $ceil: { $divide: [{ $month: "$completedAt" }, 3] } }, 0, 1] }] },
+        year: '%Y'
+      }[timeUnit];
+
+      const groupBy = {
+        day: { $dateToString: { format: format, date: "$completedAt" } },
+        week: { $concat: [{ $substr: [{ $year: "$completedAt" }, 0, 4] }, '-', 
+        { $cond: [{ $lte: [{ $week: "$completedAt" }, 9] }, { $concat: ['0', { $toString: { $week: "$completedAt" } }] }, { $toString: { $week: "$completedAt" } }] }] },
+        month: { $dateToString: { format: format, date: "$completedAt" } },
+        quarter: {
+          $concat: [
+              { $substr: [{ $year: "$completedAt" }, 0, 4] },
+              '-Q',
+              { $toString: { $ceil: { $divide: [{ $month: "$completedAt" }, 3] } } }
+          ]
+      },
+          year: { $dateToString: { format: format, date: "$completedAt" } }
+      }[timeUnit];
+
+      const result = await studentResponse.aggregate([
+        { $match: { assessmentId: { $in: assessmentIds } } },
+        { $group: {
+          _id: groupBy,
+          totalStudentsAppeared: { $sum: 1 },
+          totalStudentsSelected: { $sum: { $cond: [{ $eq: ["$status", "selected"] }, 1, 0] } }
+        }},
+        { $sort: { _id: 1 } }
+      ]);
+      return result.map(item => ({
+        time: item._id,
+        totalStudentsAppeared: item.totalStudentsAppeared,
+        totalStudentsSelected: item.totalStudentsSelected
+      }));
+    };
+
+    const data = {
+      daily: await aggregateData('day'),
+      weekly: await aggregateData('week'),
+      monthly: await aggregateData('month'),
+      quarterly: await aggregateData('quarter'),
+      yearly: await aggregateData('year'),
+      assessmentIds : assessmentIds
+    };
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
