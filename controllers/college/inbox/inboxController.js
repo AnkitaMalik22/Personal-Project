@@ -9,6 +9,7 @@ const { v2: cloudinary } = require("cloudinary");
 const mongoose = require("mongoose");
 const BookmarkedMail = require("../../../models/college/inbox/BookmarkedMails");
 const UploadedStudents = require("../../../models/student/uploadedStudents");
+const ApprovedStudents = require("../../../models/college/student/Approved");
 
 // Forgot Password
 
@@ -64,11 +65,12 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
 
     const college = await College.findOne({ Email: req.body.Email });
 
-    const pendingStudents = await UploadedStudents.findOne({
+    const approvedStudents = await ApprovedStudents.findOne({
       college: req.user.id,
     }).populate("students");
-    const student = pendingStudents.students.find((student) => {
-      student.Email === req.body.Email;
+
+    const student = approvedStudents.students.find((student) => {
+      return student.Email === req.body.Email;
     });
     // const student = await Student.findOne({ Email: req.body.Email });
 
@@ -76,8 +78,9 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     //   emailTo = "College";
     //   recepient = college;
     // } else
+    console.log(student);
     if (student) {
-      emailTo = "Student";
+      emailTo = "Students";
       recepient = student;
     } else {
       return next(new ErrorHandler("not found", 404));
@@ -86,8 +89,10 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     if (req.user.role === "college") {
       from = "College";
     } else {
-      from = "Student";
+      from = "Students";
     }
+    console.log("ids");
+
     console.log("ids", recepient._id);
     const mail = await Mail.create({
       Mailtype: emailTo,
@@ -124,7 +129,7 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     res.status(200).send({ sender, receiver });
   } catch (error) {
     console.log(error);
-    return next(new ErrorHandler(error.message, 500));
+    return next(new ErrorHandler(error, 500));
   }
 });
 
