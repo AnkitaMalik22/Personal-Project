@@ -44,10 +44,9 @@ app.use(
       "https://skillaccessprod.netlify.app",
       "https://checkout.stripe.com",
       "https://skillaccess.vercel.app",
-      "https://skillaccess-student.vercel.app"
+      "https://skillaccess-student.vercel.app",
     ],
     credentials: true,
-    
   })
 );
 
@@ -69,6 +68,7 @@ const qbRoutes = require("./routes/college/qbRoutes.js");
 const paymentRoutes = require("./routes/college/paymentRoutes.js");
 
 const studentTestRoutes = require("./routes/student/studentTestRoutes.js");
+const studentInboxRoutes = require("./routes/student/studentInboxRoutes.js");
 
 // routes
 app.use("/api/college", collegeRoutes);
@@ -77,11 +77,12 @@ app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/studentDummy", studentDummyRoutes);
 app.use("/api/student/test", studentTestRoutes);
+app.use("/api/student/inbox", studentInboxRoutes);
+
 app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/qb", qbRoutes);
 app.use("/api/payment", paymentRoutes);
-
 app.get("/", (req, res) => {
   res.send("API is running");
 });
@@ -106,8 +107,7 @@ const io = new socketIo.Server(server, {
       "https://skillaccessclient.netlify.app",
       "https://skillaccessprod.netlify.app",
       "https://skillaccess.vercel.app",
-      "https://skillaccess-student.vercel.app"
-      
+      "https://skillaccess-student.vercel.app",
     ],
   },
 });
@@ -120,7 +120,7 @@ io.on("connection", (socket) => {
   socket.on("joinRoom", (email) => {
     // Handle sending email logic
     socket.join(email);
-    console.log("joined room" + email);
+    console.log(" joined room" + email);
   });
 
   socket.on("message", (roomName, message) => {
