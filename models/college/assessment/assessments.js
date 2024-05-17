@@ -133,7 +133,32 @@ const assessmentsSchema = new Schema({
     default: 0,
   },
 
-// ----------------------------------
+// -------------------------------- RESULTS --------------------------
+avgSelectedPercentage: {
+  type: Number,
+  default: 0,
+},
+avgRejectedPercentage: {
+  type: Number,
+  default: 0,
+},
+selectedStudents : [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StudentResponse",
+  },
+],
+
+
+rejectedStudents : [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StudentResponse",
+  },
+],
+
+
+// -----------------------------------------------------------------------
 createdAt: {
   type: Date,
   default: Date.now,

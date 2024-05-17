@@ -11,6 +11,13 @@ const studentResponseSchema = new mongoose.Schema({
     ref: "Assessment",
     // required: [true, 'Please enter assessment id']
   },
+  status :{
+    // selected or rejected
+    type: 'String',
+    default: 'pending',
+    enum : ['pending','selected','rejected']
+  },
+
   attempt: { type: Number, default: 1 },
   testType: {
     type: String,
@@ -291,6 +298,12 @@ const studentResponseSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+},{
+  timestamps: true
 });
 
 const studentResponse = mongoose.model(

@@ -213,7 +213,12 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     assessment.response = studentResponse._id;
     test.studentResponses.push(studentResponse._id);
+// -------------------------------------------------------
+    const std = await Student.findById(studentId);
+    std.studentResponses.push(studentResponse._id);
 
+    await std.save()
+// -------------------------------------------------------
     await test.save();
 
     await student.save();
@@ -253,7 +258,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         firstQuestion,
         data: {
           assessment,
-          student,
+          // student,
         },
         // studentResponse
       });
@@ -342,6 +347,35 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
   assessment.L2Correct = 0;
   assessment.L3Correct = 0;
   await student.save();
+
+
+// --------------------- update the avgPercentage of the assessment -------------------
+
+  const test = await Assessments.findById(testId).populate("studentResponses");
+let avgPercentage = test.avgPercentage
+
+// duplicate student responses remove
+// let studentResponses = test.studentResponses.map((response) => response.studentId);
+
+let totalStudentResponses = test.studentResponses.length;
+let totalMarks = 0;
+
+assessment.studentResponses.forEach((response) => {
+  totalMarks += response.totalMarks;
+});
+
+avgPercentage = (totalMarks / (totalStudentResponses * test.totalQuestionsCount)) * 100;
+
+test.avgPercentage = avgPercentage;
+await test.save();
+
+// -----------------------------------------------------------------------------------
+
+
+
+
+
+
 
   res.json({
     success: true,

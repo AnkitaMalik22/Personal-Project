@@ -25,6 +25,8 @@ const PaymentPlan = require("../../models/college/account/planModel");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
 const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
+const studentResponse = require("../../models/student/studentResponse");
+const Assessments = require("../../models/college/assessment/assessments");
 
 // Import the Student model
 
@@ -1124,6 +1126,7 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 
     const student = await Student.findById(studentId.studentId);
 
+
     // for (let i = 0; i < college.pendingStudents.length; i++) {
     //   const student = await Student.findById(college.pendingStudents[i]);
 
@@ -1136,6 +1139,11 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+
+    student.approved = true;
+    await student.save();
+
+
     let sId = studentId.studentId;
 
     const approvedStudents = await ApprovedStudents.findOne({
@@ -1195,6 +1203,65 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+
+
+// reject student 
+
+
+exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const student = await Student.findById(req.params.studentId);
+    if(!student){
+      return next(new ErrorHandler("Student not found", 404));
+    }
+
+    await Student.findByIdAndDelete(req.params.studentId)
+
+    const college = await College.findById(req.user.id);
+
+    // remove from college approve students 
+   
+    // college.approveStudents = college.approvedStudents.filter(std => std._id.toString() !== student._id.toString());
+
+    const approvedStudents = await ApprovedStudents.findOne({
+      college: req.user.id,
+    });
+    if (approvedStudents) {
+      if (approvedStudents.students.includes(student._id)) {
+        approvedStudents.students = approvedStudents.students.filter(
+          (std) => std.toString() !== student._id.toString()
+        );
+      }
+    } 
+    await college.save();
+    await approvedStudents.save();
+
+
+
+    const message = `
+    Hello ${student.FirstName}, 
+    We regret to inform you that your request has been rejected. 
+    Please register again using the previous registration link and ensure that you complete your profile accurately.
+    `
+    await sendEmail({
+      email: student.Email,
+      subject: `${college.CollegeName} Registration Rejection`,
+      message,
+    });
+
+
+    return res.status(200).json({
+      sucess :"true",
+      message : "Student Rejected"
+
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+})
 
 // ------------------------------get students-----------------------------
 
@@ -1345,3 +1412,133 @@ exports.getPlacedStudents = catchAsyncErrors(async (req, res, next) => {
     totalPlacedStudents: college.students.length,
   });
 });
+
+
+
+// =========================================== select student for the assessment ==============================================
+
+//  College Assessment Inv > 
+
+exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
+
+
+  //student response id
+
+  const {responseId,testId} = req.params ;
+  const {status} = req.body;
+
+  const response = await studentResponse.findById(responseId);
+  const assessment = await Assessments.findById(testId);
+
+  if(!response){
+    return next(new ErrorHandler("Student response not found", 404));
+  }
+
+  response.status = status;
+
+
+  if(status == 'selected'){
+    assessment.selectedStudents.push(responseId);
+// calculate avgSelectedStudents percentage
+if(assessment.avgSelectedPercentage){ // if this field exits // check for old tests
+  assessment.avgSelectedPercentage = (assessment.selectedStudents.length / assessment.totalStudents) * 100;
+}
+  }
+  else if(status == 'rejected'){
+    assessment.rejectedStudents.push(responseId);
+    if(assessment.avgRejectedPercentage){ // if this field exits // check for old tests
+      assessment.avgRejectedPercentage = (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
+    }
+
+  }
+
+  await assessment.save();
+  await response.save();
+
+  res.status(200).json({
+    success: true,
+message : 'Student selected/rejected sucessfully'
+  });
+});
+
+
+// =========================================== GET ALL SELECTED STUDENTS FOR THE TEST  ===========================================
+
+exports.getSelectedStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {testId} = req.params;
+
+  const assessment = await Assessments.findById(testId).populate('selectedStudents');
+
+  if(!assessment){
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    selectedStudents: assessment.selectedStudents,
+  });
+});
+
+
+
+// =========================================== GET ALL REJECTED STUDENTS FOR THE TEST  ===========================================
+
+exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
+
+  const {testId} = req.params;
+
+  const assessment = await Assessments.findById(testId).populate('rejectedStudents');
+
+  if(!assessment){
+    return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    rejectedStudents: assessment.rejectedStudents,
+  });
+}
+);
+
+// =========================================== GET ALL STUDENTS FOR THE TEST  ===========================================
+
+// ALLL ATTEMPTED STUDENTS = studentresponses
+// ALL SELECTED STUDENTS = selectedStudents
+// ALL REJECTED STUDENTS = rejectedStudents
+
+// student tests => studentResponse 
+
+
+
+// =========================================== RESULT GRAPHS  ===========================================
+
+// get all students who attempted the test
+// get all students who selected the test
+// day , week , month , quarter , year
+
+// const resultOverviewGraph = async (req, res, next) => {
+//   const {testId} = req.params;
+//   const assessment = await Assessments.findById(testId);
+
+//   if(!assessment){
+//     return next(new ErrorHandler("Assessment not found", 404));
+//   }
+
+//   const attemptedStudents = await studentResponse.find({assessment : testId});
+//   const selectedStudents = await studentResponse.find({assessment : testId , status : 'selected'});
+//   const rejectedStudents = await studentResponse.find({assessment : testId , status : 'rejected'});
+//   const totalStudents = attemptedStudents.length;
+
+//   const attemptedPercentage = (attemptedStudents.length / totalStudents) * 100;
+//   const selectedPercentage = (selectedStudents.length / totalStudents) * 100;
+//   const rejectedPercentage = (rejectedStudents.length / totalStudents) * 100;
+
+//   // monthly basis data
+
+//   const monthlyData = [];
+
+  // get month wise data using createdAt
+ 
+
+
