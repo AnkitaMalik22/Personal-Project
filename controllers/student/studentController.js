@@ -375,7 +375,7 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
   await student.save({ validateBeforeSave: false });
 
 
-  const resetPasswordUrl = `https://skillaccess-student.vercel.app/password/reset/${resetToken}`;
+  const resetPasswordUrl = `https://skillaccess-student-iota.vercel.app/password/reset/${resetToken}`;
 
   const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
 
