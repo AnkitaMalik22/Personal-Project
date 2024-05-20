@@ -414,9 +414,17 @@ exports.searchMail = async (req, res) => {
 };
 exports.deleteMail = async (req, res) => {
   try {
+    const type = req.query.type;
+    console.log(type, "type");
     let inbox = await Inbox.findOneAndUpdate(
       { user: req.user.id },
-      { $pull: { emailsReceived: { mail: req.params.id } } },
+      {
+        $pull: {
+          [type === "Sent" ? "emailsSent" : "emailsReceived"]: {
+            mail: req.params.id,
+          },
+        },
+      },
       { new: true } // To return the updated document after the update
     );
 
