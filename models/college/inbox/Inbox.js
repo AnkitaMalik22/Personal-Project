@@ -9,7 +9,7 @@ const inboxSchema = new mongoose.Schema(
     refModel: {
       type: String,
       required: true,
-      enum: ["College", "Student"],
+      enum: ["College", "Students"],
     },
     emailsReceived: [
       {
