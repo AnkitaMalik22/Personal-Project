@@ -65,14 +65,14 @@ exports.updatePersonalInfo = catchAsyncErrors(async (req, res, next) => {
 
   const student = await Student.findByIdAndUpdate(
     req.user.id,
-    
-      req.body,
-    
+
+    req.body,
+
     // {
     //   PhoneNumber,
     //   Website,
     //   Address,
-      
+
     // },
     {
       new: true,
@@ -209,22 +209,32 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("College not found", 404));
     }
     // const { Links } = data;
-    // console.log(Links);
 
     // student.Links = Links;
     student.Portfolio = data;
+    console.log(!student.completedProfile);
     if (!student.completedProfile) {
-      student.completedProfile = true;
+      console.log("upl");
 
-      
-      const uploadedStudents = await UploadedStudents.findOneAndUpdate(
+      const uploadedStudents = await UploadedStudents.findOne(
+        { college: CollegeId }
+        // `new: true` returns the modified document
+      );
+      if (!uploadedStudents) {
+        console.log("create");
+        await UploadedStudents.create({
+          college: CollegeId,
+        });
+      }
+      await UploadedStudents.findOneAndUpdate(
         { college: CollegeId },
         {
           $push: { students: student._id },
-          $set: { college: CollegeId },
-        },
-        { new: true, upsert: true }
+        }
       );
+
+      console.log("Document updated or created:", uploadedStudents);
+      console.log("uplpadedStiudents");
       let invitedStudents = await InvitedStudents.findOne({
         college: student.CollegeId,
       });
@@ -234,9 +244,9 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
         }
       });
       await invitedStudents.save();
-    }
 
-  
+      student.completedProfile = true;
+    }
 
     // college.pendingStudents.push(student._id);
 

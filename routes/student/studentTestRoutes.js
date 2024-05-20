@@ -21,8 +21,7 @@ router.get("/:testId", isAuthenticatedStudent, getTestDetailsForStudent);
 router.post("/start/:testId", isAuthenticatedStudent, startAssessment);
 router.post("/end/:testId", isAuthenticatedStudent, endAssessment);
 router.post("/response/:testId", isAuthenticatedStudent, sendResponse);
-router.post(
-  "/response/non-adaptive/:testId",
+router.post( "/response/non-adaptive/:testId",
   isAuthenticatedStudent,
   sendResponseNonAdaptive
 );

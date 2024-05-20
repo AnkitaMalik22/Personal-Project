@@ -8,6 +8,8 @@ const { v2: cloudinary } = require("cloudinary");
 
 const mongoose = require("mongoose");
 const BookmarkedMail = require("../../../models/college/inbox/BookmarkedMails");
+const UploadedStudents = require("../../../models/student/uploadedStudents");
+const ApprovedStudents = require("../../../models/college/student/Approved");
 
 // Forgot Password
 
@@ -47,47 +49,63 @@ exports.uploadAttachment = async (req, res) => {
 };
 
 exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
-  let attachments = req.body.attachments || [];
-
-  const role = req.params.role;
-  console.log(req.user);
-
-  if (role === "college") {
-    user = await College.findOne({ Email: req.body.Email });
-  } else {
-    user = await Student.findOne({ Email: req.body.Email });
-  }
-
-  const college = await College.findOne({ Email: req.body.Email });
-  const student = await Student.findOne({ Email: req.body.Email });
-
-  if (college) {
-    emailTo = "College";
-  } else if (student) {
-    emailTo = "Student";
-  } else {
-    return next(new ErrorHandler("not found", 404));
-  }
-  let from;
-  if (req.user.role === "college") {
-    from = "College";
-  } else {
-    from = "Student";
-
-  }
   try {
+    let attachments = req.body.attachments || [];
+    let emailTo, user, recepient;
+
+    // const role = req.params.role;
+    // console.log(role);
+
+    // if (role === "college") {
+    //   user = await College.findOne({ Email: req.body.Email });
+    // } else {
+
+    // }
+    user = await Student.findOne({ Email: req.body.Email });
+
+    const college = await College.findOne({ Email: req.body.Email });
+
+    const approvedStudents = await ApprovedStudents.findOne({
+      college: req.user.id,
+    }).populate("students");
+
+    const student = approvedStudents.students.find((student) => {
+      return student.Email === req.body.Email;
+    });
+    // const student = await Student.findOne({ Email: req.body.Email });
+
+    // if (college) {
+    //   emailTo = "College";
+    //   recepient = college;
+    // } else
+    console.log(student);
+    if (student) {
+      emailTo = "Students";
+      recepient = student;
+    } else {
+      return next(new ErrorHandler("not found", 404));
+    }
+    let from;
+    if (req.user.role === "college") {
+      from = "College";
+    } else {
+      from = "Students";
+    }
+    console.log("ids");
+
+    console.log("ids", recepient._id);
     const mail = await Mail.create({
       Mailtype: emailTo,
       MailtypeFrom: from,
       attachments: attachments,
       Date: new Date(),
       from: req.user.id,
-      to: user._id,
+      to: recepient._id,
       message: req.body.Message,
       subject: req.body.Subject,
       replies: [],
     });
-
+    // console.log(mail);
     const sender = await Inbox.findOneAndUpdate(
       { user: req.user.id }, // Find the document with the specified user ID
       {
@@ -99,7 +117,7 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     );
     sender.emailsSent.reverse();
     const receiver = await Inbox.findOneAndUpdate(
-      { user: user._id }, // Find the document with the specified user ID
+      { user: recepient._id }, // Find the document with the specified user ID
       {
         $push: {
           emailsReceived: { mail: mail._id },
@@ -110,7 +128,8 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
 
     res.status(200).send({ sender, receiver });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    console.log(error);
+    return next(new ErrorHandler(error, 500));
   }
 });
 

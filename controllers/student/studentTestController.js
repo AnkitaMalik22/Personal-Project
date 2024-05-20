@@ -746,7 +746,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
   try {
     const { testId } = req.params;
     const { response } = req.body;
-    console.log(req.user.id, testId, );
+
     const studentId = req.user.id;
     const student = await CollegeAssessInv.findOne({
       student: studentId,
