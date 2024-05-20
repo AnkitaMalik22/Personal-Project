@@ -54,7 +54,7 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
       })
       .populate({
         path: "assessments.sender",
-        select: "CollegeName Email _id",
+        select: "CollegeName Email _id avatar Address",
       });
 
     if (!student) {
@@ -88,7 +88,7 @@ exports.getTestDetailsForStudent = catchAsyncErrors(async (req, res, next) => {
 
         // deselect: "",
 
-        select: "-studentResponses -totalQuestionsCount",
+        select: "-totalQuestionsCount",
       })
       .populate("assessments.sender");
 
@@ -123,22 +123,7 @@ exports.getTestDetailsForStudent = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-// const collegeAssessInvSchema = new mongoose.Schema({
-//   student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
-//   email: { type: String },
-//   assessments: [
-//     {
-//       active: { type: Boolean },
-//       onGoingAssessment: { type: String },
-
-//       completed: { type: Boolean },
-//       completedAt: { type: Date },
-//       startedAt: { type: Date },
-//       sender: { type: mongoose.Schema.Types.ObjectId, ref: "College" },
-//       assessment: { type: mongoose.Schema.Types.ObjectId, ref: "Assessments" },
-//     },
-//   ],
-// });
+// ================================================= START ASSESSMENT =====================================================
 
 exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -243,6 +228,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         topicNames,
         topicIndex: 0,
         firstQuestion: assessment.assessment.topics[0].questions[0],
+        totalTime : assessment.assessment.totalTime
         // studentResponse
       });
     } else {
@@ -276,6 +262,7 @@ console.log(firstQuestion);
           assessment,
           // student,
         },
+        totalTime : assessment.assessment.totalTime
         // studentResponse
       });
     }
@@ -1284,5 +1271,43 @@ exports.addMarks = catchAsyncErrors(async (req, res, next) => {
     message: "Marks added",
     totalMarks: student.totalMarks,
     student,
+  });
+});
+
+
+// ========================================= GET TOTAL APPEARED STUDENTS /TEST-ID ==============================================
+
+
+const getTotalAppearedStudents = catchAsyncErrors(async (req, res, next) => {
+  // Fetch student responses for the given studentId and testId
+  const studentResponses = await StudentResponse.find({
+    studentId: req.query.studentId,
+    assessmentId: req.query.testId
+  });
+
+
+  const assessment = await Assessments.findById(req.query.testId);
+
+  
+  if (assessment) {
+
+    const appearedStudents = new Set(studentResponses.map(response => response.studentId));
+
+ 
+    appearedStudents.forEach(studentId => {
+      if (!assessment?.appearedStudents?.includes(studentId)) {
+        assessment?.appearedStudents?.push(studentId);
+      }
+    });
+
+ 
+    await assessment.save();
+  }
+
+
+  res.status(200).json({
+    success: true,
+    studentResponses,
+    totalAppearedStudents : studentResponses.length
   });
 });

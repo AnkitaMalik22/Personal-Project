@@ -1,4 +1,5 @@
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
+
 const College = require("../../../models/college/collegeModel");
 const Inbox = require("../../../models/college/inbox/Inbox");
 const Mail = require("../../../models/college/inbox/Mail");
@@ -197,6 +198,104 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
+// exports.searchMail = async (req, res) => {
+//   try {
+//     const { skip = 0, limit = 10 } = req.query;
+//     const uploadPromises = [];
+//     let from,
+//       to = null;
+//     let within = 1;
+//     from = await College.find({ Email: req.body.from });
+//     // to = await College.find({ Email: req.body.to });
+
+//     // if (!from) {
+//     //   from = await Student.find({ Email: req.body.from});
+//     // } else if (!from) {
+//     //   from = await Company.find({ Email: req.body.from });
+//     // }
+//     // if (!to) {
+//     //   to = await Student.find({ Email: "Siddchtriggg@gmail.com" });
+//     // }
+//     const startDate = new Date(); // Current date
+//     startDate.setDate(startDate.getDate() - req.body.within || 0); // Subtract 1 day
+
+//     const endDate = new Date(); // Current date
+
+//     let dateToMatch = new Date();
+
+//     if (req.body.date) {
+//       dateToMatch = new Date(req.body.date);
+//     }
+//     if (req.body.within) {
+//       within = req.body.within;
+//     }
+//     // Convert the date from the request body to a Date object
+
+//     const nextDay = new Date(dateToMatch); // Create a new Date object for the day after dateToMatch
+//     nextDay.setDate(nextDay.getDate() + within);
+//     let mails;
+//     let query = {};
+
+//     if (req.body.within && !req.body.date) {
+//       query = {
+//         isDeletedReceiver: { $nin: { user: req.user.id } },
+//         // Always include the Date field in the query
+//         Date: { $gte: startDate, $lt: endDate },
+//       };
+//     } else if (!req.body.within && !req.body.date) {
+//       query = { isDeletedReceiver: { $nin: { user: req.user.id } } };
+//     } else {
+//       query = {
+//         isDeletedReceiver: { $nin: { user: req.user.id } },
+//         Date: { $gte: dateToMatch, $lt: nextDay }, // Match documents between dateToMatch (inclusive) and nextDay (exclusive)
+//       };
+//     }
+
+//     // Conditionally include the 'to' field
+//     // if (to._id) {
+//     query.to = req.user.id;
+//     // }
+//     const objectId = new mongoose.Types.ObjectId(req.user.id);
+//     // query.isDeletedReceiver = { $nin: { user: req.user.id } };
+
+//     // Conditionally include the 'message' field
+//     if (req.body.keyword) {
+//       query.message = { $regex: new RegExp(`.*${req.body.keyword}.*`) };
+//     }
+
+//     // Conditionally include the 'from' field
+//     if (from._id) {
+//       query.from = from._id;
+//     }
+
+//     console.log(query);
+
+//     mails = await Mail.find({
+//       $and: [
+//         {
+//           isDeletedReceiver: {
+//             $not: {
+//               $elemMatch: {
+//                 user: req.user.id,
+//               },
+//             },
+//           },
+//         },
+//         query, // Your existing query conditions
+//       ],
+//     })
+//       .skip(skip)
+//       .limit(limit)
+//       .populate("from")
+//       .populate("to");
+
+//     res.status(200).send(mails);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ success: false });
+//   }
+// };
+
 exports.searchMail = async (req, res) => {
   try {
     const { skip = 0, limit = 10 } = req.query;
@@ -205,7 +304,7 @@ exports.searchMail = async (req, res) => {
       to = null;
     let within = 1;
     from = await College.find({ Email: req.body.from });
-    // to = await College.find({ Email: req.body.to });
+    to = await Student.find({ Email: req.body.to });
 
     // if (!from) {
     //   from = await Student.find({ Email: req.body.from});
@@ -237,22 +336,19 @@ exports.searchMail = async (req, res) => {
 
     if (req.body.within && !req.body.date) {
       query = {
-        isDeletedReceiver: { $nin: { user: req.user.id } },
         // Always include the Date field in the query
         Date: { $gte: startDate, $lt: endDate },
       };
     } else if (!req.body.within && !req.body.date) {
-      query = { isDeletedReceiver: { $nin: { user: req.user.id } } };
     } else {
       query = {
-        isDeletedReceiver: { $nin: { user: req.user.id } },
         Date: { $gte: dateToMatch, $lt: nextDay }, // Match documents between dateToMatch (inclusive) and nextDay (exclusive)
       };
     }
 
     // Conditionally include the 'to' field
     // if (to._id) {
-    query.to = req.user.id;
+    // query.to = req.user.id;
     // }
     const objectId = new mongoose.Types.ObjectId(req.user.id);
     // query.isDeletedReceiver = { $nin: { user: req.user.id } };
@@ -269,37 +365,66 @@ exports.searchMail = async (req, res) => {
 
     console.log(query);
 
-    mails = await Mail.find({
-      $and: [
-        {
-          isDeletedReceiver: {
-            $not: {
-              $elemMatch: {
-                user: req.user.id,
-              },
-            },
+    const inbox = await Inbox.findOne({ user: req.user.id })
+      .populate({
+        path: "emailsReceived.mail",
+        match: { ...query, to: req.user.id },
+        populate: [
+          {
+            path: "from",
+            select: ["avatar", "Email", "FirstName", "LastName"],
           },
+          {
+            path: "to",
+            select: ["avatar", "Email", "FirstName", "LastName"],
+          },
+        ],
+      })
+      .populate({
+        path: "emailsSent.mail",
+        match: {
+          ...query,
+          from: req.user.id,
+          ...(to._id ? { to: to._id } : {}),
         },
-        query, // Your existing query conditions
-      ],
-    })
-      .skip(skip)
-      .limit(limit)
-      .populate("from")
-      .populate("to");
+        populate: [
+          {
+            path: "from",
+            select: ["avatar", "Email", "FirstName", "LastName", "CollegeName"],
+          },
+          {
+            path: "to",
+            select: ["avatar", "Email", "FirstName", "LastName", "CollegeName"],
+          },
+        ],
+      });
 
-    res.status(200).send(mails);
+    const received = inbox.emailsReceived
+      .filter((mail) => mail.mail !== null)
+      .slice(skip, limit);
+    const sent = inbox.emailsSent
+      .filter((mail) => mail.mail !== null)
+      .slice(skip, limit);
+
+    res.status(200).json({ emailsReceived: received, emailsSent: sent });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false });
   }
 };
-
 exports.deleteMail = async (req, res) => {
   try {
+    const type = req.query.type;
+    console.log(type, "type");
     let inbox = await Inbox.findOneAndUpdate(
       { user: req.user.id },
-      { $pull: { emailsReceived: { mail: req.params.id } } },
+      {
+        $pull: {
+          [type === "Sent" ? "emailsSent" : "emailsReceived"]: {
+            mail: req.params.id,
+          },
+        },
+      },
       { new: true } // To return the updated document after the update
     );
 
