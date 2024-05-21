@@ -206,7 +206,7 @@ exports.searchMail = async (req, res) => {
       to = null;
     let within = 1;
     from = await College.find({ Email: req.body.from });
-    // to = await College.find({ Email: req.body.to });
+    to = await Student.find({ Email: req.body.to });
 
     // if (!from) {
     //   from = await Student.find({ Email: req.body.from});
@@ -238,22 +238,19 @@ exports.searchMail = async (req, res) => {
 
     if (req.body.within && !req.body.date) {
       query = {
-        isDeletedReceiver: { $nin: { user: req.user.id } },
         // Always include the Date field in the query
         Date: { $gte: startDate, $lt: endDate },
       };
     } else if (!req.body.within && !req.body.date) {
-      query = { isDeletedReceiver: { $nin: { user: req.user.id } } };
     } else {
       query = {
-        isDeletedReceiver: { $nin: { user: req.user.id } },
         Date: { $gte: dateToMatch, $lt: nextDay }, // Match documents between dateToMatch (inclusive) and nextDay (exclusive)
       };
     }
 
     // Conditionally include the 'to' field
     // if (to._id) {
-    query.to = req.user.id;
+    // query.to = req.user.id;
     // }
     const objectId = new mongoose.Types.ObjectId(req.user.id);
     // query.isDeletedReceiver = { $nin: { user: req.user.id } };
@@ -270,26 +267,48 @@ exports.searchMail = async (req, res) => {
 
     console.log(query);
 
-    mails = await Mail.find({
-      $and: [
-        {
-          isDeletedReceiver: {
-            $not: {
-              $elemMatch: {
-                user: req.user.id,
-              },
-            },
+    const inbox = await Inbox.findOne({ user: req.user.id })
+      .populate({
+        path: "emailsReceived.mail",
+        match: { ...query, to: req.user.id },
+        populate: [
+          {
+            path: "from",
+            select: ["avatar", "Email", "FirstName", "LastName"],
           },
+          {
+            path: "to",
+            select: ["avatar", "Email", "FirstName", "LastName"],
+          },
+        ],
+      })
+      .populate({
+        path: "emailsSent.mail",
+        match: {
+          ...query,
+          from: req.user.id,
+          ...(to._id ? { to: to._id } : {}),
         },
-        query, // Your existing query conditions
-      ],
-    })
-      .skip(skip)
-      .limit(limit)
-      .populate("from")
-      .populate("to");
+        populate: [
+          {
+            path: "from",
+            select: ["avatar", "Email", "FirstName", "LastName", "CollegeName"],
+          },
+          {
+            path: "to",
+            select: ["avatar", "Email", "FirstName", "LastName", "CollegeName"],
+          },
+        ],
+      });
 
-    res.status(200).send(mails);
+    const received = inbox.emailsReceived
+      .filter((mail) => mail.mail !== null)
+      .slice(skip, limit);
+    const sent = inbox.emailsSent
+      .filter((mail) => mail.mail !== null)
+      .slice(skip, limit);
+
+    res.status(200).json({ emailsReceived: received, emailsSent: sent });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false });
