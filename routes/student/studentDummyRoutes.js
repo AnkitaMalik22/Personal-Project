@@ -1,26 +1,36 @@
-const router = require('express').Router();
+const router = require("express").Router();
 
+const {
+  registerStudent,
+  loginStudent,
+  getStudentDetails,
+  getAllStudents,
+  addTest,
+  getTestDetails,
+  giveTest,
+  getStudentResponse,
+  getStudentResponseById,
+  getStudentResponseByStudentIdAndTestId,
+  testPerformance,
+  getAllStudentResponseByStudentId,
+  getStudentResponseByAccessmentId,
+} = require("../../controllers/student/studentDummy");
 
-const {registerStudent,loginStudent,getStudentDetails,getAllStudents,addTest,getTestDetails,giveTest, getStudentResponse, getStudentResponseById, getStudentResponseByStudentIdAndTestId, testPerformance} = require('../../controllers/student/studentDummy');
+router.route("/register").post(registerStudent);
+router.route("/login").post(loginStudent);
+router.route("/me/:id").get(getStudentDetails);
 
-
-router.route('/register').post(registerStudent);
-router.route('/login').post(loginStudent);
-router.route('/me/:id').get(getStudentDetails);
-
-router.route('/all/:id').get(getAllStudents);
-router.route('/add/test').post(addTest);
+router.route("/all/:id").get(getAllStudents);
+router.route("/add/test").post(addTest);
 // router.route('/add/marks').post(addMarks);
-router.route('/get/test-details/:id').get(getTestDetails);
-router.route('/answer/test').post(giveTest);
-router.route('/response/details').get(getStudentResponse);
-router.route('/response/:id').get(getStudentResponseById);
-router.route('/students/:id').get(getAllStudents);
-router.route('/test/student').get(getStudentResponseByStudentIdAndTestId);
-router.route('/test/get-performace/:id').get(testPerformance);
-
-
-
-
+router.route("/get/test-details/:id").get(getTestDetails);
+router.route("/answer/test").post(giveTest);
+router.route("/response/details").get(getStudentResponse);
+router.route("/response/:id").get(getStudentResponseById);
+router.route("/students/:id").get(getAllStudents);
+router.route("/test/student").get(getStudentResponseByStudentIdAndTestId);
+router.route("/test/get-performace/:id").get(testPerformance);
+router.route("/test/result").get(getAllStudentResponseByStudentId);
+router.route("/test/get-details").get(getStudentResponseByAccessmentId);
 
 module.exports = router;
