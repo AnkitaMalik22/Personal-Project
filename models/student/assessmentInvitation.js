@@ -48,6 +48,10 @@ const collegeAssessInvSchema = new mongoose.Schema({
         type: Number,
         default: 0,
       },
+      correctAnswers: {
+        type: Number,
+        default: 0,
+      },
       currentTopicIndex: {
         type: Number,
         default: 0,
@@ -56,7 +60,13 @@ const collegeAssessInvSchema = new mongoose.Schema({
         type: Number,
         default: 0,
       },
+      // topic wise
       totalQuestionsAttempted: {
+        type: Number,
+        default: 0,
+      },
+      // total assessment questions
+      totalStudentAttempted: {
         type: Number,
         default: 0,
       },

@@ -290,11 +290,32 @@ const studentResponseSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  // assessment marks
   marks: {
     type: Number,
     default: 0,
   },
+  // student marks
   totalMarks: {
+    type: Number,
+    default: 0,
+  },
+  // time assessment
+  time :{
+    type: Number,
+    default: 0
+  },
+  // time taken by student
+  timeTaken :{
+    type: Number,
+    default: 0
+  },
+
+  totalQuestionsAttempted: {
+    type: Number,
+    default: 0,
+  },
+  correctAnswers: {
     type: Number,
     default: 0,
   },
