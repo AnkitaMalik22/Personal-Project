@@ -157,6 +157,12 @@ rejectedStudents : [
   },
 ],
 
+apprearedStudents :[
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StudentResponse",
+  },
+],
 
 // -----------------------------------------------------------------------
 createdAt: {
