@@ -312,14 +312,15 @@ exports.getStudentResponseByStudentIdAndTestId = catchAsyncErrors(
 );
 
 // get all Student result data
-exports.getAllStudentResponseByStudentId = catchAsyncErrors(
+exports.getAllAssessmentAppperByStudentId = catchAsyncErrors(
   async (req, res, next) => {
     const studentResponse = await StudentResponse.find({
       studentId: req.query.studentId,
-    });
+    }).populate("assessmentId");
 
     res.status(200).json({
       success: true,
+
       studentResponse,
     });
   }
@@ -331,14 +332,14 @@ exports.getStudentResponseByAccessmentId = catchAsyncErrors(
     const { _id } = req.query;
 
     // console.log(_id);
-    const studentResponse = await StudentResponse.find({ _id });
-    const assessment = await Assessments.findById(
-      studentResponse[0].assessmentId
+    const studentResponse = await StudentResponse.find({ _id }).populate(
+      "assessmentId"
     );
+
     // console.log(assessment);
     res.status(200).json({
       success: true,
-      studentResponse: { ...studentResponse, assessment: assessment },
+      studentResponse,
     });
   }
 );
