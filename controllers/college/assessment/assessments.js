@@ -100,6 +100,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     return {
       ...topic,
+      topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
       L1count,
       L2count,
       L3count,
@@ -108,6 +109,8 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       totalL3Question,
     };
   });
+  // Need to calculate the marks of subjective questions also
+  let totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
 
   // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
 
@@ -121,6 +124,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     endDate: req.body.endDate,
     totalQuestionsCount: req.body.totalQuestions,
     totalTime: req.body.totalDuration,
+    totalMarks,
     createdByCompany,
   });
 

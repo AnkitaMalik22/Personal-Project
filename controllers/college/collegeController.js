@@ -1438,14 +1438,18 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
 
 
   if(status == 'selected'){
+   if(!assessment.selectedStudents.includes(responseId)){
     assessment.selectedStudents.push(responseId);
+   }
 // calculate avgSelectedStudents percentage
 if(assessment.avgSelectedPercentage){ // if this field exits // check for old tests
   assessment.avgSelectedPercentage = (assessment.selectedStudents.length / assessment.totalStudents) * 100;
 }
   }
   else if(status == 'rejected'){
+  if(!assessment.rejectedStudents.includes(responseId)){
     assessment.rejectedStudents.push(responseId);
+  }
     if(assessment.avgRejectedPercentage){ // if this field exits // check for old tests
       assessment.avgRejectedPercentage = (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
     }
@@ -1468,7 +1472,13 @@ exports.getSelectedStudents = catchAsyncErrors(async (req, res, next) => {
 
   const {testId} = req.params;
 
-  const assessment = await Assessments.findById(testId).populate('selectedStudents');
+  const assessment = await Assessments.findById(testId).populate({
+    path: 'selectedStudents',
+    populate: {
+      path: 'studentId',
+      model: 'Students'
+    }
+  });
 
   if(!assessment){
     return next(new ErrorHandler("Assessment not found", 404));
