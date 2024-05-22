@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const connectDatabase = () => {
   const dbURI = process.env.MONGO_URI;
+  // console.log(dbURI);
   mongoose.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
   const db = mongoose.connection;
