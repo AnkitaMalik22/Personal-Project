@@ -43,16 +43,18 @@ exports.uploadAttachment = async (req, res) => {
     console.log(uploadedFiles[0]);
     res.status(200).json(pics);
   } catch (error) {
-    console.log(error);
+    console.log("err", error);
     res.status(500).json(error);
   }
 };
 
+// /api/student/inbox/sendMail
+
 exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
   try {
     let attachments = req.body.attachments || [];
-    let emailTo, user, recepient;
-
+    let emailTo, mail, user, recepient, Student;
+    const { Email } = req.body;
     // const role = req.params.role;
     // console.log(role);
 
@@ -61,51 +63,86 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     // } else {
 
     // }
-    user = await Student.findOne({ Email: req.body.Email });
 
-    const college = await College.findOne({ Email: req.body.Email });
+    const college = await College.findById(req.user.CollegeId);
 
+    let studentExists = false;
     const approvedStudents = await ApprovedStudents.findOne({
-      college: req.user.id,
-    }).populate("students");
-
-    const student = approvedStudents.students.find((student) => {
-      return student.Email === req.body.Email;
+      college: req.user.CollegeId,
+    }).populate({
+      path: "students",
+      // select: ["Email"],
     });
-    // const student = await Student.findOne({ Email: req.body.Email });
 
-    // if (college) {
-    //   emailTo = "College";
-    //   recepient = college;
-    // } else
-    console.log(student);
-    if (student) {
-      emailTo = "Student";
-      recepient = student;
-    } else {
-      return next(new ErrorHandler("not found", 404));
-    }
-    let from;
-    if (req.user.role === "college") {
-      from = "College";
-    } else {
-      from = "Student";
-    }
-    console.log("ids");
+    // console.log(college, approvedStudents);
 
-    console.log("ids", recepient._id);
-    const mail = await Mail.create({
-      Mailtype: emailTo,
-      MailtypeFrom: from,
-      attachments: attachments,
-      Date: new Date(),
-      from: req.user.id,
-      to: recepient._id,
-      message: req.body.Message,
-      subject: req.body.Subject,
-      replies: [],
+    approvedStudents.students.forEach((student) => {
+      if (student.Email === Email) {
+        studentExists = true;
+        Student = student;
+      }
     });
-    // console.log(mail);
+
+    if (!studentExists && Email !== college.Email) {
+      return next(new ErrorHandler("Email not registered on skillaccess", 500));
+    }
+
+    if (!studentExists) {
+      console.log("non existing");
+      mail = await Mail.create({
+        Mailtype: "College",
+        MailtypeFrom: "Students",
+        attachments: attachments,
+        Date: new Date(),
+        from: req.user.id,
+        to: req.user.CollegeId,
+        message: req.body.Message,
+        subject: req.body.Subject,
+        replies: [],
+      });
+      recepient = req.user.CollegeId;
+    } else {
+      mail = await Mail.create({
+        Mailtype: "Students",
+        MailtypeFrom: "Students",
+        attachments: attachments,
+        Date: new Date(),
+        from: req.user.id,
+        to: Student._id,
+
+        message: req.body.Message,
+        subject: req.body.Subject,
+        replies: [],
+      });
+      recepient = Student._id;
+    }
+    //   const student = approvedStudents.students.find((student) => {
+    //     return student.Email === req.body.Email;
+    //   });
+    //   // const student = await Student.findOne({ Email: req.body.Email });
+
+    //   // if (college) {
+    //   //   emailTo = "College";
+    //   //   recepient = college;
+    //   // } else
+    //   console.log(student);
+    //   if (student) {
+    //     emailTo = "Student";
+    //     recepient = student;
+    //   } else {
+    //     return next(new ErrorHandler("not found", 404));
+    //   }
+    //   let from;
+    //   if (req.user.role === "college") {
+    //     from = "College";
+    //   } else {
+    //     from = "Student";
+    //   }
+    //   console.log("ids");
+
+    //   console.log("ids", recepient._id);
+
+    //   // console.log(mail);
     const sender = await Inbox.findOneAndUpdate(
       { user: req.user.id }, // Find the document with the specified user ID
       {
@@ -117,7 +154,7 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     );
     sender.emailsSent.reverse();
     const receiver = await Inbox.findOneAndUpdate(
-      { user: recepient._id }, // Find the document with the specified user ID
+      { user: recepient }, // Find the document with the specified user ID
       {
         $push: {
           emailsReceived: { mail: mail._id },
@@ -189,10 +226,11 @@ exports.getEmailStudent = catchAsyncErrors(async (req, res, next) => {
       });
 
     const total = mail.emailsReceived.length;
+    const totalSent = mail.emailsSent.length;
     mail.emailsReceived = mail.emailsReceived.slice(skip, limit);
     mail.emailsSent = mail.emailsSent.slice(skip, limit);
 
-    res.status(200).send({ success: true, mail, total });
+    res.status(200).send({ success: true, mail, total, totalSent });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
@@ -317,20 +355,30 @@ exports.searchMail = async (req, res) => {
 
 exports.deleteMail = async (req, res) => {
   try {
-    let inbox = await Inbox.findOneAndUpdate(
-      { user: req.user.id },
-      { $pull: { emailsReceived: { mail: req.params.id } } },
-      { new: true } // To return the updated document after the update
-    );
-
-    let mail = await Mail.findOneAndUpdate(
-      { _id: req.params.id },
-      { $push: { isDeletedReceiver: { user: req.user.id } } },
-      { new: true } // To return the updated document after the update
-    );
-    if (!mail || !inbox) {
+    const type = req.params.type;
+    let inbox;
+    console.log(type);
+    if (type === "Sent") {
+      inbox = await Inbox.findOneAndUpdate(
+        { user: req.user.id },
+        { $pull: { emailsSent: { mail: req.params.id } } },
+        { new: true } // To return the updated document after the update
+      );
+    } else {
+      inbox = await Inbox.findOneAndUpdate(
+        { user: req.user.id },
+        { $pull: { emailsReceived: { mail: req.params.id } } },
+        { new: true } // To return the updated document after the update
+      );
     }
-    res.status(200).json({ success: true, mail, inbox });
+
+    // let mail = await Mail.findOneAndUpdate(
+    //   { _id: req.params.id },
+    //   { $push: { isDeletedReceiver: { user: req.user.id } } },
+    //   { new: true } // To return the updated document after the update
+    // );
+
+    res.status(200).json({ success: true, inbox });
   } catch (error) {
     console.log(error);
   }

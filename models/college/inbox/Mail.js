@@ -12,7 +12,7 @@ const mailSchema = new mongoose.Schema(
     MailtypeFrom: {
       type: String,
       required: true,
-      enum: ["College", "Student"],
+      enum: ["College", "Students"],
     },
     Date: Date,
     to: {
