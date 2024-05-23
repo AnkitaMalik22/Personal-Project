@@ -157,7 +157,7 @@ exports.sendReply = catchAsyncErrors(async (req, res) => {
 
 exports.getEmail = catchAsyncErrors(async (req, res, next) => {
   try {
-    const { skip = 0, limit = 10 } = req.query;
+    const { skip = 0, limit = 5 } = req.query;
     let mail = await Inbox.findOne({ user: req.user.id })
       .populate({
         path: "emailsReceived.mail",
@@ -189,10 +189,11 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
       });
 
     const total = mail.emailsReceived.length;
-    mail.emailsReceived = mail.emailsReceived.slice(skip, limit);
-    mail.emailsSent = mail.emailsSent.slice(skip, limit);
+    const totalSent = mail.emailsSent.length;
+    mail.emailsReceived = mail.emailsReceived.splice(skip, limit);
+    mail.emailsSent = mail.emailsSent.splice(skip, limit);
 
-    res.status(200).send({ success: true, mail, total });
+    res.status(200).send({ success: true, mail, total, totalSent });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
@@ -298,7 +299,7 @@ exports.getEmail = catchAsyncErrors(async (req, res, next) => {
 
 exports.searchMail = async (req, res) => {
   try {
-    const { skip = 0, limit = 10 } = req.query;
+    const { skip = 0, limit = 5 } = req.body;
     const uploadPromises = [];
     let from,
       to = null;
@@ -406,7 +407,12 @@ exports.searchMail = async (req, res) => {
       .filter((mail) => mail.mail !== null)
       .slice(skip, limit);
 
-    res.status(200).json({ emailsReceived: received, emailsSent: sent });
+    res.status(200).json({
+      emailsReceived: received,
+      emailsSent: sent,
+      total: inbox.emailsReceived.filter((mail) => mail.mail !== null).length,
+      totalSent: inbox.emailsSent.filter((mail) => mail.mail !== null).length,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false });
