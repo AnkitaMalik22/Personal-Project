@@ -29,6 +29,13 @@ const studentResponseSchema = new mongoose.Schema({
       Type: String,
       Heading: String,
       Description: String,
+      totalMarks : Number,
+      totalQuestions : Number,
+      topicMarks: {
+        type: Number,
+        default: 0,
+      },
+
 
       questions: [
         {
@@ -90,6 +97,12 @@ const studentResponseSchema = new mongoose.Schema({
           //     },
           Title: String,
           Duration: String,
+          totalMarks : Number,
+      totalQuestions : Number,
+      topicMarks: {
+        type: Number,
+        default: 0,
+      },
           Answer: {
             type: String,
             default: "",
@@ -109,6 +122,12 @@ const studentResponseSchema = new mongoose.Schema({
           Duration: String,
           video: String,
           videoFile: String,
+          totalMarks : Number,
+      totalQuestions : Number,
+      topicMarks: {
+        type: Number,
+        default: 0,
+      },
           // calulate total from client and send
           marks: {
             type: Number,
@@ -187,6 +206,12 @@ const studentResponseSchema = new mongoose.Schema({
       findAnswers: [
         {
           Title: String,
+          totalMarks : Number,
+          totalQuestions : Number,
+          topicMarks: {
+            type: Number,
+            default: 0,
+          },
           marks: {
             type: Number,
             default: 0,
@@ -217,6 +242,12 @@ const studentResponseSchema = new mongoose.Schema({
       compiler: [
         {
           Duration: String,
+          totalMarks : Number,
+          totalQuestions : Number,
+          topicMarks: {
+            type: Number,
+            default: 0,
+          },
           code: {
             type: String,
             default: `printf('hello world')`,
