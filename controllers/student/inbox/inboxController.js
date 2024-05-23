@@ -227,8 +227,8 @@ exports.getEmailStudent = catchAsyncErrors(async (req, res, next) => {
 
     const total = mail.emailsReceived.length;
     const totalSent = mail.emailsSent.length;
-    mail.emailsReceived = mail.emailsReceived.slice(skip, limit);
-    mail.emailsSent = mail.emailsSent.slice(skip, limit);
+    mail.emailsReceived = mail.emailsReceived.splice(skip, limit);
+    mail.emailsSent = mail.emailsSent.splice(skip, limit);
 
     res.status(200).send({ success: true, mail, total, totalSent });
   } catch (error) {
@@ -238,7 +238,7 @@ exports.getEmailStudent = catchAsyncErrors(async (req, res, next) => {
 
 exports.searchMail = async (req, res) => {
   try {
-    const { skip = 0, limit = 10 } = req.query;
+    const { skip = 0, limit = 10 } = req.body;
     const uploadPromises = [];
     let from,
       to = null;
@@ -341,12 +341,17 @@ exports.searchMail = async (req, res) => {
 
     const received = inbox.emailsReceived
       .filter((mail) => mail.mail !== null)
-      .slice(skip, limit);
+      .splice(skip, limit);
     const sent = inbox.emailsSent
       .filter((mail) => mail.mail !== null)
-      .slice(skip, limit);
+      .splice(skip, limit);
 
-    res.status(200).json({ emailsReceived: received, emailsSent: sent });
+    res.status(200).json({
+      emailsReceived: received,
+      emailsSent: sent,
+      total: inbox.emailsReceived.filter((mail) => mail.mail !== null).length,
+      totalSent: inbox.emailsSent.filter((mail) => mail.mail !== null).length,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false });
