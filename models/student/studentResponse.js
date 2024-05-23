@@ -19,17 +19,24 @@ const studentResponseSchema = new mongoose.Schema(
       enum: ["pending", "selected", "rejected"],
     },
 
-    attempt: { type: Number, default: 1 },
-    testType: {
-      type: String,
-      default: "adaptive",
-      enum: ["adaptive", "non-adaptive"],
-    },
-    topics: [
-      {
-        Type: String,
-        Heading: String,
-        Description: String,
+  attempt: { type: Number, default: 1 },
+  testType: {
+    type: String,
+    default: "adaptive",
+    enum: ["adaptive", "non-adaptive"],
+  },
+  topics: [
+    {
+      Type: String,
+      Heading: String,
+      Description: String,
+      totalMarks : Number,
+      totalQuestions : Number,
+      topicMarks: {
+        type: Number,
+        default: 0,
+      },
+
 
         questions: [
           {
@@ -59,96 +66,108 @@ const studentResponseSchema = new mongoose.Schema(
               default: "",
             },
 
-            AnswerIndex: {
-              type: Number,
-              default: -1,
-            },
-            QuestionType: {
-              type: String,
-              default: "mcq",
-            }, // for MCQ
-            StudentAnswerIndex: {
-              type: Number,
-              // required: [true, 'Please enter student answer index']
-            },
-            marks: {
-              type: Number,
-              default: 0,
-            },
-            // for subjective
-            // studentAnswer: {
-            //     type: String,
-            //     // required: [true, 'Please enter student answer']
-            // }
+          AnswerIndex: {
+            type: Number,
+            default: -1,
           },
-        ],
-        essay: [
-          {
-            //    questionId: {
-            //         type: mongoose.Schema.ObjectId,
-            //         ref: 'Essay',
-            //         // required: [true, 'Please enter question id']
-            //     },
-            Title: String,
-            Duration: String,
-            Answer: {
-              type: String,
-              default: "",
-            },
-            studentAnswer: {
-              type: String,
-              // required: [true, 'Please enter student answer']
-            },
-            marks: {
-              type: Number,
-              default: 0,
-            },
+          QuestionType: {
+            type: String,
+            default: "mcq",
+          }, // for MCQ
+          StudentAnswerIndex: {
+            type: Number,
+            // required: [true, 'Please enter student answer index']
           },
-        ],
-        video: [
-          {
-            Duration: String,
-            video: String,
-            videoFile: String,
-            // calulate total from client and send
-            marks: {
-              type: Number,
-              default: 0,
+          marks: {
+            type: Number,
+            default: 0,
+          },
+          // for subjective
+          // studentAnswer: {
+          //     type: String,
+          //     // required: [true, 'Please enter student answer']
+          // }
+        },
+      ],
+      essay: [
+        {
+          //    questionId: {
+          //         type: mongoose.Schema.ObjectId,
+          //         ref: 'Essay',
+          //         // required: [true, 'Please enter question id']
+          //     },
+          Title: String,
+          Duration: String,
+          totalMarks : Number,
+      totalQuestions : Number,
+      topicMarks: {
+        type: Number,
+        default: 0,
+      },
+          Answer: {
+            type: String,
+            default: "",
+          },
+          studentAnswer: {
+            type: String,
+            // required: [true, 'Please enter student answer']
+          },
+          marks: {
+            type: Number,
+            default: 0,
+          },
+        },
+      ],
+      video: [
+        {
+          Duration: String,
+          video: String,
+          videoFile: String,
+          totalMarks : Number,
+      totalQuestions : Number,
+      topicMarks: {
+        type: Number,
+        default: 0,
+      },
+          // calulate total from client and send
+          marks: {
+            type: Number,
+            default: 0,
+          },
+          long: [
+            {
+              Title: String,
+              studentAnswer: String,
+              Duration: String,
+              marks: {
+                type: Number,
+                default: 0,
+              },
             },
-            long: [
-              {
-                Title: String,
-                studentAnswer: String,
-                Duration: String,
-                marks: {
-                  type: Number,
-                  default: 0,
-                },
+          ],
+          short: [
+            {
+              Title: String,
+              studentAnswer: String,
+              Duration: String,
+              marks: {
+                type: Number,
+                default: 0,
               },
-            ],
-            short: [
-              {
-                Title: String,
-                studentAnswer: String,
-                Duration: String,
-                marks: {
-                  type: Number,
-                  default: 0,
-                },
+            },
+          ],
+          questions: [
+            {
+              Title: String,
+              Options: {
+                type: Array,
+                default: [],
               },
-            ],
-            questions: [
-              {
-                Title: String,
-                Options: {
-                  type: Array,
-                  default: [],
-                },
-                // For lengthy questions
-                Answer: {
-                  type: String,
-                  default: "",
-                },
+              // For lengthy questions
+              Answer: {
+                type: String,
+                default: "",
+              },
 
                 AnswerIndex: {
                   type: Number,
@@ -174,72 +193,84 @@ const studentResponseSchema = new mongoose.Schema(
             ],
             VideoLink: String,
 
-            mcq: [],
-            essay: [],
-            findAnswer: [],
-            shortAnswer: [],
-            longAnswer: [],
-            studentAnswer: {
-              type: String,
-              // required: [true, 'Please enter student answer']
-            },
+          mcq: [],
+          essay: [],
+          findAnswer: [],
+          shortAnswer: [],
+          longAnswer: [],
+          studentAnswer: {
+            type: String,
+            // required: [true, 'Please enter student answer']
           },
-        ],
-        findAnswers: [
-          {
-            Title: String,
-            marks: {
-              type: Number,
-              default: 0,
+        },
+      ],
+      findAnswers: [
+        {
+          Title: String,
+          totalMarks : Number,
+          totalQuestions : Number,
+          topicMarks: {
+            type: Number,
+            default: 0,
+          },
+          marks: {
+            type: Number,
+            default: 0,
+          },
+          questions: [
+            {
+              question: String,
+              studentAnswer: String,
             },
-            questions: [
-              {
-                question: String,
-                studentAnswer: String,
-              },
-            ],
-            Duration: String,
+          ],
+          Duration: String,
 
             Answer: {
               type: String,
               default: "",
             },
 
-            QuestionType: {
-              type: String,
-              default: "findAnswer",
-            },
-            studentAnswer: {
-              type: String,
-              // required: [true, 'Please enter student answer']
-            },
+          QuestionType: {
+            type: String,
+            default: "findAnswer",
           },
-        ],
-        compiler: [
-          {
-            Duration: String,
-            code: {
-              type: String,
-              default: `printf('hello world')`,
-            },
-            verificationCode: {
-              type: String,
-              default: "",
-            },
-            codeQuestion: {
-              type: String,
-            },
-            codeLanguage: {
-              type: String,
-              // enum:['c','cpp','java','python','javascript'],
-            },
-            parameters: {
-              type: [],
-            },
-            returnType: {
-              type: String,
-              // enum: ['int', 'boolean', 'string'],
-            },
+          studentAnswer: {
+            type: String,
+            // required: [true, 'Please enter student answer']
+          },
+        },
+      ],
+      compiler: [
+        {
+          Duration: String,
+          totalMarks : Number,
+          totalQuestions : Number,
+          topicMarks: {
+            type: Number,
+            default: 0,
+          },
+          code: {
+            type: String,
+            default: `printf('hello world')`,
+          },
+          verificationCode: {
+            type: String,
+            default: "",
+          },
+          codeQuestion: {
+            type: String,
+          },
+          codeLanguage: {
+            type: String,
+            // enum:['c','cpp','java','python','javascript'],
+          },
+          parameters: {
+            type: [],
+          },
+          returnType: {
+            type: String,
+            // enum: ['int', 'boolean', 'string'],
+          },
 
             testcase: {
               type: [
