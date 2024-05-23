@@ -9,7 +9,7 @@ const studentResponseSchema = new mongoose.Schema(
     },
     assessmentId: {
       type: mongoose.Schema.ObjectId,
-      ref: "Assessments",
+      ref: "Assessment",
       // required: [true, 'Please enter assessment id']
     },
     status: {
@@ -19,24 +19,23 @@ const studentResponseSchema = new mongoose.Schema(
       enum: ["pending", "selected", "rejected"],
     },
 
-  attempt: { type: Number, default: 1 },
-  testType: {
-    type: String,
-    default: "adaptive",
-    enum: ["adaptive", "non-adaptive"],
-  },
-  topics: [
-    {
-      Type: String,
-      Heading: String,
-      Description: String,
-      totalMarks : Number,
-      totalQuestions : Number,
-      topicMarks: {
-        type: Number,
-        default: 0,
-      },
-
+    attempt: { type: Number, default: 1 },
+    testType: {
+      type: String,
+      default: "adaptive",
+      enum: ["adaptive", "non-adaptive"],
+    },
+    topics: [
+      {
+        Type: String,
+        Heading: String,
+        Description: String,
+        totalMarks: Number,
+        totalQuestions: Number,
+        topicMarks: {
+          type: Number,
+          default: 0,
+        },
 
         questions: [
           {
@@ -66,108 +65,108 @@ const studentResponseSchema = new mongoose.Schema(
               default: "",
             },
 
-          AnswerIndex: {
-            type: Number,
-            default: -1,
-          },
-          QuestionType: {
-            type: String,
-            default: "mcq",
-          }, // for MCQ
-          StudentAnswerIndex: {
-            type: Number,
-            // required: [true, 'Please enter student answer index']
-          },
-          marks: {
-            type: Number,
-            default: 0,
-          },
-          // for subjective
-          // studentAnswer: {
-          //     type: String,
-          //     // required: [true, 'Please enter student answer']
-          // }
-        },
-      ],
-      essay: [
-        {
-          //    questionId: {
-          //         type: mongoose.Schema.ObjectId,
-          //         ref: 'Essay',
-          //         // required: [true, 'Please enter question id']
-          //     },
-          Title: String,
-          Duration: String,
-          totalMarks : Number,
-      totalQuestions : Number,
-      topicMarks: {
-        type: Number,
-        default: 0,
-      },
-          Answer: {
-            type: String,
-            default: "",
-          },
-          studentAnswer: {
-            type: String,
-            // required: [true, 'Please enter student answer']
-          },
-          marks: {
-            type: Number,
-            default: 0,
-          },
-        },
-      ],
-      video: [
-        {
-          Duration: String,
-          video: String,
-          videoFile: String,
-          totalMarks : Number,
-      totalQuestions : Number,
-      topicMarks: {
-        type: Number,
-        default: 0,
-      },
-          // calulate total from client and send
-          marks: {
-            type: Number,
-            default: 0,
-          },
-          long: [
-            {
-              Title: String,
-              studentAnswer: String,
-              Duration: String,
-              marks: {
-                type: Number,
-                default: 0,
-              },
+            AnswerIndex: {
+              type: Number,
+              default: -1,
             },
-          ],
-          short: [
-            {
-              Title: String,
-              studentAnswer: String,
-              Duration: String,
-              marks: {
-                type: Number,
-                default: 0,
-              },
+            QuestionType: {
+              type: String,
+              default: "mcq",
+            }, // for MCQ
+            StudentAnswerIndex: {
+              type: Number,
+              // required: [true, 'Please enter student answer index']
             },
-          ],
-          questions: [
-            {
-              Title: String,
-              Options: {
-                type: Array,
-                default: [],
+            marks: {
+              type: Number,
+              default: 0,
+            },
+            // for subjective
+            // studentAnswer: {
+            //     type: String,
+            //     // required: [true, 'Please enter student answer']
+            // }
+          },
+        ],
+        essay: [
+          {
+            //    questionId: {
+            //         type: mongoose.Schema.ObjectId,
+            //         ref: 'Essay',
+            //         // required: [true, 'Please enter question id']
+            //     },
+            Title: String,
+            Duration: String,
+            totalMarks: Number,
+            totalQuestions: Number,
+            topicMarks: {
+              type: Number,
+              default: 0,
+            },
+            Answer: {
+              type: String,
+              default: "",
+            },
+            studentAnswer: {
+              type: String,
+              // required: [true, 'Please enter student answer']
+            },
+            marks: {
+              type: Number,
+              default: 0,
+            },
+          },
+        ],
+        video: [
+          {
+            Duration: String,
+            video: String,
+            videoFile: String,
+            totalMarks: Number,
+            totalQuestions: Number,
+            topicMarks: {
+              type: Number,
+              default: 0,
+            },
+            // calulate total from client and send
+            marks: {
+              type: Number,
+              default: 0,
+            },
+            long: [
+              {
+                Title: String,
+                studentAnswer: String,
+                Duration: String,
+                marks: {
+                  type: Number,
+                  default: 0,
+                },
               },
-              // For lengthy questions
-              Answer: {
-                type: String,
-                default: "",
+            ],
+            short: [
+              {
+                Title: String,
+                studentAnswer: String,
+                Duration: String,
+                marks: {
+                  type: Number,
+                  default: 0,
+                },
               },
+            ],
+            questions: [
+              {
+                Title: String,
+                Options: {
+                  type: Array,
+                  default: [],
+                },
+                // For lengthy questions
+                Answer: {
+                  type: String,
+                  default: "",
+                },
 
                 AnswerIndex: {
                   type: Number,
@@ -193,84 +192,84 @@ const studentResponseSchema = new mongoose.Schema(
             ],
             VideoLink: String,
 
-          mcq: [],
-          essay: [],
-          findAnswer: [],
-          shortAnswer: [],
-          longAnswer: [],
-          studentAnswer: {
-            type: String,
-            // required: [true, 'Please enter student answer']
-          },
-        },
-      ],
-      findAnswers: [
-        {
-          Title: String,
-          totalMarks : Number,
-          totalQuestions : Number,
-          topicMarks: {
-            type: Number,
-            default: 0,
-          },
-          marks: {
-            type: Number,
-            default: 0,
-          },
-          questions: [
-            {
-              question: String,
-              studentAnswer: String,
+            mcq: [],
+            essay: [],
+            findAnswer: [],
+            shortAnswer: [],
+            longAnswer: [],
+            studentAnswer: {
+              type: String,
+              // required: [true, 'Please enter student answer']
             },
-          ],
-          Duration: String,
+          },
+        ],
+        findAnswers: [
+          {
+            Title: String,
+            totalMarks: Number,
+            totalQuestions: Number,
+            topicMarks: {
+              type: Number,
+              default: 0,
+            },
+            marks: {
+              type: Number,
+              default: 0,
+            },
+            questions: [
+              {
+                question: String,
+                studentAnswer: String,
+              },
+            ],
+            Duration: String,
 
             Answer: {
               type: String,
               default: "",
             },
 
-          QuestionType: {
-            type: String,
-            default: "findAnswer",
+            QuestionType: {
+              type: String,
+              default: "findAnswer",
+            },
+            studentAnswer: {
+              type: String,
+              // required: [true, 'Please enter student answer']
+            },
           },
-          studentAnswer: {
-            type: String,
-            // required: [true, 'Please enter student answer']
-          },
-        },
-      ],
-      compiler: [
-        {
-          Duration: String,
-          totalMarks : Number,
-          totalQuestions : Number,
-          topicMarks: {
-            type: Number,
-            default: 0,
-          },
-          code: {
-            type: String,
-            default: `printf('hello world')`,
-          },
-          verificationCode: {
-            type: String,
-            default: "",
-          },
-          codeQuestion: {
-            type: String,
-          },
-          codeLanguage: {
-            type: String,
-            // enum:['c','cpp','java','python','javascript'],
-          },
-          parameters: {
-            type: [],
-          },
-          returnType: {
-            type: String,
-            // enum: ['int', 'boolean', 'string'],
-          },
+        ],
+        compiler: [
+          {
+            Duration: String,
+            totalMarks: Number,
+            totalQuestions: Number,
+            topicMarks: {
+              type: Number,
+              default: 0,
+            },
+            code: {
+              type: String,
+              default: `printf('hello world')`,
+            },
+            verificationCode: {
+              type: String,
+              default: "",
+            },
+            codeQuestion: {
+              type: String,
+            },
+            codeLanguage: {
+              type: String,
+              // enum:['c','cpp','java','python','javascript'],
+            },
+            parameters: {
+              type: [],
+            },
+            returnType: {
+              type: String,
+              // enum: ['int', 'boolean', 'string'],
+            },
 
             testcase: {
               type: [
@@ -302,63 +301,66 @@ const studentResponseSchema = new mongoose.Schema(
       default: 0,
     },
 
+    mcqMarks: {
+      type: Number,
+      default: 0,
+    },
+    codingMarks: {
+      type: Number,
+      default: 0,
+    },
+    essayMarks: {
+      type: Number,
+      default: 0,
+    },
+    videoMarks: {
+      type: Number,
+      default: 0,
+    },
+    findAnswerMarks: {
+      type: Number,
+      default: 0,
+    },
+    // assessment marks
+    marks: {
+      type: Number,
+      default: 0,
+    },
+    // student marks
+    totalMarks: {
+      type: Number,
+      default: 0,
+    },
+    // time assessment
+    time: {
+      type: Number,
+      default: 0,
+    },
+    // time taken by student
+    timeTaken: {
+      type: Number,
+      default: 0,
+    },
 
-  mcqMarks: {
-    type: Number,
-    default: 0,
-  },
-  codingMarks: {
-    type: Number,
-    default: 0,
-  },
-  essayMarks: {
-    type: Number,
-    default: 0,
-  },
-  videoMarks: {
-    type: Number,
-    default: 0,
-  },
-  findAnswerMarks: {
-    type: Number,
-    default: 0,
-  },
-  // assessment marks
-  marks: {
-    type: Number,
-    default: 0,
-  },
-  // student marks
-  totalMarks: {
-    type: Number,
-    default: 0,
-  },
-  // time assessment
-  time :{
-    type: Number,
-    default: 0
-  },
-  // time taken by student
-  timeTaken :{
-    type: Number,
-    default: 0
-  },
-
-  totalQuestionsAttempted: {
-    type: Number,
-    default: 0,
-  },
-  correctAnswers: {
-    type: Number,
-    default: 0,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  completedAt: {
-    type: Date,
-
+    totalQuestionsAttempted: {
+      type: Number,
+      default: 0,
+    },
+    correctAnswers: {
+      type: Number,
+      default: 0,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    completedAt: {
+      type: Date,
+    },
+    completed: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
