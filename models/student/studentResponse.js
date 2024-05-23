@@ -271,45 +271,63 @@ const studentResponseSchema = new mongoose.Schema(
       default: 0,
     },
 
-    mcqMarks: {
-      type: Number,
-      default: 0,
-    },
-    codingMarks: {
-      type: Number,
-      default: 0,
-    },
-    essayMarks: {
-      type: Number,
-      default: 0,
-    },
-    videoMarks: {
-      type: Number,
-      default: 0,
-    },
-    findAnswerMarks: {
-      type: Number,
-      default: 0,
-    },
-    marks: {
-      type: Number,
-      default: 0,
-    },
-    totalMarks: {
-      type: Number,
-      default: 0,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    completedAt: {
-      type: Date,
-    },
-    completed: {
-      type: Boolean,
-      default: false,
-    },
+
+  mcqMarks: {
+    type: Number,
+    default: 0,
+  },
+  codingMarks: {
+    type: Number,
+    default: 0,
+  },
+  essayMarks: {
+    type: Number,
+    default: 0,
+  },
+  videoMarks: {
+    type: Number,
+    default: 0,
+  },
+  findAnswerMarks: {
+    type: Number,
+    default: 0,
+  },
+  // assessment marks
+  marks: {
+    type: Number,
+    default: 0,
+  },
+  // student marks
+  totalMarks: {
+    type: Number,
+    default: 0,
+  },
+  // time assessment
+  time :{
+    type: Number,
+    default: 0
+  },
+  // time taken by student
+  timeTaken :{
+    type: Number,
+    default: 0
+  },
+
+  totalQuestionsAttempted: {
+    type: Number,
+    default: 0,
+  },
+  correctAnswers: {
+    type: Number,
+    default: 0,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  completedAt: {
+    type: Date,
+
   },
   {
     timestamps: true,

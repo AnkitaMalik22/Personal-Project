@@ -141,6 +141,10 @@ compiler:[
     type: Number,
     default: 0,
   },
+  topicMarks : {
+    type: Number,
+    default: 0,
+  },
 
   
   // negativeCount: {
