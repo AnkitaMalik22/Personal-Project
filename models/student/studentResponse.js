@@ -9,7 +9,7 @@ const studentResponseSchema = new mongoose.Schema(
     },
     assessmentId: {
       type: mongoose.Schema.ObjectId,
-      ref: "Assessment",
+      ref: "Assessments",
       // required: [true, 'Please enter assessment id']
     },
     status: {
