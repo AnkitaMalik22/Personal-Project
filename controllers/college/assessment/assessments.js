@@ -198,7 +198,7 @@ else if (req.body.level === "advanced"){
 const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
   try {
     const students = req.body;
-    console.log(students, "students");
+    // console.log(students, "students");
 
     // console.log ("upload students called" , students , "students")
 
@@ -208,7 +208,8 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
     const college = await College.findById(CollegeId);
     const assessment = await Assessments.findById(assessmentId);
-
+    const credit = await Credit.findOne({ college: CollegeId });
+    console.log(credit);
     if (!college) {
       return next(new ErrorHandler("College not found", 404));
     }
@@ -226,27 +227,46 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
           console.log("Student already invited");
           // return next(new ErrorHandler("Student already invited", 404));
         } else {
-          assessment.invitedStudents.push(_id);
-          await assessment.save();
-        }
+          console.log(assessment.invitedStudents.length + 1, credit.limit);
 
-        await CollegeAssessInv.findOneAndUpdate(
-          { student: _id },
-          {
-            $set: { student: _id },
-            $push: {
-              assessments: { sender: CollegeId, assessment: assessmentId },
-            },
-          },
-          {
-            upsert: true,
+          if (
+            credit.limit === 400 &&
+            assessment.invitedStudents.length + 1 > credit.limit
+          ) {
+            if (credit.credit === 0) {
+              return res
+                .status(200)
+                .json({ success: "true", message: i + " students invited" });
+            }
+
+            credit -= 1;
+            await credit.save();
+          } else if (assessment.invitedStudents.length + 1 > credit.limit) {
+            return res
+              .status(200)
+              .json({ success: "true", message: i + "students invited" });
           }
-        );
-        sendEmail({
-          email: Email,
-          subject: "Invitation to join Test",
-          message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/login?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, please register first.`,
-        });
+          assessment.invitedStudents.push(_id);
+
+          await assessment.save();
+          await CollegeAssessInv.findOneAndUpdate(
+            { student: _id },
+            {
+              $set: { student: _id },
+              $push: {
+                assessments: { sender: CollegeId, assessment: assessmentId },
+              },
+            },
+            {
+              upsert: true,
+            }
+          );
+          sendEmail({
+            email: Email,
+            subject: "Invitation to join Test",
+            message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/login?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, please register first.`,
+          });
+        }
       }
     }
 
@@ -455,7 +475,36 @@ const endAssessment = catchAsyncErrors(async (req, res, next) => {
 
 // =========================================================================================================================================
 
+const getRecentAssessments = catchAsyncErrors(async (req, res, next) => {
+  const id = req.user.id;
+  const assessment = await Assessments.find({
+    createdBy: id,
+    $or: [{ visible: true }, { visible: { $exists: false } }],
+    endDate: { $lt: Date.now() },
+  }).sort({ endDate: -1 });
+
+  if (!assessment) {
+    return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+  }
+
+  res.status(200).json({ success: true, assessment });
+});
+
+const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
+  const id = req.user.id;
+  const assessment = await Assessments.findByIdAndUpdate(req.params.id, {
+    visible: false,
+  });
+
+  if (!assessment) {
+    return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+  }
+
+  res.status(200).json({ success: true, assessment });
+});
 module.exports = {
+  removeRecentAssessment,
+  getRecentAssessments,
   createAssessment,
   getAllAssessments,
   getAssessmentById,
