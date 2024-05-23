@@ -12,7 +12,7 @@ const {
   getStudentResponseById,
   getStudentResponseByStudentIdAndTestId,
   testPerformance,
-  getAllStudentResponseByStudentId,
+  getAllAssessmentAppperByStudentId,
   getStudentResponseByAccessmentId,
 } = require("../../controllers/student/studentDummy");
 
@@ -30,7 +30,7 @@ router.route("/response/:id").get(getStudentResponseById);
 router.route("/students/:id").get(getAllStudents);
 router.route("/test/student").get(getStudentResponseByStudentIdAndTestId);
 router.route("/test/get-performace/:id").get(testPerformance);
-router.route("/test/result").get(getAllStudentResponseByStudentId);
+router.route("/test/result").get(getAllAssessmentAppperByStudentId);
 router.route("/test/get-details").get(getStudentResponseByAccessmentId);
 
 module.exports = router;

@@ -81,7 +81,7 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  approved :{
+  approved: {
     type: Boolean,
     default: false,
   },
@@ -123,32 +123,30 @@ const studentSchema = new mongoose.Schema({
     select: false,
   },
 
-// ------ for dummy -------------
-// the tests student has taken
-studentTests: [
+  // ------ for dummy -------------
+  // the tests student has taken
+  studentTests: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Assessments",
     },
-
   ],
   // the responses student has given
-studentResponses: [
+  studentResponses: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "StudentResponse",
     },
   ],
 
-studentMarks : [ {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "StudentMarks",
-  },
-],
+  studentMarks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentMarks",
+    },
+  ],
 
-
-// -----------------------------
-
+  // -----------------------------
 
   createdAt: {
     type: Date,
@@ -156,7 +154,7 @@ studentMarks : [ {
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
-  
+
   CollegeName: {
     type: String,
     // required: [true, "Please Enter Your College Name"],
@@ -171,31 +169,31 @@ studentMarks : [ {
     type: mongoose.Schema.Types.ObjectId,
     ref: "College",
   },
-// ----
-// registrationLink: { type: String, unique: true, default: "" },
-registrationLink: { type: String, default: ""},
-registeredAt: { type: Date },
-confirmationToken: { type: String },
-emailConfirmed: { type: Boolean, default: false },
+  // ----
+  // registrationLink: { type: String, unique: true, default: "" },
+  registrationLink: { type: String, default: "" },
+  registeredAt: { type: Date },
+  confirmationToken: { type: String },
+  emailConfirmed: { type: Boolean, default: false },
 
-lastLogin: { type: Date },
-loginAttempts: { type: Number, default: 0 },
-loggedOut: { type: Boolean, default: false },
-// ----
+  lastLogin: { type: Date },
+  loginAttempts: { type: Number, default: 0 },
+  loggedOut: { type: Boolean, default: false },
+  // ----
   Assessments: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Assessments",
     },
   ],
-  OnGoingAssessment: 
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Assessments",
-    },
+  OnGoingAssessment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Assessments",
+  },
   PhoneNumber: String,
   Address: String,
   Website: String,
+  Profile: String,
   // Education: educationSchema,
   Education: [
     {
@@ -204,8 +202,8 @@ loggedOut: { type: Boolean, default: false },
       Degree: String,
       StartDate: Date,
       EndDate: Date,
-      Place : String,
-      Media:[
+      Place: String,
+      Media: [
         {
           public_id: {
             type: String,
@@ -213,36 +211,38 @@ loggedOut: { type: Boolean, default: false },
           url: {
             type: String,
           },
-          file_name : {
+          file_name: {
             type: String,
           },
-        }
-      ]
+        },
+      ],
     },
   ],
   // Skills: skillsSchema,
   Skills: {
-    SoftwareKnowledge: [{
-      type: String,
-    }],
+    SoftwareKnowledge: [
+      {
+        type: String,
+      },
+    ],
     Achievements: [
       {
         type: String,
       },
     ],
-    CodingKnowledge: [{type: String}],
-    Languages: [{type: String}],
+    CodingKnowledge: [{ type: String }],
+    Languages: [{ type: String }],
   },
-  Links: [{
-    type: String,
-  
-  }],
+  Links: [
+    {
+      type: String,
+    },
+  ],
   // Portfolio: portfolioSchema,
   Portfolio: [
     {
       type: String,
-    
-    }
+    },
   ],
   Cv: {
     public_id: {
@@ -251,11 +251,9 @@ loggedOut: { type: Boolean, default: false },
     url: {
       type: String,
     },
-    file_name : {
+    file_name: {
       type: String,
     },
-    
-
   },
   Certificates: [
     {
@@ -295,7 +293,7 @@ loggedOut: { type: Boolean, default: false },
       ref: "Jobs",
     },
   ],
-// ---------------------
+  // ---------------------
   loginActivity: [
     {
       ip: String,

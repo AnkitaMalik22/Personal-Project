@@ -1,22 +1,23 @@
 const mongoose = require("mongoose");
 
-const studentResponseSchema = new mongoose.Schema({
-  studentId: {
-    type: mongoose.Schema.ObjectId,
-    ref: "Students",
-    // required: [true, 'Please enter student id']
-  },
-  assessmentId: {
-    type: mongoose.Schema.ObjectId,
-    ref: "Assessment",
-    // required: [true, 'Please enter assessment id']
-  },
-  status :{
-    // selected or rejected
-    type: 'String',
-    default: 'pending',
-    enum : ['pending','selected','rejected']
-  },
+const studentResponseSchema = new mongoose.Schema(
+  {
+    studentId: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Students",
+      // required: [true, 'Please enter student id']
+    },
+    assessmentId: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Assessments",
+      // required: [true, 'Please enter assessment id']
+    },
+    status: {
+      // selected or rejected
+      type: "String",
+      default: "pending",
+      enum: ["pending", "selected", "rejected"],
+    },
 
   attempt: { type: Number, default: 1 },
   testType: {
@@ -37,33 +38,33 @@ const studentResponseSchema = new mongoose.Schema({
       },
 
 
-      questions: [
-        {
-          // questionId: {
-          //     type: mongoose.Schema.ObjectId,
-          //     ref: 'Question',
-          //     // required: [true, 'Please enter question id']
-          // },
-          id: {
-            type: String,
-            // required:true
-          },
-          QuestionLevel: {
-            type: String,
-            default: "beginner",
-            enum: ["beginner", "intermediate", "advanced"],
-          },
+        questions: [
+          {
+            // questionId: {
+            //     type: mongoose.Schema.ObjectId,
+            //     ref: 'Question',
+            //     // required: [true, 'Please enter question id']
+            // },
+            id: {
+              type: String,
+              // required:true
+            },
+            QuestionLevel: {
+              type: String,
+              default: "beginner",
+              enum: ["beginner", "intermediate", "advanced"],
+            },
 
-          Title: String,
-          Options: {
-            type: Array,
-            default: [],
-          },
-          // For lengthy questions
-          Answer: {
-            type: String,
-            default: "",
-          },
+            Title: String,
+            Options: {
+              type: Array,
+              default: [],
+            },
+            // For lengthy questions
+            Answer: {
+              type: String,
+              default: "",
+            },
 
           AnswerIndex: {
             type: Number,
@@ -168,29 +169,29 @@ const studentResponseSchema = new mongoose.Schema({
                 default: "",
               },
 
-              AnswerIndex: {
-                type: Number,
-                default: -1,
+                AnswerIndex: {
+                  type: Number,
+                  default: -1,
+                },
+                QuestionType: {
+                  type: String,
+                  default: "mcq",
+                }, // for MCQ
+                StudentAnswerIndex: {
+                  type: Number,
+                  // required: [true, 'Please enter student answer index']
+                },
+                attempted: {
+                  type: Boolean,
+                  default: false,
+                },
+                marks: {
+                  type: Number,
+                  default: 0,
+                },
               },
-              QuestionType: {
-                type: String,
-                default: "mcq",
-              }, // for MCQ
-              StudentAnswerIndex: {
-                type: Number,
-                // required: [true, 'Please enter student answer index']
-              },
-              attempted: {
-                type: Boolean,
-                default: false,
-              },
-              marks: {
-                type: Number,
-                default: 0,
-              },
-            },
-          ],
-          VideoLink: String,
+            ],
+            VideoLink: String,
 
           mcq: [],
           essay: [],
@@ -224,10 +225,10 @@ const studentResponseSchema = new mongoose.Schema({
           ],
           Duration: String,
 
-          Answer: {
-            type: String,
-            default: "",
-          },
+            Answer: {
+              type: String,
+              default: "",
+            },
 
           QuestionType: {
             type: String,
@@ -271,35 +272,36 @@ const studentResponseSchema = new mongoose.Schema({
             // enum: ['int', 'boolean', 'string'],
           },
 
-          testcase: {
-            type: [
-              {
-                input: String,
-                expectedOutput: String,
-                studentOutput: String,
-                passed: Boolean,
-              },
-            ],
-            // input : "",
-            // expectedOutput :"" ,
-            // studentOutput : "",
-            // passed : false,
+            testcase: {
+              type: [
+                {
+                  input: String,
+                  expectedOutput: String,
+                  studentOutput: String,
+                  passed: Boolean,
+                },
+              ],
+              // input : "",
+              // expectedOutput :"" ,
+              // studentOutput : "",
+              // passed : false,
+            },
+            output: {
+              type: [],
+            },
+            studentAnswer: {
+              type: String,
+              // required: [true, 'Please enter student answer']
+            },
           },
-          output: {
-            type: [],
-          },
-          studentAnswer: {
-            type: String,
-            // required: [true, 'Please enter student answer']
-          },
-        },
-      ],
+        ],
+      },
+    ],
+    percentage: {
+      type: Number,
+      default: 0,
     },
-  ],
-  percentage: {
-    type: Number,
-    default: 0,
-  },
+
 
   mcqMarks: {
     type: Number,
@@ -356,14 +358,12 @@ const studentResponseSchema = new mongoose.Schema({
   },
   completedAt: {
     type: Date,
+
   },
-  completed : {
-    type: Boolean,
-    default: false
+  {
+    timestamps: true,
   }
-},{
-  timestamps: true
-});
+);
 
 const studentResponse = mongoose.model(
   "StudentResponse",
