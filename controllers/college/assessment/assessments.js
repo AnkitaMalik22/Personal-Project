@@ -82,6 +82,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
   // calculate the total sections duration == test duration
   const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
+  const isAdaptive = req.body.level === "adaptive";
 
   let newTopics = topics.map((topic) => {
     const totalL1Question = topic.questions.filter(
@@ -94,11 +95,15 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     ).length;
 
     const L2count = Math.ceil(totalL2Question / 2);
+    
     const totalL3Question = topic.questions.filter(
       (question) => question.QuestionLevel === "advanced"
     ).length;
-    const L3count = Math.ceil(totalL3Question);
+    const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question-1) : 1;
+    
+    // let L3count = topic.questions.length - L1count - L2count;
 
+   if(isAdaptive){
     return {
       ...topic,
       topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
@@ -109,9 +114,39 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       totalL2Question,
       totalL3Question,
     };
+   }else{
+    return{
+      ...topic,
+      // only calculating mcqs for beginner , intermediate and advanced
+      topicMarks: topic.questions.length,
+      totalL1Question,
+      totalL2Question,
+      totalL3Question,
+    }
+   }
   });
+
+let totalMarks = 0;
+
+if(req.body.level === "adaptive"){
+  totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
+}
+else if (req.body.level === "beginner"){
+  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL1Question, 0);
+}
+else if (req.body.level === "intermediate"){
+  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL2Question, 0);
+}
+else if (req.body.level === "advanced"){
+  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL3Question, 0);
+}
+
+
+
+
+
   // Need to calculate the marks of subjective questions also
-  let totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
+ 
 
   // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
 
