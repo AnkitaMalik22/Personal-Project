@@ -307,7 +307,9 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
 
   const assessment = await Assessments.findById(id).populate({
     path: "studentResponses",
-    populate: { path: "studentId" }, // Replace "fieldNameToPopulate" with the field you want to populate
+    populate: { path: "studentId" },
+    // only send those res who completed the test
+    match: { completed: true }
   });
 
   if (!assessment) {
