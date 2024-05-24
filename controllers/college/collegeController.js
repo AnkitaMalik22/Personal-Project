@@ -1323,7 +1323,6 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 // ============================================ dashboard ===========================================================
 
 // getTotalJobs
-
 exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
   // const college = await College.findById(req.user.id).populate({
   //   path: "jobs",
@@ -1336,6 +1335,38 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
     // totalJobs: college.jobs.length,
   });
 });
+
+
+// Corrected getTotalJobs -- commented due to no jobs available
+
+// exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
+//   try {
+//     // Retrieve the college and populate designated companies
+//     const college = await College.findById(req.user.id).populate({
+//       path: "designatedCompanies",
+//       options: { strictPopulate: false }
+//     });
+
+//     if (!college) {
+//       return next(new ErrorHandler("College not found", 404));
+//     }
+
+    
+//     const designatedCompanyIds = college.designatedCompanies.map(company => company._id);
+
+//     const jobs = await Job.find({ company: { $in: designatedCompanyIds } }).populate("company");
+
+//     res.status(200).json({
+//       success: true,
+//       jobs: jobs,
+//       totalJobs: jobs.length,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return next(new ErrorHandler("An error occurred while fetching the jobs from designated companies", 500));
+//   }
+// });
+
 
 // get available assessments
 
@@ -1372,30 +1403,69 @@ exports.getTotalStudents = catchAsyncErrors(async (req, res, next) => {
 // get total companies
 
 exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
-  const companies = await Company.find({});
-  res.status(200).json({
-    success: true,
-    companies: companies,
-  });
+  try {
+      const college = await College.findById(req.params.collegeId);
+      if (!college) {
+          return next(new ErrorHandler("College not found", 404));
+      }
+
+      const companies = await College.findById(req.params.collegeId)
+          .populate('designatedCompanies', null, null, { strictPopulate: false })
+          .exec();
+
+      if (!companies || !companies.designatedCompanies) {
+          return next(new ErrorHandler("No designated companies found", 404));
+      }
+
+      // Map over the designatedCompanies array
+      let designatedCompanies = companies.designatedCompanies.map(company => {
+          return company;
+      });
+
+      res.status(200).json({
+          success: true,
+          companies: designatedCompanies,
+      });
+  } catch (error) {
+      console.log(error);
+      return next(new ErrorHandler("An error occurred while fetching companies", 500));
+  }
 });
+
 
 // get recent companies
 
-exports.getRecentCompanies = catchAsyncErrors(async (req, res, next) => {
-  const companies = await Company.find({}).sort({ createdAt: -1 }).limit(5);
 
-  if (companies.length > 0) {
-    res.status(200).json({
-      success: true,
-      companies: companies,
+exports.getRecentDesignatedCompanies = catchAsyncErrors(async (req, res, next) => {
+  try {
+    // Find the college by user ID and populate the designated companies
+    const college = await College.findById(req.params.collegeId).populate({
+      path: 'designatedCompanies',
+      options: { sort: { createdAt: -1 }, limit: 5 } // Sort by creation date and limit to 5
     });
-  } else {
-    res.status(404).json({
-      success: false,
-      message: "No recent companies found",
-    });
+
+    if (!college) {
+      return next(new ErrorHandler("College not found", 404));
+    }
+
+    // Check if there are any designated companies
+    if (college.designatedCompanies.length > 0) {
+      res.status(200).json({
+        success: true,
+        companies: college.designatedCompanies,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "No recent designated companies found",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return next(new ErrorHandler("An error occurred while fetching recent designated companies", 500));
   }
 });
+
 
 // get Placed Students
 
