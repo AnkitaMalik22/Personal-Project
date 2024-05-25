@@ -251,7 +251,6 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         totalTime: assessment.assessment.totalTime,
         // studentResponse
       });
-
     } else {
       // check which type of test it is
       const type = assessment.assessment.topics[0].Type;
@@ -268,7 +267,6 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         firstQuestion = assessment.assessment.topics[0].compiler[0];
       }
 
-    
       res.json({
         success: true,
         message: "Assessment started",
@@ -511,7 +509,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // ==========================================================
     //find the question from topic
     const question = topic.questions[questionIndex];
-    console.log("question" , questionIndex);
+    console.log("question", questionIndex);
     if (!question) {
       return next(new ErrorHandler("Question not found", 404));
     }
@@ -528,11 +526,10 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       console.log("Correct Answer");
       assessment.correctAnswers += 1;
       if (question.QuestionLevel === "beginner") {
-       
         assessment.marks += 1;
         assessment.L1Correct += 1;
         assessment.currentTopicMarks += 1;
-       
+
         console.log("L1 correct", assessment.marks);
       } else if (question.QuestionLevel === "intermediate") {
         assessment.marks += 2;
@@ -682,12 +679,10 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       // console.log("All L1 questions completed ");
       // Send the same topic level 2 questions if the student has achieved the required marks for level 1
       const nextQuestionIndex = topic.totalL1Question + assessment.L2Correct;
-       console.log("Next question index L2 ", nextQuestionIndex);
+      console.log("Next question index L2 ", nextQuestionIndex);
 
       if (nextQuestionIndex < topic.questions.length) {
-      
         nextQuestion = topic.questions[nextQuestionIndex];
-
       }
       assessment.currentQuestionIndex = nextQuestionIndex;
     } else if (
@@ -697,14 +692,14 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     ) {
       // console.log("All L2 questions completed ");
       // Send the same topic level 3 questions if the student has achieved the required marks for level 2
-      const nextQuestionIndex = topic.totalL1Question + topic.totalL2Question + assessment.L3Correct;
+      const nextQuestionIndex =
+        topic.totalL1Question + topic.totalL2Question + assessment.L3Correct;
       console.log("Next question index L3 ", nextQuestionIndex);
       if (nextQuestionIndex <= topic.questions.length) {
         // console.log("Next question index", nextQuestionIndex);
         nextQuestion = topic.questions[nextQuestionIndex];
         assessment.currentQuestionIndex = nextQuestionIndex;
       }
-    
     } else if (assessment.L3Correct >= topic.L3count) {
       // console.log("All L3 questions completed ");
       // Send the next topic level 1 questions if the student has achieved the required marks for level 3
@@ -1114,7 +1109,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     }
 
     await student.save();
-  
+
     res.json({
       success: true,
       message: "Question sent",
