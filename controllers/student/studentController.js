@@ -56,6 +56,14 @@ exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
     "studentResponses"
   );
 
+  const student = await Student.findById(req.params.id).populate({
+    path: "studentResponses",
+    populate: {
+      path: "assessmentId",
+      select: "name",
+    },
+  });
+
   if (!student) {
     return next(new ErrorHandler("Student not found", 404));
   }

@@ -15,7 +15,7 @@ const {
   getTotalJobs,
   getTotalCompanies,
   getPlacedStudents,
-  getRecentCompanies,
+  getRecentDesignatedCompanies,
   uploadStudents,
   getStudents,
   inviteStudents,
@@ -159,7 +159,10 @@ router.post("/upload/video", isAuthenticatedCollege, uploadVideo);
 // dashboard
 
 // router.post("/dashboard/jobs", isAuthenticatedCollege, getTotalJobs);
-router.post("/dashboard/jobs",getTotalJobs);
+
+router.get("/dashboard/jobs",getTotalJobs);
+
+
 // router.get('/dashboard/students',isAuthenticatedCollege, getTotalStudents);
 router.post(
   "/dashboard/assessments",
@@ -167,15 +170,14 @@ router.post(
   getAllAssessments
 );
 // router.post("/dashboard/companies", isAuthenticatedCollege, getTotalCompanies);
-router.post("/dashboard/companies", getTotalCompanies);
+router.get("/dashboard/companies/new/:collegeId", getRecentDesignatedCompanies);
+router.get("/dashboard/companies/:collegeId", getTotalCompanies);
 // router.post(
 //   "/dashboard/companies/new",
 //   isAuthenticatedCollege,
 //   getRecentCompanies
 // );
-router.post(
-  "/dashboard/companies/new", getRecentCompanies
-);
+
 router.post(
   "/dashboard/placed/students",
   isAuthenticatedCollege,
