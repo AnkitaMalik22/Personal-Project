@@ -14,6 +14,7 @@ const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
 const UploadedStudents = require("../../models/student/uploadedStudents");
 const BlacklistToken = require("../../models/college/blacklistToken");
+const sendEmail = require("../../utils/sendEmail");
 // =======
 // const { Student } = require('../../models/student/studentModel');
 // const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
@@ -377,6 +378,8 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
 
   // Get Reset Password Token
   const resetToken = student.getResetPasswordToken();
+
+  console.log(resetToken);
 
   await student.save({ validateBeforeSave: false });
 
