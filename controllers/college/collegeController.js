@@ -1274,9 +1274,20 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 
     // const uploadedStudents = await Invitation.find({ sender: id });
     const invitedStudents = await InvitedStudents.findOne({ college: id });
-    const approvedStudents = await ApprovedStudents.findOne({
-      college: id,
-    }).populate("students");
+    const approvedStudents = await ApprovedStudents.findOne({ college: id })
+    .populate({
+      path: 'students',
+      populate: {
+        path: 'studentResponses',
+        select: 'assessmentId',
+        populate: {
+          path: 'assessmentId',
+          select: 'name',
+        },
+      },
+    });
+  
+  
 
     // console.log(uploadedStudents , "uploaded students" , id)
 

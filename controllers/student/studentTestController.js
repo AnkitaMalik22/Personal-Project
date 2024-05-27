@@ -164,6 +164,34 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       console.log(test.totalAttempts, assessment.attempts);
       return next(new ErrorHandler("test attempts exceeded", 429));
     }
+    // ---------------------  CHECK IF TEST STARTED/ENDED-------------------
+    const startDate = new Date(assessment.assessment.startDate);
+    const endDate = new Date(assessment.assessment.endDate);
+    
+    // Get the current date and time
+    const now = new Date();
+    
+    // Check if the test has started or ended
+    let testStatus;
+    
+    if (now < startDate) {
+      // testStatus = 'Test has not started yet';
+      testStatus = false;
+      return next(new ErrorHandler("Test not started yet", 404));
+    } else if (now > endDate) {
+      // testStatus = 'Test has ended';
+      testStatus=false;
+      return next(new ErrorHandler("Test Ended", 404));
+    } else {
+      // testStatus = 'Test is currently ongoing';
+      testStatus = true;
+      
+    }
+    // if(!testStatus){
+      
+
+    // }
+      // ---------------------------------------------------------------------
     student.OnGoingAssessment = testId;
     assessment.active = true;
     assessment.startedAt = Date.now();
