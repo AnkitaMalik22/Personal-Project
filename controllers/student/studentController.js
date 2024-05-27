@@ -14,6 +14,7 @@ const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
 const UploadedStudents = require("../../models/student/uploadedStudents");
 const BlacklistToken = require("../../models/college/blacklistToken");
+const sendEmail = require("../../utils/sendEmail");
 // =======
 // const { Student } = require('../../models/student/studentModel');
 // const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
@@ -49,12 +50,12 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 // --------------------------------------------- GET A STUDENT --ID -------------------------------------------------------
 
 exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
-  const student = await Student.findById(req.params.id).populate("studentResponses");
+  const student = await Student.findById(req.params.id).populate(
+    "studentResponses"
+  );
 
   if (!student) {
     return next(new ErrorHandler("Student not found", 404));
@@ -66,7 +67,6 @@ exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
 // --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
 
 exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
@@ -77,8 +77,6 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
     students,
   });
 });
-
-
 
 // --------------------------------------------- CREATE A STUDENT --------------------------------------------------------
 
@@ -372,8 +370,9 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
   // Get Reset Password Token
   const resetToken = student.getResetPasswordToken();
 
-  await student.save({ validateBeforeSave: false });
+  console.log(resetToken);
 
+  await student.save({ validateBeforeSave: false });
 
   const resetPasswordUrl = `https://skillaccess-student-iota.vercel.app/password/reset/${resetToken}`;
 
@@ -711,7 +710,10 @@ exports.getYourAssessments = catchAsyncErrors(async (req, res, next) => {
 
 //  -- New Jobs
 exports.getNewJobs = catchAsyncErrors(async (req, res, next) => {
-  const recentJobs = await Job.find().populate('company').sort({ createdAt: -1 }).limit(5);
+  const recentJobs = await Job.find()
+    .populate("company")
+    .sort({ createdAt: -1 })
+    .limit(5);
 
   res.status(200).json({
     success: true,
