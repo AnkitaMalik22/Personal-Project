@@ -9,6 +9,7 @@ const {
   uploadAttachment,
   addMailBookmark,
   deleteBookmarkedMail,
+  markAsSeen,
 } = require("../../controllers/student/inbox/inboxController");
 const { isAuthenticatedStudent } = require("../../middlewares/studentAuth");
 
@@ -23,5 +24,5 @@ router
   .route("/bookmark/:id")
   .post(isAuthenticatedStudent, addMailBookmark)
   .delete(isAuthenticatedStudent, deleteBookmarkedMail);
-
+router.route("/seen/:id").put(isAuthenticatedStudent, markAsSeen);
 module.exports = router;

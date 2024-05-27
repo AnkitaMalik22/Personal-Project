@@ -60,10 +60,12 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
-
+    const filteredAssessments = student.assessments.filter(
+      (assess) => assess.assessment
+    );
     res.status(200).json({
       success: true,
-      assessments: student.assessments,
+      assessments: filteredAssessments,
       message: "Test found",
     });
   } catch (error) {
