@@ -288,9 +288,12 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       };
 
       const existingUser = await College.findOne({ Email });
+      const mailUsed = await Student.findOne({ Email });
 
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
+      if (existingUser || mailUsed) {
+        return res
+          .status(400)
+          .json({ message: "User already registered with this email" });
       }
       // const ip =  (req.headers['x-forwarded-for'] || '')
       // .split(',').pop().trim() ||
@@ -1126,7 +1129,6 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 
     const student = await Student.findById(studentId.studentId);
 
-
     // for (let i = 0; i < college.pendingStudents.length; i++) {
     //   const student = await Student.findById(college.pendingStudents[i]);
 
@@ -1142,7 +1144,6 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
 
     student.approved = true;
     await student.save();
-
 
     let sId = studentId.studentId;
 
@@ -1204,24 +1205,21 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
-
-// reject student 
-
+// reject student
 
 exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
   try {
     const student = await Student.findById(req.params.studentId);
-    if(!student){
+    if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
 
-    await Student.findByIdAndDelete(req.params.studentId)
+    await Student.findByIdAndDelete(req.params.studentId);
 
     const college = await College.findById(req.user.id);
 
-    // remove from college approve students 
-   
+    // remove from college approve students
+
     // college.approveStudents = college.approvedStudents.filter(std => std._id.toString() !== student._id.toString());
 
     const approvedStudents = await ApprovedStudents.findOne({
@@ -1233,35 +1231,29 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
           (std) => std.toString() !== student._id.toString()
         );
       }
-    } 
+    }
     await college.save();
     await approvedStudents.save();
-
-
 
     const message = `
     Hello ${student.FirstName}, 
     We regret to inform you that your request has been rejected. 
     Please register again using the previous registration link and ensure that you complete your profile accurately.
-    `
+    `;
     await sendEmail({
       email: student.Email,
       subject: `${college.CollegeName} Registration Rejection`,
       message,
     });
 
-
     return res.status(200).json({
-      sucess :"true",
-      message : "Student Rejected"
-
-    })
-    
+      sucess: "true",
+      message: "Student Rejected",
+    });
   } catch (error) {
     console.log(error);
-    
   }
-})
+});
 
 // ------------------------------get students-----------------------------
 
@@ -1323,7 +1315,6 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 // ============================================ dashboard ===========================================================
 
 // getTotalJobs
-
 exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
   // const college = await College.findById(req.user.id).populate({
   //   path: "jobs",
@@ -1336,6 +1327,38 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
     // totalJobs: college.jobs.length,
   });
 });
+
+
+// Corrected getTotalJobs -- commented due to no jobs available
+
+// exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
+//   try {
+//     // Retrieve the college and populate designated companies
+//     const college = await College.findById(req.user.id).populate({
+//       path: "designatedCompanies",
+//       options: { strictPopulate: false }
+//     });
+
+//     if (!college) {
+//       return next(new ErrorHandler("College not found", 404));
+//     }
+
+    
+//     const designatedCompanyIds = college.designatedCompanies.map(company => company._id);
+
+//     const jobs = await Job.find({ company: { $in: designatedCompanyIds } }).populate("company");
+
+//     res.status(200).json({
+//       success: true,
+//       jobs: jobs,
+//       totalJobs: jobs.length,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return next(new ErrorHandler("An error occurred while fetching the jobs from designated companies", 500));
+//   }
+// });
+
 
 // get available assessments
 
@@ -1372,30 +1395,69 @@ exports.getTotalStudents = catchAsyncErrors(async (req, res, next) => {
 // get total companies
 
 exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
-  const companies = await Company.find({});
-  res.status(200).json({
-    success: true,
-    companies: companies,
-  });
+  try {
+      const college = await College.findById(req.params.collegeId);
+      if (!college) {
+          return next(new ErrorHandler("College not found", 404));
+      }
+
+      const companies = await College.findById(req.params.collegeId)
+          .populate('designatedCompanies', null, null, { strictPopulate: false })
+          .exec();
+
+      if (!companies || !companies.designatedCompanies) {
+          return next(new ErrorHandler("No designated companies found", 404));
+      }
+
+      // Map over the designatedCompanies array
+      let designatedCompanies = companies.designatedCompanies.map(company => {
+          return company;
+      });
+
+      res.status(200).json({
+          success: true,
+          companies: designatedCompanies,
+      });
+  } catch (error) {
+      console.log(error);
+      return next(new ErrorHandler("An error occurred while fetching companies", 500));
+  }
 });
+
 
 // get recent companies
 
-exports.getRecentCompanies = catchAsyncErrors(async (req, res, next) => {
-  const companies = await Company.find({}).sort({ createdAt: -1 }).limit(5);
 
-  if (companies.length > 0) {
-    res.status(200).json({
-      success: true,
-      companies: companies,
+exports.getRecentDesignatedCompanies = catchAsyncErrors(async (req, res, next) => {
+  try {
+    // Find the college by user ID and populate the designated companies
+    const college = await College.findById(req.params.collegeId).populate({
+      path: 'designatedCompanies',
+      options: { sort: { createdAt: -1 }, limit: 5 } // Sort by creation date and limit to 5
     });
-  } else {
-    res.status(404).json({
-      success: false,
-      message: "No recent companies found",
-    });
+
+    if (!college) {
+      return next(new ErrorHandler("College not found", 404));
+    }
+
+    // Check if there are any designated companies
+    if (college.designatedCompanies.length > 0) {
+      res.status(200).json({
+        success: true,
+        companies: college.designatedCompanies,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "No recent designated companies found",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return next(new ErrorHandler("An error occurred while fetching recent designated companies", 500));
   }
 });
+
 
 // get Placed Students
 
@@ -1413,47 +1475,44 @@ exports.getPlacedStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 // =========================================== select student for the assessment ==============================================
 
-//  College Assessment Inv > 
+//  College Assessment Inv >
 
 exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
-
-
   //student response id
 
-  const {responseId,testId} = req.params ;
-  const {status} = req.body;
+  const { responseId, testId } = req.params;
+  const { status } = req.body;
 
   const response = await studentResponse.findById(responseId);
   const assessment = await Assessments.findById(testId);
 
-  if(!response){
+  if (!response) {
     return next(new ErrorHandler("Student response not found", 404));
   }
 
   response.status = status;
 
-
-  if(status == 'selected'){
-   if(!assessment.selectedStudents.includes(responseId)){
-    assessment.selectedStudents.push(responseId);
-   }
-// calculate avgSelectedStudents percentage
-if(assessment.avgSelectedPercentage){ // if this field exits // check for old tests
-  assessment.avgSelectedPercentage = (assessment.selectedStudents.length / assessment.totalStudents) * 100;
-}
-  }
-  else if(status == 'rejected'){
-  if(!assessment.rejectedStudents.includes(responseId)){
-    assessment.rejectedStudents.push(responseId);
-  }
-    if(assessment.avgRejectedPercentage){ // if this field exits // check for old tests
-      assessment.avgRejectedPercentage = (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
+  if (status == "selected") {
+    if (!assessment.selectedStudents.includes(responseId)) {
+      assessment.selectedStudents.push(responseId);
     }
-
+    // calculate avgSelectedStudents percentage
+    if (assessment.avgSelectedPercentage) {
+      // if this field exits // check for old tests
+      assessment.avgSelectedPercentage =
+        (assessment.selectedStudents.length / assessment.totalStudents) * 100;
+    }
+  } else if (status == "rejected") {
+    if (!assessment.rejectedStudents.includes(responseId)) {
+      assessment.rejectedStudents.push(responseId);
+    }
+    if (assessment.avgRejectedPercentage) {
+      // if this field exits // check for old tests
+      assessment.avgRejectedPercentage =
+        (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
+    }
   }
 
   await assessment.save();
@@ -1461,26 +1520,24 @@ if(assessment.avgSelectedPercentage){ // if this field exits // check for old te
 
   res.status(200).json({
     success: true,
-message : 'Student selected/rejected sucessfully'
+    message: "Student selected/rejected sucessfully",
   });
 });
-
 
 // =========================================== GET ALL SELECTED STUDENTS FOR THE TEST  ===========================================
 
 exports.getSelectedStudents = catchAsyncErrors(async (req, res, next) => {
-
-  const {testId} = req.params;
+  const { testId } = req.params;
 
   const assessment = await Assessments.findById(testId).populate({
-    path: 'selectedStudents',
+    path: "selectedStudents",
     populate: {
-      path: 'studentId',
-      model: 'Students'
-    }
+      path: "studentId",
+      model: "Students",
+    },
   });
 
-  if(!assessment){
+  if (!assessment) {
     return next(new ErrorHandler("Assessment not found", 404));
   }
 
@@ -1490,17 +1547,16 @@ exports.getSelectedStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 // =========================================== GET ALL REJECTED STUDENTS FOR THE TEST  ===========================================
 
 exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
+  const { testId } = req.params;
 
-  const {testId} = req.params;
+  const assessment = await Assessments.findById(testId).populate(
+    "rejectedStudents"
+  );
 
-  const assessment = await Assessments.findById(testId).populate('rejectedStudents');
-
-  if(!assessment){
+  if (!assessment) {
     return next(new ErrorHandler("Assessment not found", 404));
   }
 
@@ -1508,8 +1564,7 @@ exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
     success: true,
     rejectedStudents: assessment.rejectedStudents,
   });
-}
-);
+});
 
 // =========================================== GET ALL STUDENTS FOR THE TEST  ===========================================
 
@@ -1517,9 +1572,7 @@ exports.getRejectedStudents = catchAsyncErrors(async (req, res, next) => {
 // ALL SELECTED STUDENTS = selectedStudents
 // ALL REJECTED STUDENTS = rejectedStudents
 
-// student tests => studentResponse 
-
-
+// student tests => studentResponse
 
 // =========================================== RESULT GRAPHS  ===========================================
 
@@ -1531,61 +1584,97 @@ exports.resultOverviewGraph = async (req, res, next) => {
   try {
     const collegeId = req.user.id;
 
-    const assessments = await Assessments.find({createdBy: collegeId }).populate('selectedStudents').populate('rejectedStudents').populate('studentResponses');
+    const assessments = await Assessments.find({ createdBy: collegeId })
+      .populate("selectedStudents")
+      .populate("rejectedStudents")
+      .populate("studentResponses");
 
     if (!assessments.length) {
-      return res.status(404).json({ message: "No assessments found for this college" });
+      return res
+        .status(404)
+        .json({ message: "No assessments found for this college" });
     }
 
-    const assessmentIds = assessments.map(assessment => assessment._id);
+    const assessmentIds = assessments.map((assessment) => assessment._id);
 
     const aggregateData = async (timeUnit) => {
       const format = {
-        day: '%Y-%m-%d',
-        week: '%Y-%U',
-        month: '%Y-%m',
-        quarter: { $concat: [{ $substr: [{ $year: "$completedAt" }, 0, 4] }, '-Q', { $substr: [{ $ceil: { $divide: [{ $month: "$completedAt" }, 3] } }, 0, 1] }] },
-        year: '%Y'
+        day: "%Y-%m-%d",
+        week: "%Y-%U",
+        month: "%Y-%m",
+        quarter: {
+          $concat: [
+            { $substr: [{ $year: "$completedAt" }, 0, 4] },
+            "-Q",
+            {
+              $substr: [
+                { $ceil: { $divide: [{ $month: "$completedAt" }, 3] } },
+                0,
+                1,
+              ],
+            },
+          ],
+        },
+        year: "%Y",
       }[timeUnit];
 
       const groupBy = {
         day: { $dateToString: { format: format, date: "$completedAt" } },
-        week: { $concat: [{ $substr: [{ $year: "$completedAt" }, 0, 4] }, '-', 
-        { $cond: [{ $lte: [{ $week: "$completedAt" }, 9] }, { $concat: ['0', { $toString: { $week: "$completedAt" } }] }, { $toString: { $week: "$completedAt" } }] }] },
+        week: {
+          $concat: [
+            { $substr: [{ $year: "$completedAt" }, 0, 4] },
+            "-",
+            {
+              $cond: [
+                { $lte: [{ $week: "$completedAt" }, 9] },
+                { $concat: ["0", { $toString: { $week: "$completedAt" } }] },
+                { $toString: { $week: "$completedAt" } },
+              ],
+            },
+          ],
+        },
         month: { $dateToString: { format: format, date: "$completedAt" } },
         quarter: {
           $concat: [
-              { $substr: [{ $year: "$completedAt" }, 0, 4] },
-              '-Q',
-              { $toString: { $ceil: { $divide: [{ $month: "$completedAt" }, 3] } } }
-          ]
-      },
-          year: { $dateToString: { format: format, date: "$completedAt" } }
+            { $substr: [{ $year: "$completedAt" }, 0, 4] },
+            "-Q",
+            {
+              $toString: {
+                $ceil: { $divide: [{ $month: "$completedAt" }, 3] },
+              },
+            },
+          ],
+        },
+        year: { $dateToString: { format: format, date: "$completedAt" } },
       }[timeUnit];
 
       const result = await studentResponse.aggregate([
         { $match: { assessmentId: { $in: assessmentIds } } },
-        { $group: {
-          _id: groupBy,
-          totalStudentsAppeared: { $sum: 1 },
-          totalStudentsSelected: { $sum: { $cond: [{ $eq: ["$status", "selected"] }, 1, 0] } }
-        }},
-        { $sort: { _id: 1 } }
+        {
+          $group: {
+            _id: groupBy,
+            totalStudentsAppeared: { $sum: 1 },
+            totalStudentsSelected: {
+              $sum: { $cond: [{ $eq: ["$status", "selected"] }, 1, 0] },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
       ]);
-      return result.map(item => ({
+      return result.map((item) => ({
         time: item._id,
         totalStudentsAppeared: item.totalStudentsAppeared,
-        totalStudentsSelected: item.totalStudentsSelected
+        totalStudentsSelected: item.totalStudentsSelected,
       }));
     };
 
     const data = {
-      daily: await aggregateData('day'),
-      weekly: await aggregateData('week'),
-      monthly: await aggregateData('month'),
-      quarterly: await aggregateData('quarter'),
-      yearly: await aggregateData('year'),
-      assessmentIds : assessmentIds
+      daily: await aggregateData("day"),
+      weekly: await aggregateData("week"),
+      monthly: await aggregateData("month"),
+      quarterly: await aggregateData("quarter"),
+      yearly: await aggregateData("year"),
+      assessmentIds: assessmentIds,
     };
 
     res.json(data);
@@ -1593,5 +1682,3 @@ exports.resultOverviewGraph = async (req, res, next) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-

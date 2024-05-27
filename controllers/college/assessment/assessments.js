@@ -8,6 +8,7 @@ const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
 const sendEmail = require("../../../utils/sendEmail");
 const Credit = require("../../../models/college/account/creditModel");
 const CollegeAssessInv = require("../../../models/student/assessmentInvitation");
+const ApprovedStudents = require("../../../models/college/student/Approved");
 
 // =========================================================================================================================================
 
@@ -307,7 +308,9 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
 
   const assessment = await Assessments.findById(id).populate({
     path: "studentResponses",
-    populate: { path: "studentId" }, // Replace "fieldNameToPopulate" with the field you want to populate
+    populate: { path: "studentId" },
+    // only send those res who completed the test
+    match: { completed: true }
   });
 
   if (!assessment) {
@@ -502,7 +505,30 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({ success: true, assessment });
 });
+
+const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { id } = req.user;
+
+    const assessment = await Assessments.findById(req.params.id);
+    const approved = await ApprovedStudents.findOne({ college: id }).populate(
+      "students"
+    );
+
+    const filtered = approved.students.filter(
+      (student) => !assessment.invitedStudents.includes(student._id)
+    );
+    res.status(200).json({
+      success: true,
+      assessment,
+      students: filtered,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
 module.exports = {
+  getStudentsForTest,
   removeRecentAssessment,
   getRecentAssessments,
   createAssessment,

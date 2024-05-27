@@ -57,6 +57,14 @@ exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
     "studentResponses"
   );
 
+  const student = await Student.findById(req.params.id).populate({
+    path: "studentResponses",
+    populate: {
+      path: "assessmentId",
+      select: "name",
+    },
+  });
+
   if (!student) {
     return next(new ErrorHandler("Student not found", 404));
   }
@@ -118,8 +126,9 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       };
 
       const existingUser = await Student.findOne({ Email });
+      const mailUsed = await College.findOne({ Email });
 
-      if (existingUser) {
+      if (existingUser || mailUsed) {
         return res.status(400).json({ message: "User already exists" });
       }
 
