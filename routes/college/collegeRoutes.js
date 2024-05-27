@@ -197,7 +197,7 @@ router.post(
 );
 
 // ======================== INBOX ROUTES =======================================
-router.route("/inbox/seen/:id").delete(isAuthenticatedCollege, markAsSeen);
+router.route("/inbox/seen/:id").put(isAuthenticatedCollege, markAsSeen);
 
 router.route("/inbox/delete/:id").delete(isAuthenticatedCollege, deleteMail);
 router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
