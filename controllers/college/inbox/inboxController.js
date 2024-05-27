@@ -447,6 +447,33 @@ exports.deleteMail = async (req, res) => {
   }
 };
 
+exports.markAsSeen = async (req, res) => {
+  try {
+    const type = req.query.type;
+    let inbox = await Inbox.findOneAndUpdate(
+      {
+        user: req.user.id,
+        [type === "Sent" ? "emailsSent.mail" : "emailsReceived.mail"]:
+          req.params.id,
+      },
+      {
+        $set: {
+          [type === "Sent"
+            ? "emailsSent.$.seen"
+            : "emailsReceived.$.seen"]: true,
+        },
+      },
+      { new: true } // To return the updated document after the update
+    );
+    if (!inbox) {
+      throw new Error({ message: "mail not found" });
+    }
+    res.status(200).json({ success: true, inbox });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "internal server error" });
+  }
+};
+
 // ------------------------------------------------------------------------------------------------------------------
 
 exports.addMailBookmark = catchAsyncErrors(async (req, res, next) => {
