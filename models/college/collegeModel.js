@@ -197,6 +197,12 @@ const collegeSchema = new mongoose.Schema({
     planEndDate : {
       type: Date,
     },
+    designatedCompanies : [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+      }
+    ],
   
 });
 
