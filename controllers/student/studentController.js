@@ -53,9 +53,9 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- GET A STUDENT --ID -------------------------------------------------------
 
 exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
-  const student = await Student.findById(req.params.id).populate(
-    "studentResponses"
-  );
+  // const student = await Student.findById(req.params.id).populate(
+  //   "studentResponses"
+  // );
 
   const student = await Student.findById(req.params.id).populate({
     path: "studentResponses",
