@@ -688,6 +688,27 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         await studentResponse.save();
         // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
         console.log("All topics completed 2");
+         // --------------------- update the avgPercentage of the assessment -------------------
+         const test = await Assessments.findById(testId).populate(
+          "studentResponses"
+        );
+        let avgPercentage = test.avgPercentage;
+
+        // duplicate student responses remove
+        // let studentResponses = test.studentResponses.map((response) => response.studentId);
+
+        let totalStudentResponses = test.studentResponses.length;
+        let totalPercentage = 0;
+
+        test.studentResponses?.forEach((response) => {
+          totalPercentage += response.percentage;
+        });
+
+        avgPercentage = totalPercentage / totalStudentResponses;
+        test.avgPercentage = avgPercentage;
+        await test.save();
+
+        // -------------------------------------------------------------------------------------
         return res.json({
           success: true,
           message: "Test Completed 482",
@@ -1233,6 +1254,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       assessment.totalQuestionsAttempted = 0;
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
+        await completeAssessment(student, assessment, testId);
         return res.status(200).json({ message: "Test completed" });
       }
 
@@ -1271,6 +1293,22 @@ async function completeAssessment(student, assessment, testId) {
   const totalPercentage = test.studentResponses.reduce((acc, response) => acc + response.percentage, 0);
   test.avgPercentage = totalPercentage / test.studentResponses.length;
   await test.save();
+
+  const studentResponse = await StudentResponse.findOne({
+    studentId: student.student,
+    assessmentId: testId,
+    attempt: assessment.attempts,
+  });
+  // console.log("student response", studentResponse);
+
+  studentResponse.completed = true;
+  studentResponse.completedAt = Date.now();
+  studentResponse.totalMarks = assessment.marks;
+  studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
+  studentResponse.correctAnswers = assessment.correctAnswers;
+  studentResponse.percentage = (assessment.marks / assessment.assessment.totalMarks) * 100;
+  await studentResponse.save();
+  
 }
 
 function getTypeDir(type) {
