@@ -165,31 +165,29 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     // ---------------------  CHECK IF TEST STARTED/ENDED-------------------
     const startDate = new Date(assessment.assessment.startDate);
     const endDate = new Date(assessment.assessment.endDate);
-    
+
     // Get the current date and time
     const now = new Date();
-    
+
     // Check if the test has started or ended
     let testStatus;
-    
+
     if (now < startDate) {
       // testStatus = 'Test has not started yet';
       testStatus = false;
       return next(new ErrorHandler("Test not started yet", 404));
     } else if (now > endDate) {
       // testStatus = 'Test has ended';
-      testStatus=false;
+      testStatus = false;
       return next(new ErrorHandler("Test Ended", 404));
     } else {
       // testStatus = 'Test is currently ongoing';
       testStatus = true;
-      
     }
     // if(!testStatus){
-      
 
     // }
-      // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------
     student.OnGoingAssessment = testId;
     assessment.active = true;
     assessment.startedAt = Date.now();
@@ -390,6 +388,30 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Assessment already started", 404));
     }
 
+    // ------------------------------------------------
+
+    const studentResponse = await StudentResponse.findOne({
+      studentId: studentId,
+      assessmentId: testId,
+      attempt: assessment.attempts,
+    });
+
+    if (!studentResponse) {
+      return next(new ErrorHandler("Student response not found", 404));
+    }
+
+    // studentResponse.totalMarks = assessment.marks;
+    studentResponse.completed = true;
+    studentResponse.completedAt = Date.now();
+    // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
+    // studentResponse.timeTaken = timeTaken;
+    // studentResponse.correctAnswers = assessment.correctAnswers;
+    // studentResponse.percentage =
+    //   (assessment.marks / assessment.assessment.totalMarks) * 100;
+
+    await studentResponse.save();
+
+    // ---------------------------------------------
     assessment.active = false;
     assessment.completed = true;
     assessment.completedAt = Date.now();
@@ -416,39 +438,20 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // let studentResponses = test.studentResponses.map((response) => response.studentId);
 
     let totalStudentResponses = test.studentResponses.length;
-    let totalMarks = 0;
+    let totalPercentage = 0;
 
-    assessment.studentResponses?.forEach((response) => {
-      totalMarks += response.totalMarks;
+    test.studentResponses?.forEach((response) => {
+      console.log(response.percentage ,response , "response");
+      totalPercentage += response.percentage;
     });
 
-    avgPercentage =
-      (totalMarks / (totalStudentResponses * test.totalQuestionsCount)) * 100;
-
+    avgPercentage = totalPercentage / totalStudentResponses;
     test.avgPercentage = avgPercentage;
     await test.save();
 
     // -------------------------------------------------------------------------------------
 
-    const studentResponse = await StudentResponse.findOne({
-      studentId: studentId,
-      assessmentId: testId,
-    });
 
-    if (!studentResponse) {
-      return next(new ErrorHandler("Student response not found", 404));
-    }
-
-    studentResponse.totalMarks = assessment.marks;
-    studentResponse.completed = true;
-    studentResponse.completedAt = Date.now();
-    studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
-    studentResponse.timeTaken = timeTaken;
-    studentResponse.correctAnswers = assessment.correctAnswers;
-    studentResponse.percentage =
-      (assessment.marks / assessment.assessment.totalMarks) * 100;
-
-    await studentResponse.save();
 
     res.json({
       success: true,
@@ -770,7 +773,6 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           await studentResponse.save();
           // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
           // --------------------- update the avgPercentage of the assessment -------------------
-
           const test = await Assessments.findById(testId).populate(
             "studentResponses"
           );
@@ -780,16 +782,13 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           // let studentResponses = test.studentResponses.map((response) => response.studentId);
 
           let totalStudentResponses = test.studentResponses.length;
-          let totalMarks = 0;
+          let totalPercentage = 0;
 
-          assessment.studentResponses?.forEach((response) => {
-            totalMarks += response.totalMarks;
+          test.studentResponses?.forEach((response) => {
+            totalPercentage += response.percentage;
           });
 
-          avgPercentage =
-            (totalMarks / (totalStudentResponses * test.totalQuestionsCount)) *
-            100;
-
+          avgPercentage = totalPercentage / totalStudentResponses;
           test.avgPercentage = avgPercentage;
           await test.save();
 
@@ -855,6 +854,11 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     studentResponse.totalMarks = assessment.marks;
     studentResponse.topics[topicIndex].totalMarks =
       assessment.currentTopicMarks;
+    studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
+    studentResponse.correctAnswers = assessment.correctAnswers;
+    studentResponse.percentage =
+      (assessment.marks / assessment.assessment.totalMarks) * 100;
+    studentResponse.timeTaken = timeTaken;
 
     // console.log(
     //   studentResponse.topics[topicIndex].questions[questionIndex]
@@ -892,15 +896,292 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 
 // ===============================================  NON ADAPTIVE || SEND STUDENT RESPONSE AND GET NEXT QUESTION ==============================
 
+// exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
+//   try {
+//     const { testId } = req.params;
+//     const { response } = req.body;
+
+//     const studentId = req.user.id;
+//     const student = await CollegeAssessInv.findOne({
+//       student: studentId,
+//     })
+//       .populate("assessments.assessment")
+//       .populate("assessments.assessment.questions")
+//       .populate("assessments.assessment.findAnswers")
+//       .populate("assessments.assessment.essay")
+//       .populate("assessments.assessment.video")
+//       .populate("assessments.assessment.compiler");
+
+//     if (!student) {
+//       return next(new ErrorHandler("Student not found", 404));
+//     }
+
+//     const assessment = student.assessments.find(
+//       (assessment) => assessment.assessment?._id.toString() === testId
+//     );
+
+//     if (!assessment) {
+//       return next(new ErrorHandler("Test not found", 404));
+//     }
+
+//     if (!assessment.active) {
+//       return next(new ErrorHandler("Assessment not started", 404));
+//     }
+//     // total questions student attepted
+//     assessment.totalStudentAttempted += 1;
+//     const topicIndex = assessment.currentTopicIndex;
+//     const topic = assessment.assessment?.topics[topicIndex];
+//     const questionIndex = assessment.currentQuestionIndex;
+
+//     if (!topic) {
+//       assessment.currentTopicIndex = 0;
+//       assessment.currentQuestionIndex = 0;
+//       assessment.active = false;
+
+//       await student.save();
+
+//       // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
+//       // const studentResponse = await StudentResponse.findOne({
+//       //   studentId: studentId,
+//       //   assessmentId: testId,
+//       //   attempt: assessment.attempts,
+//       // });
+
+//       // studentResponse.totalMarks = assessment.marks;
+//       // studentResponse.completed = true;
+//       // studentResponse.completedAt = Date.now();
+//       // console.log("time taken", timeTaken);
+//       // studentResponse.timeTaken = timeTaken;
+//       // console.log("student marks", assessment.marks);
+//       // await studentResponse.save();
+//       // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
+//       // --------------------- update the avgPercentage of the assessment -------------------
+
+//       const test = await Assessments.findById(testId).populate(
+//         "studentResponses"
+//       );
+//       let avgPercentage = test.avgPercentage;
+
+//       // duplicate student responses remove
+//       // let studentResponses = test.studentResponses.map((response) => response.studentId);
+
+//       let totalStudentResponses = test.studentResponses.length;
+//       let totalPercentage = 0;
+
+//       assessment.studentResponses?.forEach((response) => {
+//         totalPercentage += response.percentage;
+//       });
+//       console.log("totalPercentage", totalPercentage);
+
+//       avgPercentage = totalPercentage / totalStudentResponses;
+//       console.log("avgPercentage", avgPercentage);
+//       test.avgPercentage = avgPercentage;
+//       await test.save();
+
+//       // -------------------------------------------------------------------------------------
+
+//       return res.json({
+//         success: true,
+//         message: "Test Completed -- No Next Topic Found",
+//       });
+//     }
+
+//     let type = topic.Type;
+//     let question = {};
+
+//     if (type === "mcq") {
+//       typeDir = "questions";
+//     } else if (type === "findAnswer") {
+//       typeDir = "findAnswers";
+//     } else {
+//       typeDir = type;
+//     }
+
+//     let nextQuestion = {};
+//     const totalQuestions = topic[typeDir].length;
+//     console.log(type, "is");
+//     const studentResponse = await StudentResponse.findOne({
+//       studentId: studentId,
+//       assessmentId: testId,
+//       attempt: assessment.attempts,
+//     });
+
+//     console.log("totalQuestionsAttempted");
+//     switch (type) {
+//       case "mcq":
+//         studentResponse.topics[topicIndex].questions[
+//           questionIndex
+//         ].StudentAnswerIndex = parseInt(response);
+
+//         console.log(
+//           "mcq",
+//           studentResponse.topics[topicIndex].questions[questionIndex]
+//             .StudentAnswerIndex
+//         );
+//         break;
+//       case "findAnswer":
+//         // "response" : [
+//         //   {
+
+//         //     "studentAnswer": "The capital of France is Paris"
+//         //   },
+//         //   {
+
+//         //     "studentAnswer": "The capital of Spain is Madrid"
+//         //   }
+//         // ]
+//         if (response && response.length > 0) {
+//           studentResponse.topics[topicIndex].findAnswers[
+//             questionIndex
+//           ].questions.forEach((ques, index) => {
+//             ques.studentAnswer = response[index].studentAnswer;
+//           });
+//         } else {
+//           studentResponse.topics[topicIndex].findAnswers[
+//             questionIndex
+//           ].questions.forEach((ques, index) => {
+//             ques.studentAnswer = "";
+//           });
+//         }
+//         console.log(
+//           "findAnswer",
+//           studentResponse.topics[topicIndex].findAnswers[questionIndex]
+//             .questions
+//         );
+
+//         break;
+//       case "essay":
+//         // "response" : "The capital of France is Paris"
+//         if (response) {
+//           studentResponse.topics[topicIndex].essay[
+//             questionIndex
+//           ].studentAnswer = response;
+//         } else {
+//           studentResponse.topics[topicIndex].essay[
+//             questionIndex
+//           ].studentAnswer = "";
+//         }
+//         break;
+//       case "video":
+//         // "response" : {
+//         //   "long": [
+//         //     "The capital of France is Paris",
+//         //     "The capital of Spain is Madrid"
+//         //   ],
+//         //   "short": [
+//         //     "The capital of France is Paris",
+//         //     "The capital of Spain is Madrid"
+//         //   ],
+//         //   "mcq": [
+//         //     0,
+//         //     1
+//         //   ]
+
+//         studentResponse.topics[topicIndex].video[questionIndex].long.forEach(
+//           (long, index) => {
+//             // long = response.long[index];
+//             long.studentAnswer = response.long[index];
+//           }
+//         );
+//         studentResponse.topics[topicIndex].video[questionIndex].short.forEach(
+//           (short, index) => {
+//             short.studentAnswer = response.short[index];
+//           }
+//         );
+//         studentResponse.topics[topicIndex].video[
+//           questionIndex
+//         ].questions.forEach((mcq, index) => {
+//           mcq.StudentAnswerIndex = response.mcq[index];
+//         });
+
+//         break;
+//       case "compiler":
+//         // "response" : [
+//         //   {
+//         //     "studentOutput": "Hello World"
+//         //   },
+//         //   {
+//         //     "studentOutput": "Hello World"
+//         //   }
+//         // ]
+
+//         studentResponse.topics[topicIndex].compiler[
+//           questionIndex
+//         ].testcase.forEach((testcase, index) => {
+//           testcase.studentOutput = response[index];
+//         });
+//         break;
+//       default:
+//         break;
+//     }
+
+//     studentResponse.totalQuestionsAttempted += 1;
+//     studentResponse.correctAnswers = assessment.correctAnswers;
+//     studentResponse.totalMarks = assessment.marks;
+//     studentResponse.topics[topicIndex].totalMarks =
+//       assessment.currentTopicMarks;
+//     studentResponse.percentage =
+//       (assessment.marks / assessment.assessment.totalMarks) * 100;
+
+//     await studentResponse.save();
+
+//     //for one topic
+//     assessment.totalQuestionsAttempted = assessment.totalQuestionsAttempted + 1;
+//     console.log(assessment.totalQuestionsAttempted, totalQuestions);
+//     if (assessment.totalQuestionsAttempted >= totalQuestions) {
+//       assessment.currentQuestionIndex = 0;
+//       assessment.currentTopicIndex = topicIndex + 1;
+//       assessment.totalQuestionsAttempted = 0;
+//       console.log("Next topic");
+
+//       if (assessment.assessment.topics.length === topicIndex + 1) {
+//         return res.status(200).json({ message: "test comp" });
+//       }
+
+//       type = assessment.assessment.topics[topicIndex + 1].Type;
+//       if (type === "mcq") {
+//         typeDir = "questions";
+//       } else if (type === "findAnswer") {
+//         typeDir = "findAnswers";
+//       } else {
+//         typeDir = type;
+//       }
+//       nextQuestion = assessment.assessment.topics[topicIndex + 1][typeDir][0];
+//     } else {
+//       assessment.currentQuestionIndex = questionIndex + 1;
+
+//       nextQuestion =
+//         assessment.assessment.topics[topicIndex][typeDir][questionIndex + 1];
+//     }
+
+//     await student.save();
+
+//     res.json({
+//       success: true,
+//       message: "Question sent",
+//       count: assessment.totalStudentAttempted + 1,
+//       questionIndex: questionIndex,
+//       topicIndex: topicIndex,
+//       nextQuestion: nextQuestion,
+//       topic: topic.Heading,
+//       studentResponse: question,
+//       result: studentResponse,
+//     });
+//   } catch (error) {
+//     console.log("Error", error);
+//   }
+// });
+
+
+
+
 exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
   try {
     const { testId } = req.params;
     const { response } = req.body;
-
     const studentId = req.user.id;
-    const student = await CollegeAssessInv.findOne({
-      student: studentId,
-    })
+
+    const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate("assessments.assessment")
       .populate("assessments.assessment.questions")
       .populate("assessments.assessment.findAnswers")
@@ -908,232 +1189,58 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       .populate("assessments.assessment.video")
       .populate("assessments.assessment.compiler");
 
-    if (!student) {
-      return next(new ErrorHandler("Student not found", 404));
-    }
+    if (!student) return next(new ErrorHandler("Student not found", 404));
 
-    const assessment = student.assessments.find(
-      (assessment) => assessment.assessment?._id.toString() === testId
-    );
+    const assessment = student.assessments.find(assessment => assessment.assessment?._id.toString() === testId);
+    if (!assessment) return next(new ErrorHandler("Test not found", 404));
+    if (!assessment.active) return next(new ErrorHandler("Assessment not started", 404));
 
-    if (!assessment) {
-      return next(new ErrorHandler("Test not found", 404));
-    }
-
-    if (!assessment.active) {
-      return next(new ErrorHandler("Assessment not started", 404));
-    }
-    // total questions student attepted
     assessment.totalStudentAttempted += 1;
+
     const topicIndex = assessment.currentTopicIndex;
     const topic = assessment.assessment?.topics[topicIndex];
     const questionIndex = assessment.currentQuestionIndex;
 
     if (!topic) {
-      assessment.currentTopicIndex = 0;
-      assessment.currentQuestionIndex = 0;
-      assessment.active = false;
-
-      await student.save();
-
-      // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
-      // const studentResponse = await StudentResponse.findOne({
-      //   studentId: studentId,
-      //   assessmentId: testId,
-      //   attempt: assessment.attempts,
-      // });
-
-      // studentResponse.totalMarks = assessment.marks;
-      // studentResponse.completed = true;
-      // studentResponse.completedAt = Date.now();
-      // console.log("time taken", timeTaken);
-      // studentResponse.timeTaken = timeTaken;
-      // console.log("student marks", assessment.marks);
-      // await studentResponse.save();
-      // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
-      // --------------------- update the avgPercentage of the assessment -------------------
-
-      const test = await Assessments.findById(testId).populate(
-        "studentResponses"
-      );
-      let avgPercentage = test.avgPercentage;
-
-      // duplicate student responses remove
-      // let studentResponses = test.studentResponses.map((response) => response.studentId);
-
-      let totalStudentResponses = test.studentResponses.length;
-      let totalMarks = 0;
-
-      assessment.studentResponses?.forEach((response) => {
-        totalMarks += response.totalMarks;
-      });
-
-      avgPercentage =
-        (totalMarks / (totalStudentResponses * test.totalQuestionsCount)) * 100;
-
-      test.avgPercentage = avgPercentage;
-      await test.save();
-
-      // -------------------------------------------------------------------------------------
-
-      return res.json({
-        success: true,
-        message: "Test Completed -- No Next Topic Found",
-      });
+      await completeAssessment(student, assessment, testId);
+      return res.json({ success: true, message: "Test Completed -- No Next Topic Found" });
     }
 
-    let type = topic.Type;
-    let question = {};
-
-    if (type === "mcq") {
-      typeDir = "questions";
-    } else if (type === "findAnswer") {
-      typeDir = "findAnswers";
-    } else {
-      typeDir = type;
-    }
+    const type = topic.Type;
+    const typeDir = getTypeDir(type);
 
     let nextQuestion = {};
     const totalQuestions = topic[typeDir].length;
-    console.log(type, "is");
-    const studentResponse = await StudentResponse.findById(assessment.response);
-    switch (type) {
-      case "mcq":
-        studentResponse.topics[topicIndex].questions[
-          questionIndex
-        ].StudentAnswerIndex = parseInt(response);
-        console.log(
-          "mcq",
-          studentResponse.topics[topicIndex].questions[questionIndex]
-            .StudentAnswerIndex
-        );
-        break;
-      case "findAnswer":
-        // "response" : [
-        //   {
 
-        //     "studentAnswer": "The capital of France is Paris"
-        //   },
-        //   {
+    const studentResponse = await StudentResponse.findOne({
+      studentId: studentId,
+      assessmentId: testId,
+      attempt: assessment.attempts,
+    });
 
-        //     "studentAnswer": "The capital of Spain is Madrid"
-        //   }
-        // ]
-        if (response && response.length > 0) {
-          studentResponse.topics[topicIndex].findAnswers[
-            questionIndex
-          ].questions.forEach((ques, index) => {
-            ques.studentAnswer = response[index].studentAnswer;
-          });
-        } else {
-          studentResponse.topics[topicIndex].findAnswers[
-            questionIndex
-          ].questions.forEach((ques, index) => {
-            ques.studentAnswer = "";
-          });
-        }
-        console.log(
-          "findAnswer",
-          studentResponse.topics[topicIndex].findAnswers[questionIndex]
-            .questions
-        );
-
-        break;
-      case "essay":
-        // "response" : "The capital of France is Paris"
-        if (response) {
-          studentResponse.topics[topicIndex].essay[
-            questionIndex
-          ].studentAnswer = response;
-        } else {
-          studentResponse.topics[topicIndex].essay[
-            questionIndex
-          ].studentAnswer = "";
-        }
-        break;
-      case "video":
-        // "response" : {
-        //   "long": [
-        //     "The capital of France is Paris",
-        //     "The capital of Spain is Madrid"
-        //   ],
-        //   "short": [
-        //     "The capital of France is Paris",
-        //     "The capital of Spain is Madrid"
-        //   ],
-        //   "mcq": [
-        //     0,
-        //     1
-        //   ]
-
-        studentResponse.topics[topicIndex].video[questionIndex].long.forEach(
-          (long, index) => {
-            // long = response.long[index];
-            long.studentAnswer = response.long[index];
-          }
-        );
-        studentResponse.topics[topicIndex].video[questionIndex].short.forEach(
-          (short, index) => {
-            short.studentAnswer = response.short[index];
-          }
-        );
-        studentResponse.topics[topicIndex].video[
-          questionIndex
-        ].questions.forEach((mcq, index) => {
-          mcq.StudentAnswerIndex = response.mcq[index];
-        });
-
-        break;
-      case "compiler":
-        // "response" : [
-        //   {
-        //     "studentOutput": "Hello World"
-        //   },
-        //   {
-        //     "studentOutput": "Hello World"
-        //   }
-        // ]
-
-        studentResponse.topics[topicIndex].compiler[
-          questionIndex
-        ].testcase.forEach((testcase, index) => {
-          testcase.studentOutput = response[index];
-        });
-        break;
-      default:
-        break;
+    const question = topic[typeDir][questionIndex];
+    if (type === 'mcq') {
+      calculateMcqMarks(assessment, question, response);
     }
 
-    studentResponse.totalQuestionsAttempted += 1;
+
+    updateStudentResponse(studentResponse, type, topicIndex, questionIndex, response,assessment);
     await studentResponse.save();
 
-    //for one topic
-    assessment.totalQuestionsAttempted = assessment.totalQuestionsAttempted + 1;
-    console.log(assessment.totalQuestionsAttempted, totalQuestions);
-    if (assessment.totalQuestionsAttempted >= totalQuestions) {
+    if (++assessment.totalQuestionsAttempted >= totalQuestions) {
       assessment.currentQuestionIndex = 0;
       assessment.currentTopicIndex = topicIndex + 1;
       assessment.totalQuestionsAttempted = 0;
-      console.log("Next topic");
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
-        return res.status(200).json({ message: "test comp" });
+        return res.status(200).json({ message: "Test completed" });
       }
 
-      type = assessment.assessment.topics[topicIndex + 1].Type;
-      if (type === "mcq") {
-        typeDir = "questions";
-      } else if (type === "findAnswer") {
-        typeDir = "findAnswers";
-      } else {
-        typeDir = type;
-      }
-      nextQuestion = assessment.assessment.topics[topicIndex + 1][typeDir][0];
+      const nextTopic = assessment.assessment.topics[topicIndex + 1];
+      nextQuestion = nextTopic[getTypeDir(nextTopic.Type)][0];
     } else {
       assessment.currentQuestionIndex = questionIndex + 1;
-
-      nextQuestion =
-        assessment.assessment.topics[topicIndex][typeDir][questionIndex + 1];
+      nextQuestion = topic[typeDir][questionIndex + 1];
     }
 
     await student.save();
@@ -1141,18 +1248,111 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     res.json({
       success: true,
       message: "Question sent",
-      count: assessment.totalStudentAttempted + 1,
+      count: assessment.totalStudentAttempted,
       questionIndex: questionIndex,
       topicIndex: topicIndex,
       nextQuestion: nextQuestion,
       topic: topic.Heading,
-      studentResponse: question,
+      studentResponse: response,
       result: studentResponse,
     });
   } catch (error) {
     console.log("Error", error);
   }
 });
+
+async function completeAssessment(student, assessment, testId) {
+  assessment.currentTopicIndex = 0;
+  assessment.currentQuestionIndex = 0;
+  assessment.active = false;
+  await student.save();
+
+  const test = await Assessments.findById(testId).populate("studentResponses");
+  const totalPercentage = test.studentResponses.reduce((acc, response) => acc + response.percentage, 0);
+  test.avgPercentage = totalPercentage / test.studentResponses.length;
+  await test.save();
+}
+
+function getTypeDir(type) {
+  switch (type) {
+    case 'mcq':
+      return 'questions';
+    case 'findAnswer':
+      return 'findAnswers';
+    default:
+      return type;
+  }
+}
+
+function updateStudentResponse(studentResponse, type, topicIndex, questionIndex, response,assessment) {
+  const currentTopic = studentResponse.topics[topicIndex];
+
+  switch (type) {
+    case 'mcq':
+      currentTopic.questions[questionIndex].StudentAnswerIndex = parseInt(response);
+      break;
+    case 'findAnswer':
+      currentTopic.findAnswers[questionIndex].questions.forEach((ques, index) => {
+        ques.studentAnswer = response[index]?.studentAnswer || '';
+      });
+      break;
+    case 'essay':
+      currentTopic.essay[questionIndex].studentAnswer = response || '';
+      break;
+    case 'video':
+      currentTopic.video[questionIndex].long.forEach((long, index) => {
+        long.studentAnswer = response.long[index] || '';
+      });
+      currentTopic.video[questionIndex].short.forEach((short, index) => {
+        short.studentAnswer = response.short[index] || '';
+      });
+      currentTopic.video[questionIndex].questions.forEach((mcq, index) => {
+        mcq.StudentAnswerIndex = response.mcq[index] || '';
+      });
+      break;
+    case 'compiler':
+      currentTopic.compiler[questionIndex].testcase.forEach((testcase, index) => {
+        testcase.studentOutput = response[index] || '';
+      });
+      break;
+  }
+
+  studentResponse.totalQuestionsAttempted += 1;
+  studentResponse.correctAnswers = assessment.correctAnswers;
+  studentResponse.totalMarks = assessment.marks;
+  currentTopic.totalMarks = assessment.currentTopicMarks;
+  studentResponse.percentage = (assessment.marks / assessment.assessment.totalMarks) * 100;
+}
+
+function calculateMcqMarks(assessment, question, response) {
+  if (parseInt(question.AnswerIndex) === parseInt(response)) {
+    assessment.correctAnswers += 1;
+    const level = question.QuestionLevel;
+    let marks = 0;
+    if (level === "beginner") {
+      marks = 1;
+      assessment.L1Correct += 1;
+    } else if (level === "intermediate") {
+      marks = 2;
+      assessment.L2Correct += 1;
+    } else if (level === "advanced") {
+      marks = 3;
+      assessment.L3Correct += 1;
+    }
+    assessment.marks += marks;
+    assessment.currentTopicMarks += marks;
+    console.log(`${level} correct`, assessment.marks);
+  } else {
+    if (assessment.negativeCount === 3) {
+      assessment.marks -= 1;
+      assessment.negativeCount = 0;
+      assessment.currentTopicMarks -= 1;
+    } else {
+      assessment.negativeCount += 1;
+    }
+  }
+}
+
 
 // ====================================== get student result ===================
 
