@@ -13,6 +13,7 @@ const InvitedStudents = require("../../models/college/student/Invited");
 const CollegeAssessInv = require("../../models/student/assessmentInvitation");
 const StudentResponse = require("../../models/student/studentResponse");
 const Assessments = require("../../models/college/assessment/assessments");
+const { isBefore, isAfter } = require('date-fns');
 
 // student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
 //   email: { type: String },
@@ -102,7 +103,7 @@ exports.getTestDetailsForStudent = catchAsyncErrors(async (req, res, next) => {
       (assessment) => assessment.assessment._id == testId
     );
 
-    assessment.assessment.topics.forEach((topic, index) => {
+    assessment?.assessment?.topics?.forEach((topic, index) => {
       assessment.assessment.topics[index] = {
         ...assessment.assessment.topics[index],
         questions: [],
@@ -165,29 +166,46 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("test attempts exceeded", 429));
     }
     // ---------------------  CHECK IF TEST STARTED/ENDED-------------------
-    const startDate = new Date(assessment.assessment.startDate).toISOString().replace(/T/, ' ').replace(/\..+/, '')
-    const endDate = new Date(assessment.assessment.endDate).toISOString().replace(/T/, ' ').replace(/\..+/, '')
-
-    // Get the current date and time
-    const now =new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
-
-
-    // // Check if the test has started or ended
-    let testStatus;
   
-    if (now < startDate) {
-      // testStatus = 'Test has not started yet';
+
+    // Convert start date, end date, and current date to Date objects
+    const startDate = new Date(assessment.assessment.startDate);
+    startDate.setHours(startDate.getHours() - 5);
+    startDate.setMinutes(startDate.getMinutes() - 30);
+    const startDateString = startDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    
+    const endDate = new Date(assessment.assessment.endDate);
+    endDate.setHours(endDate.getHours() - 5);
+    endDate.setMinutes(endDate.getMinutes() - 30);
+    const endDateString = endDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    
+    const now = new Date();
+    const nowString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    
+    let testStatus;
+    
+    console.log("Start Date: ", startDateString , typeof startDateString);
+    console.log("End Date: ", endDateString, typeof endDateString);
+    console.log("Current Date: ", nowString, typeof nowString);
+    
+    // Check if the current date is before the start date
+    if (isBefore(nowString, startDateString)) {
       testStatus = false;
       return next(new ErrorHandler("Test not started yet", 404));
-    } else if (now > endDate) {
-      // testStatus = 'Test has ended';
+    } 
+    // Check if the current date is after the end date
+    else if (isAfter(nowString, endDateString)) {
       testStatus = false;
       return next(new ErrorHandler("Test Ended", 404));
-    } else {
-      // testStatus = 'Test is currently ongoing';
+    } 
+    // Otherwise, the test is ongoing
+    else {
       testStatus = true;
     }
-    // console.log(testStatus , now , startDate , endDate , "test status");
+    
+    console.log("Test Status: ", testStatus);
+    
+
 
     
     // if(!testStatus){
