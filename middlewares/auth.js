@@ -1,4 +1,3 @@
-
 // isAuthenticatedUser middleware
 const ErrorHander = require("../utils/errorhandler");
 const catchAsyncErrors = require("./catchAsyncErrors");
@@ -60,6 +59,7 @@ const isAuthenticatedUser = (model) => {
     //   req.user = user;
     //   next();
     // }
+
     req.user = user;
     next();
   });
