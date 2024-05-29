@@ -132,6 +132,7 @@ const collegeSchema = new mongoose.Schema({
 
   loginActivity: [
     {
+      qrVerify: Boolean,
       ip: String,
       logged_in_at: Date,
       logged_out_at: Date,
@@ -184,26 +185,25 @@ const collegeSchema = new mongoose.Schema({
     ref: "PaymentPlan",
   },
 
-  subscription :   {
+  subscription: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subscription",
+  },
+  payments: [
+    {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Subscription',
+      ref: "Subscription",
     },
-    payments : [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Subscription',
-      }
-    ],
-    planEndDate : {
-      type: Date,
+  ],
+  planEndDate: {
+    type: Date,
+  },
+  designatedCompanies: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
     },
-    designatedCompanies : [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Company',
-      }
-    ],
-  
+  ],
 });
 
 collegeSchema.pre("save", async function (next) {

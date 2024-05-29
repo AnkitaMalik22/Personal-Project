@@ -110,11 +110,11 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     })
     .populate({
       path: "selectedStudents",
-      match: { $exists: true }, // Add this line to ignore if the field doesn't exist
+      // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
     })
     .populate({
       path: "rejectedStudents",
-      match: { $exists: true }, // Add this line to ignore if the field doesn't exist
+      // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
     });
   // console.log(testSections, "testSections");
 

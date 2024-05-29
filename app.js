@@ -37,6 +37,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:3002",
       "https://65a11283c51a3ba9c2cdb954--mellifluous-conkies-ba7b88.netlify.app/",
       "https://deploy-preview-8--mellifluous-conkies-ba7b88.netlify.app",
       "https://skillaccessclient.netlify.app",
@@ -109,6 +110,7 @@ const io = new socketIo.Server(server, {
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:3002",
       "https://65a11283c51a3ba9c2cdb954--mellifluous-conkies-ba7b88.netlify.app/",
       "https://deploy-preview-8--mellifluous-conkies-ba7b88.netlify.app",
       "https://skillaccessclient.netlify.app",
