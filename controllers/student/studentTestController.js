@@ -165,15 +165,16 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("test attempts exceeded", 429));
     }
     // ---------------------  CHECK IF TEST STARTED/ENDED-------------------
-    const startDate = new Date(assessment.assessment.startDate);
-    const endDate = new Date(assessment.assessment.endDate);
+    const startDate = new Date(assessment.assessment.startDate).toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    const endDate = new Date(assessment.assessment.endDate).toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
     // Get the current date and time
-    const now = new Date();
+    const now =new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
 
-    // Check if the test has started or ended
+
+    // // Check if the test has started or ended
     let testStatus;
-
+  
     if (now < startDate) {
       // testStatus = 'Test has not started yet';
       testStatus = false;
@@ -186,6 +187,9 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       // testStatus = 'Test is currently ongoing';
       testStatus = true;
     }
+    // console.log(testStatus , now , startDate , endDate , "test status");
+
+    
     // if(!testStatus){
 
     // }
@@ -687,6 +691,10 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         studentResponse.percentage =
           (assessment.marks / assessment.assessment.totalMarks) * 100;
         console.log("student marks", assessment.marks);
+        // Fix : saving the last question response
+        studentResponse.topics[topicIndex].questions[
+          questionIndex
+        ].StudentAnswerIndex = response;
         await studentResponse.save();
         // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
         console.log("All topics completed 2");
