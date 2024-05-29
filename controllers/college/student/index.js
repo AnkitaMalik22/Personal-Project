@@ -2,7 +2,7 @@ const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const CollegeAssessInv = require("../../../models/student/assessmentInvitation");
 const ErrorHandler = require("../../../utils/errorhandler");
 
-// /api/college/student/tests/
+// /api/college/student/tests/:id
 exports.getStudentTests = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.params.id;

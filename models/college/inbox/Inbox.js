@@ -13,6 +13,7 @@ const inboxSchema = new mongoose.Schema(
     },
     emailsReceived: [
       {
+        seen: { type: Boolean, default: false },
         mail: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Mail",
@@ -21,6 +22,7 @@ const inboxSchema = new mongoose.Schema(
     ],
     emailsSent: [
       {
+        seen: { type: Boolean, default: false },
         mail: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Mail",
