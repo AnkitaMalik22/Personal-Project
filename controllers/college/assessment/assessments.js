@@ -262,10 +262,12 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
               upsert: true,
             }
           );
+
+          let isAdaptive = assessment.level === "adaptive";
           sendEmail({
             email: Email,
             subject: "Invitation to join Test",
-            message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/login?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, please register first.`,
+            message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/test/${assessmentId}?isAdaptive=${isAdaptive}. If you are not registered yet, please register first.`,
           });
         }
       }
