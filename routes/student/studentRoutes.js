@@ -70,7 +70,7 @@ router.post(
 );
 router.post("/profile/update/skill", isAuthenticatedStudent, updateSkills);
 router.post("/profile/update/link", isAuthenticatedStudent, updateLinks);
-router.post(
+router.put(
   "/profile/update/avatar",
   isAuthenticatedStudent,
   updateProfilePictureStudent
