@@ -12,6 +12,7 @@ const {
 } = require("../../middlewares/auth");
 
 const {
+  getResultGraph,
   getStudentsForTest,
   getRecentAssessments,
   removeRecentAssessment,
@@ -63,6 +64,8 @@ const {
 // ======================================================= ROUTES =======================================================
 
 // Assessments Routes
+router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph);
+
 router.route("/students/:id").get(isAuthenticatedCollege, getStudentsForTest);
 router.route("/recent").get(isAuthenticatedCollege, getRecentAssessments);
 router

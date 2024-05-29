@@ -220,6 +220,8 @@ exports.generateQr = async (req, res, next) => {
 };
 
 exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
+  const token = req.header("auth-token");
+
   const college = await College.findById(req.user.id);
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
@@ -233,8 +235,16 @@ exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
   });
   // console.log(parseInt(req.body.token));
   // console.log(req.body.secret);
-  college.qrVerify = true;
+  // college.qrVerify = true;
+
+  college.loginActivity.forEach((login) => {
+    console.log(login.token_id === token);
+    if (login.token_id === token) {
+      login.qrVerify = true;
+    }
+  });
   await college.save({ validateBeforeSave: false });
+
   if (verified) return res.status(200).json({ verified: verified, college });
   return res.status(400).json({ verified: verified, college });
 });
@@ -482,6 +492,7 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
   college.loginActivity.forEach((login) => {
     console.log(login.token_id === token);
     if (login.token_id === token) {
+      login.qrVerify = false;
       login.token_deleted = true;
     }
   });
@@ -548,6 +559,7 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
   college.loginActivity.forEach((login) => {
     console.log(login.token_id === token, login.token_id, token);
     if (login.token_id === token) {
+      login.qrVerify = false;
       login.token_deleted = true;
     }
   });
@@ -1274,20 +1286,19 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 
     // const uploadedStudents = await Invitation.find({ sender: id });
     const invitedStudents = await InvitedStudents.findOne({ college: id });
-    const approvedStudents = await ApprovedStudents.findOne({ college: id })
-    .populate({
-      path: 'students',
+    const approvedStudents = await ApprovedStudents.findOne({
+      college: id,
+    }).populate({
+      path: "students",
       populate: {
-        path: 'studentResponses',
-        select: 'assessmentId',
+        path: "studentResponses",
+        select: "assessmentId",
         populate: {
-          path: 'assessmentId',
-          select: 'name',
+          path: "assessmentId",
+          select: "name",
         },
       },
     });
-  
-  
 
     // console.log(uploadedStudents , "uploaded students" , id)
 
@@ -1631,7 +1642,7 @@ exports.resultOverviewGraph = async (req, res, next) => {
         },
         year: "%Y",
       }[timeUnit];
-
+      //c
       const groupBy = {
         day: { $dateToString: { format: format, date: "$completedAt" } },
         week: {
