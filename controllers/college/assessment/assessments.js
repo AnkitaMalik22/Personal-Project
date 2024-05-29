@@ -9,6 +9,7 @@ const sendEmail = require("../../../utils/sendEmail");
 const Credit = require("../../../models/college/account/creditModel");
 const CollegeAssessInv = require("../../../models/student/assessmentInvitation");
 const ApprovedStudents = require("../../../models/college/student/Approved");
+const studentResponse = require("../../../models/student/studentResponse");
 
 // =========================================================================================================================================
 
@@ -95,58 +96,59 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     ).length;
 
     const L2count = Math.ceil(totalL2Question / 2);
-    
+
     const totalL3Question = topic.questions.filter(
       (question) => question.QuestionLevel === "advanced"
     ).length;
-    const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question-1) : 1;
-    
+    const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question - 1) : 1;
+
     // let L3count = topic.questions.length - L1count - L2count;
 
-   if(isAdaptive){
-    return {
-      ...topic,
-      topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
-      L1count,
-      L2count,
-      L3count,
-      totalL1Question,
-      totalL2Question,
-      totalL3Question,
-    };
-   }else{
-    return{
-      ...topic,
-      // only calculating mcqs for beginner , intermediate and advanced
-      topicMarks: topic.questions.length,
-      totalL1Question,
-      totalL2Question,
-      totalL3Question,
+    if (isAdaptive) {
+      return {
+        ...topic,
+        topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
+        L1count,
+        L2count,
+        L3count,
+        totalL1Question,
+        totalL2Question,
+        totalL3Question,
+      };
+    } else {
+      return {
+        ...topic,
+        // only calculating mcqs for beginner , intermediate and advanced
+        topicMarks: topic.questions.length,
+        totalL1Question,
+        totalL2Question,
+        totalL3Question,
+      };
     }
-   }
   });
 
-let totalMarks = 0;
+  let totalMarks = 0;
 
-if(req.body.level === "adaptive"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
-}
-else if (req.body.level === "beginner"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL1Question, 0);
-}
-else if (req.body.level === "intermediate"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL2Question, 0);
-}
-else if (req.body.level === "advanced"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL3Question, 0);
-}
-
-
-
-
+  if (req.body.level === "adaptive") {
+    totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
+  } else if (req.body.level === "beginner") {
+    totalMarks = newTopics.reduce(
+      (acc, topic) => acc + topic.totalL1Question,
+      0
+    );
+  } else if (req.body.level === "intermediate") {
+    totalMarks = newTopics.reduce(
+      (acc, topic) => acc + topic.totalL2Question,
+      0
+    );
+  } else if (req.body.level === "advanced") {
+    totalMarks = newTopics.reduce(
+      (acc, topic) => acc + topic.totalL3Question,
+      0
+    );
+  }
 
   // Need to calculate the marks of subjective questions also
- 
 
   // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
 
@@ -312,7 +314,7 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
     path: "studentResponses",
     populate: { path: "studentId" },
     // only send those res who completed the test
-    match: { completed: true }
+    match: { completed: true },
   });
 
   if (!assessment) {
@@ -529,7 +531,68 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+const getResultGraph = catchAsyncErrors(async (req, res, next) => {
+  const now = new Date();
+  const lastYear = new Date(
+    now.getFullYear() - 1,
+    now.getMonth(),
+    now.getDate()
+  );
+  const assessments = await Assessments.aggregate([
+    {
+      $match: {
+        endDate: {
+          $gte: lastYear,
+          $lte: now,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$endDate" },
+          month: { $month: "$endDate" },
+        },
+        records: { $push: "$$ROOT" },
+      },
+    },
+  ]);
+
+  // Populate the nested studentResponses field
+  await studentResponse.populate(assessments, {
+    path: "records.studentResponses",
+    select: "status",
+  });
+
+  assessments.forEach((assessment) => {
+    let totalPlaced = 0; // Initialize total fulfilled count for the assessment
+    let totalAppearedCount = 0; // Initialize total appeared count for the assessment
+
+    assessment.records.forEach((record) => {
+      const fulfilledCount = record.studentResponses.reduce(
+        (count, response) => count + (response.status === "selected" ? 1 : 0),
+        0
+      );
+      record.topics = [];
+      record.fulfilledCount = fulfilledCount;
+      totalPlaced += fulfilledCount; // Add to the total fulfilled count
+
+      const appearedCount = record.studentResponses.length;
+      record.appearedCount = appearedCount;
+      totalAppearedCount += appearedCount; // Add to the total appeared count
+    });
+    assessment.totalPlaced = totalPlaced; // Assign the total fulfilled count to the assessment
+    assessment.totalAppearedCount = totalAppearedCount; // Assign the total appeared count to the assessment
+  });
+
+  return res.json({ assessments });
+});
+const now = new Date();
+const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+
 module.exports = {
+  getResultGraph,
   getStudentsForTest,
   removeRecentAssessment,
   getRecentAssessments,
