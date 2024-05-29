@@ -1642,7 +1642,7 @@ exports.resultOverviewGraph = async (req, res, next) => {
         },
         year: "%Y",
       }[timeUnit];
-
+      //c
       const groupBy = {
         day: { $dateToString: { format: format, date: "$completedAt" } },
         week: {
