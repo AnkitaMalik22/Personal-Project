@@ -143,14 +143,48 @@ exports.sendReply = catchAsyncErrors(async (req, res) => {
       Date: new Date(),
       message: req.body.Message,
     };
+
     // add mail to emails sent for the sender
     const mail = await Mail.findOneAndUpdate(
       { _id: req.body.id }, // Filter to match the email by its _id
       { $push: { replies: reply } }, // Use $push to add newReply to replies array
       { new: true, upsert: true } // Return the updated document
     );
+
+    //user
+    await Inbox.findOneAndUpdate(
+      {
+        user: req.user.id,
+        [mail.to === req.user.id ? "emailsReceived.mail" : "emailsSent.mail"]:
+          req.body.id,
+      },
+      {
+        $set: {
+          [mail.to === req.user.id
+            ? "emailsReceived.$.seen"
+            : "emailsSent.$.seen"]: false,
+        },
+      }
+    );
+
+    //receiver
+    await Inbox.findOneAndUpdate(
+      {
+        user: [mail.to === req.user.id ? mail.from : mail.to],
+        [mail.to !== req.user.id ? "emailsReceived.mail" : "emailsSent.mail"]:
+          req.body.id,
+      },
+      {
+        $set: {
+          [mail.to !== req.user.id
+            ? "emailsReceived.$.seen"
+            : "emailsSent.$.seen"]: false,
+        },
+      }
+    );
     res.status(200).json(mail);
   } catch (error) {
+    console.log(error);
     return next(new ErrorHandler(error.message, 500));
   }
 });
@@ -444,6 +478,33 @@ exports.deleteMail = async (req, res) => {
     res.status(200).json({ success: true, mail, inbox });
   } catch (error) {
     console.log(error);
+  }
+};
+
+exports.markAsSeen = async (req, res) => {
+  try {
+    const type = req.query.type;
+    let inbox = await Inbox.findOneAndUpdate(
+      {
+        user: req.user.id,
+        [type === "Sent" ? "emailsSent.mail" : "emailsReceived.mail"]:
+          req.params.id,
+      },
+      {
+        $set: {
+          [type === "Sent"
+            ? "emailsSent.$.seen"
+            : "emailsReceived.$.seen"]: true,
+        },
+      },
+      { new: true } // To return the updated document after the update
+    );
+    if (!inbox) {
+      throw new Error({ message: "mail not found" });
+    }
+    res.status(200).json({ success: true, inbox });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "internal server error" });
   }
 };
 

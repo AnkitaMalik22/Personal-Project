@@ -66,9 +66,9 @@ const {
 
   deleteMail,
   deleteCollegeMail,
+  markAsSeen,
 } = require("../../controllers/college/inbox/inboxController");
 const { qrWare } = require("../../middlewares/qrWare");
-
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
@@ -111,24 +111,37 @@ router.get("/upload/students/get", isAuthenticatedCollege, getUploadedStudents);
 router.get("/:id/students", isAuthenticatedCollege, getStudents);
 
 // GET STUDENT DETAILS-- ID
-router.get("/student/:id", isAuthenticatedCollege,getStudentById);
-
-
+router.get("/student/:id", isAuthenticatedCollege, getStudentById);
 
 // REJECT | SELECT STUDENT ------ FOR TEST
-router.post("/test/status/:testId/:responseId", isAuthenticatedCollege, selectStudentTest)
+router.post(
+  "/test/status/:testId/:responseId",
+  isAuthenticatedCollege,
+  selectStudentTest
+);
 // GET ALL SELECTED STUDENTS------ FOR TEST
-router.get("/test/students/selected/:testId", isAuthenticatedCollege, getSelectedStudents)
+router.get(
+  "/test/students/selected/:testId",
+  isAuthenticatedCollege,
+  getSelectedStudents
+);
 // GET ALL REJECTED STUDENTS------ FOR TEST
-router.get("/test/students/rejected/:testId", isAuthenticatedCollege, getRejectedStudents);
-
+router.get(
+  "/test/students/rejected/:testId",
+  isAuthenticatedCollege,
+  getRejectedStudents
+);
 
 // invite students
 router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
 // approve students
 router.post("/student/approve", isAuthenticatedCollege, approveStudents);
 // reject student
-router.post("/student/reject/:studentId", isAuthenticatedCollege, rejectStudent);
+router.post(
+  "/student/reject/:studentId",
+  isAuthenticatedCollege,
+  rejectStudent
+);
 
 // pending students
 router.get("/students/pending", isAuthenticatedCollege, getPendingStudents);
@@ -160,8 +173,7 @@ router.post("/upload/video", isAuthenticatedCollege, uploadVideo);
 
 // router.post("/dashboard/jobs", isAuthenticatedCollege, getTotalJobs);
 
-router.get("/dashboard/jobs",getTotalJobs);
-
+router.get("/dashboard/jobs", getTotalJobs);
 
 // router.get('/dashboard/students',isAuthenticatedCollege, getTotalStudents);
 router.post(
@@ -185,6 +197,7 @@ router.post(
 );
 
 // ======================== INBOX ROUTES =======================================
+router.route("/inbox/seen/:id").put(isAuthenticatedCollege, markAsSeen);
 
 router.route("/inbox/delete/:id").delete(isAuthenticatedCollege, deleteMail);
 router.route("/inbox/search").post(isAuthenticatedCollege, searchMail);
@@ -206,6 +219,5 @@ router.route("/inbox/mail").delete(isAuthenticatedCollege, deleteCollegeMail);
 // ===========================================================================
 
 router.route("/result/graph").get(isAuthenticatedCollege, resultOverviewGraph);
-
 
 module.exports = router;
