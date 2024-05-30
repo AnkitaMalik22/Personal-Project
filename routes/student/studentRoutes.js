@@ -21,6 +21,9 @@ const {
   getNewJobs,
   getRecommendedJobs,
   getYourAssessments,
+  generateQr,
+  verifyQr,
+  selectAuth,
 } = require("../../controllers/student/studentController");
 const {
   isAuthenticatedStudent,
@@ -34,9 +37,15 @@ const {
   updateSkills,
   updateLinks,
 } = require("../../controllers/student/profileController");
+const { qrWare } = require("../../middlewares/qrWare");
 
+router
+  .route("/qr")
+  .get(isAuthenticatedStudent, generateQr)
+  .post(isAuthenticatedStudent, verifyQr);
+router.route("/selectAuth").put(isAuthenticatedStudent, selectAuth);
 // router.get('/all', getAllStudents);
-router.route("/me").get(isAuthenticatedStudent, getStudent);
+router.route("/me").get(isAuthenticatedStudent, qrWare, getStudent);
 router.post("/register", createStudent);
 router.post("/login", loginStudent);
 router.put("/update", isAuthenticatedStudent, updateProfileStudent);

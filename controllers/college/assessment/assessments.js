@@ -539,25 +539,122 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
     now.getMonth(),
     now.getDate()
   );
-  const assessments = await Assessments.aggregate([
-    {
-      $match: {
-        endDate: {
-          $gte: lastYear,
-          $lte: now,
+
+  let assessments;
+
+  console.log(req.query.duration);
+
+  switch (req.query.duration) {
+    case "month":
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
         },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          year: { $year: "$endDate" },
-          month: { $month: "$endDate" },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              month: { $month: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
         },
-        records: { $push: "$$ROOT" },
-      },
-    },
-  ]);
+      ]);
+
+      break;
+    case "quater":
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              quarter: { $ceil: { $divide: [{ $month: "$endDate" }, 3] } },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+      break;
+    case "week":
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              week: { $week: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+
+      break;
+    case "day":
+      console.log("day");
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              month: { $month: "$endDate" },
+              day: { $dayOfMonth: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+      break;
+    default:
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              month: { $month: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+      break;
+  }
 
   // Populate the nested studentResponses field
   await studentResponse.populate(assessments, {

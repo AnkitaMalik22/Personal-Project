@@ -15,6 +15,10 @@ const ApprovedStudents = require("../../models/college/student/Approved");
 const UploadedStudents = require("../../models/student/uploadedStudents");
 const BlacklistToken = require("../../models/college/blacklistToken");
 const sendEmail = require("../../utils/sendEmail");
+const QrStudent = require("../../models/college/qr/qrStudent");
+const qrcode = require("qrcode");
+const speakeasy = require("speakeasy");
+
 // =======
 // const { Student } = require('../../models/student/studentModel');
 // const catchAsyncErrors = require('../../middlewares/catchAsyncErrors');
@@ -33,6 +37,96 @@ const sendEmail = require("../../utils/sendEmail");
 // ============================================= STUDENT CONTROLLERS ====================================================
 
 // ====
+
+// ================================================================================================================================
+//  qr
+exports.generateQr = async (req, res, next) => {
+  try {
+    let secret = speakeasy.generateSecret({
+      name: `Skillaccess: ${req.user.FirstName}`,
+    });
+    // console.log(secret);
+    const user = await Student.findById(req.user.id);
+    if (!user) return res.status(404).send("student not found");
+    const qr = await QrStudent.findOne({ user: req.user.id });
+
+    if (!qr) {
+      function generateQRCodeDataURL(secret) {
+        return new Promise((resolve, reject) => {
+          qrcode.toDataURL(secret.otpauth_url, (err, data) => {
+            if (err) {
+              reject(err); // Reject promise with error if qrcode.toDataURL encounters an error
+            } else {
+              resolve(data); // Resolve promise with data URL if qrcode.toDataURL is successful
+            }
+          });
+        });
+      }
+      const code = await generateQRCodeDataURL(secret);
+      // console.log(code);
+
+      if (!code) {
+        return res.status(401).send("could not get code");
+      }
+      await QrStudent.create({
+        user: user._id,
+        code: code,
+        secret: secret,
+      });
+      return res.status(200).json({ success: true, qr: code, secret: secret });
+    } else {
+      return res
+        .status(200)
+        .json({ success: true, qr: qr.code, secret: qr.secret });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
+  const token = req.header("auth-token");
+
+  const student = await Student.findById(req.user.id);
+  if (!student) {
+    return next(new ErrorHandler("College not found", 404));
+  }
+  const qr = await QrStudent.findOne({ user: student._id });
+  console.log(qr);
+  let verified = speakeasy.totp.verify({
+    secret: qr.secret.ascii,
+    encoding: "ascii",
+    token: parseInt(req.body.token),
+  });
+  // console.log(parseInt(req.body.token));
+  // console.log(req.body.secret);
+  // student.qrVerify = true;
+
+  student.loginActivity.forEach((login) => {
+    console.log(login.token_id === token);
+    if (login.token_id === token) {
+      login.qrVerify = true;
+    }
+  });
+  await student.save({ validateBeforeSave: false });
+
+  if (verified) return res.status(200).json({ verified: verified, student });
+  return res.status(400).json({ verified: verified, student });
+});
+// =================================================== selectAuth===========================================================
+exports.selectAuth = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.user.id);
+  if (!student) {
+    return next(new ErrorHandler("not found", 404));
+  }
+  student.authType = req.body.type;
+  if (req.body.type === "qr") {
+    student.qrVerify = true;
+  }
+  await student.save({ validateBeforeSave: false });
+  return res.status(200).json({ student });
+});
+// =================================================== REGISTER COLLEGE ===========================================================
 // --------------------------------------------- GET A STUDENT -------------------------------------------------------
 
 exports.getStudent = catchAsyncErrors(async (req, res, next) => {
@@ -53,7 +147,6 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- GET A STUDENT --ID -------------------------------------------------------
 
 exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
-
   const student = await Student.findById(req.params.id).populate({
     path: "studentResponses",
     populate: {

@@ -177,8 +177,9 @@ exports.verifyOtp = catchAsyncErrors(async (req, res, next) => {
 //  SIDD
 exports.generateQr = async (req, res, next) => {
   try {
+    console.log(req.user);
     let secret = speakeasy.generateSecret({
-      name: "Skillaccess",
+      name: `Skillaccess: ${req.user.FirstName}`,
     });
     // console.log(secret);
     const user = await College.findById(req.params.id);
@@ -215,6 +216,7 @@ exports.generateQr = async (req, res, next) => {
         .json({ success: true, qr: qr.code, secret: qr.secret });
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
