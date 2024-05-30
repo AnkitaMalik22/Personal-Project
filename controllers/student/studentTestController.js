@@ -822,7 +822,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
             assessment.currentTopicMarks;
           studentResponse.percentage =
             (assessment.marks / assessment.assessment.totalMarks) * 100;
-          console.log("student marks", assessment.marks);
+          // console.log("student marks", assessment.marks);
           await studentResponse.save();
           // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
           // --------------------- update the avgPercentage of the assessment -------------------
@@ -1173,8 +1173,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 //     studentResponse.totalMarks = assessment.marks;
 //     studentResponse.topics[topicIndex].totalMarks =
 //       assessment.currentTopicMarks;
-//     studentResponse.percentage =
-//       (assessment.marks / assessment.assessment.totalMarks) * 100;
+//     studentResponse.percentage =parseInt((assessment.marks / assessment.assessment?.totalMarks) * 100);
 
 //     await studentResponse.save();
 
@@ -1230,6 +1229,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     const { testId } = req.params;
     const { response } = req.body;
     const studentId = req.user.id;
+    console.log("Non Adaptive Response");
 
     const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate("assessments.assessment")
@@ -1380,6 +1380,9 @@ function updateStudentResponse(
     case "mcq":
       currentTopic.questions[questionIndex].StudentAnswerIndex =
         parseInt(response);
+      studentResponse.percentage =
+        (assessment.marks / assessment.assessment.totalMarks) * 100;
+
       break;
     case "findAnswer":
       currentTopic.findAnswers[questionIndex].questions.forEach(
@@ -1415,8 +1418,6 @@ function updateStudentResponse(
   studentResponse.correctAnswers = assessment.correctAnswers;
   studentResponse.totalMarks = assessment.marks;
   currentTopic.totalMarks = assessment.currentTopicMarks;
-  studentResponse.percentage =
-    (assessment.marks / assessment.assessment.totalMarks) * 100;
 }
 
 function calculateMcqMarks(assessment, question, response) {
