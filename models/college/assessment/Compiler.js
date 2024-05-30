@@ -43,9 +43,26 @@ const compilerSchema = new Schema({
         type: String,
         // enum: ['int', 'boolean', 'string'],
       },
+      defaultCodes:[
+        {
+          language: String,
+          code: String,
+        }
+      ],
       
        testcase:{
-        type:[],
+        type: [
+          {
+            input: String,
+            expectedOutput: String,
+            studentOutput: String,
+            passed: Boolean,
+            hidden: {
+              type: Boolean,
+              default: true,
+            }
+          },
+        ],
         },
        output:{
          type:[],
