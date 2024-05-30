@@ -278,6 +278,10 @@ const studentResponseSchema = new mongoose.Schema(
                   expectedOutput: String,
                   studentOutput: String,
                   passed: Boolean,
+                  hidden: {
+                    type: Boolean,
+                    default: true,
+                  }
                 },
               ],
               // input : "",
