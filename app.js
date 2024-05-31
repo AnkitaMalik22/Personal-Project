@@ -91,6 +91,7 @@ app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/qb", qbRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/compiler", require("./routes/compiler/compilerRoutes"));
 app.get("/", (req, res) => {
   res.send("API is running");
 });
