@@ -2,7 +2,6 @@ const ErrorHander = require("../utils/errorhandler");
 const catchAsyncErrors = require("./catchAsyncErrors");
 
 exports.qrWare = catchAsyncErrors(async (req, res, next) => {
-  console.log(req.user, req.token, "qr user");
   const token = req.header("auth-token");
 
   const existingLogin = req.user.loginActivity.find((activity) => {

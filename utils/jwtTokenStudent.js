@@ -1,5 +1,4 @@
-
-const {Student} = require("../models/student/studentModel");
+const { Student } = require("../models/student/studentModel");
 const BlacklistToken = require("../models/college/blacklistToken");
 
 const sendToken = async (user, statusCode, res, ip, device) => {
@@ -16,33 +15,35 @@ const sendToken = async (user, statusCode, res, ip, device) => {
   };
 
   // Set cookie with the token
-  res.cookie('token', token, options);
+  res.cookie("token", token, options);
 
   // Remove the token from the blacklist
   await BlacklistToken.deleteOne({ token });
 
-const existingLogin = user.loginActivity.find(activity => activity.ip === ip);
+  const existingLogin = user.loginActivity.find(
+    (activity) => activity.ip === ip
+  );
 
-if (existingLogin) {
-  console.log('Token already exists');
-  // Token already exists, update the existing entry
-  existingLogin.token_deleted = false;
-  existingLogin.device = device;
-  existingLogin.token_id = token;
-  existingLogin.logged_in_at = Date.now();
-} else {
-  console.log('Token does not exist--- student');
-  // Token doesn't exist, add a new entry
-  user.loginActivity.push({
-    ip,
-    logged_in_at: Date.now(),
-    device,
-    token_id: token,
-    token_deleted: false,
-  });
-  
-}
-
+  if (existingLogin) {
+    console.log("Token already exists");
+    // Token already exists, update the existing entry
+    existingLogin.qrVerify = false;
+    existingLogin.token_deleted = false;
+    existingLogin.device = device;
+    existingLogin.token_id = token;
+    existingLogin.logged_in_at = Date.now();
+  } else {
+    console.log("Token does not exist--- student");
+    // Token doesn't exist, add a new entry
+    user.loginActivity.push({
+      qrVerify: false,
+      ip,
+      logged_in_at: Date.now(),
+      device,
+      token_id: token,
+      token_deleted: false,
+    });
+  }
 
   // Update the user document in the database
   await Student.findByIdAndUpdate(
@@ -62,7 +63,3 @@ if (existingLogin) {
 };
 
 module.exports = sendToken;
-
-
-
-
