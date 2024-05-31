@@ -340,6 +340,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     }
   } catch (error) {
     console.log(error);
+    return next(new ErrorHandler("Error starting assessment", 500));
   }
 });
 

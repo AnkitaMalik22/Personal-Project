@@ -18,183 +18,200 @@ const studentResponse = require("../../../models/student/studentResponse");
 // Create Assessment -- || College || Company || -- //
 
 const createAssessment = catchAsyncErrors(async (req, res, next) => {
-  const { role, id } = req.user;
+  try{
+    const { role, id } = req.user;
 
-  let credit = await Credit.findOne({
-    college: id,
-  });
-
-  if (credit && credit.credit > 0) {
-    credit.credit -= 1;
-  } else {
-    console.log("you cont have credits");
-    return next(
-      new ErrorHandler(
-        `You don't have enough credits to create assessment!`,
-        400
-      )
-    );
-  }
-
-  const college = await College.findById(id);
-  if (!college) {
-    return next(
-      new ErrorHandler(
-        "Reset Password Token is invalid or has been expired",
-        400
-      )
-    );
-  }
-
-  const assessments = await Assessments.find({ createdBy: id });
-
-  if (assessments.length > 0) {
-    let assessmentExists = false;
-    assessments.forEach((assessment) => {
-      if (assessment.name === req.body.name) {
-        assessmentExists = true;
-      }
+    let credit = await Credit.findOne({
+      college: id,
     });
-
-    if (assessmentExists) {
+  
+    if (credit && credit.credit > 0) {
+      credit.credit -= 1;
+    } else {
+      console.log("you cont have credits");
       return next(
         new ErrorHandler(
-          `Assessment with name ${req.body.name} already exists`,
+          `You don't have enough credits to create assessment!`,
           400
         )
       );
     }
-  }
-
-  // const {testSections} = req.body;
-  const { topics } = req.body;
-
-  // if (college.topics) {
-  //   college.topics.push(...topics);
-  // } else {
-  //   college.topics = topics;
-  // }
-
-  const createdByCompany = role === "company";
-
-  if (role !== "college" && role !== "company") {
-    return next(new ErrorHandler("Invalid user role", 400));
-  }
-
-  // calculate the total sections duration == test duration
-  const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
-  const isAdaptive = req.body.level === "adaptive";
-
-  let newTopics = topics.map((topic) => {
-    const totalL1Question = topic.questions.filter(
-      (question) => question.QuestionLevel === "beginner"
-    ).length;
-    const L1count = Math.ceil(totalL1Question / 3);
-
-    const totalL2Question = topic.questions.filter(
-      (question) => question.QuestionLevel === "intermediate"
-    ).length;
-
-    const L2count = Math.ceil(totalL2Question / 2);
-
-    const totalL3Question = topic.questions.filter(
-      (question) => question.QuestionLevel === "advanced"
-    ).length;
-    const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question - 1) : 1;
-
-    // let L3count = topic.questions.length - L1count - L2count;
-
-    if (isAdaptive) {
-      return {
-        ...topic,
-        topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
-        L1count,
-        L2count,
-        L3count,
-        totalL1Question,
-        totalL2Question,
-        totalL3Question,
-      };
-    } else {
-      return {
-        ...topic,
-        // only calculating mcqs for beginner , intermediate and advanced
-        topicMarks: topic.questions.length,
-        totalL1Question,
-        totalL2Question,
-        totalL3Question,
-      };
+  
+    const college = await College.findById(id);
+    if (!college) {
+      return next(
+        new ErrorHandler(
+          "Reset Password Token is invalid or has been expired",
+          400
+        )
+      );
     }
-  });
-
-  let totalMarks = 0;
-
-  if (req.body.level === "adaptive") {
-    totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
-  } else if (req.body.level === "beginner") {
-    totalMarks = newTopics.reduce(
-      (acc, topic) => acc + topic.totalL1Question,
-      0
-    );
-  } else if (req.body.level === "intermediate") {
-    totalMarks = newTopics.reduce(
-      (acc, topic) => acc + topic.totalL2Question,
-      0
-    );
-  } else if (req.body.level === "advanced") {
-    totalMarks = newTopics.reduce(
-      (acc, topic) => acc + topic.totalL3Question,
-      0
-    );
-  }
-
-  // Need to calculate the marks of subjective questions also
-
-  // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
-
-  let assessment = await Assessments.create({
-    ...req.body,
-    topics: newTopics,
-    createdBy: id,
-    // college: id,
-    // company: id,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-    totalQuestionsCount: req.body.totalQuestions,
-    totalTime: req.body.totalDuration,
-    totalMarks,
-    createdByCompany,
-  });
-
-  const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
-
-  if (!recentQuestion) {
-    console.log("recentQuestion not found", topics);
-
-    await RecentQuestions.create({
-      createdBy: id,
-      topics,
+  
+    const assessments = await Assessments.find({ createdBy: id });
+  
+    if (assessments.length > 0) {
+      let assessmentExists = false;
+      assessments.forEach((assessment) => {
+        if (assessment.name === req.body.name) {
+          assessmentExists = true;
+        }
+      });
+  
+      if (assessmentExists) {
+        return next(
+          new ErrorHandler(
+            `Assessment with name ${req.body.name} already exists`,
+            400
+          )
+        );
+      }
+    }
+  
+    // const {testSections} = req.body;
+    const { topics } = req.body;
+  
+    // if (college.topics) {
+    //   college.topics.push(...topics);
+    // } else {
+    //   college.topics = topics;
+    // }
+  
+    const createdByCompany = role === "company";
+  
+    if (role !== "college" && role !== "company") {
+      return next(new ErrorHandler("Invalid user role", 400));
+    }
+  
+    // calculate the total sections duration == test duration
+    const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
+    const isAdaptive = req.body.level === "adaptive";
+  
+    let newTopics = topics.map((topic) => {
+      if (!topic.questions) {
+        return {
+          ...topic,
+          topicMarks: 0,
+          L1count: 0,
+          L2count: 0,
+          L3count: 0,
+          totalL1Question: 0,
+          totalL2Question: 0,
+          totalL3Question: 0,
+        };
+      }
+      const totalL1Question = topic.questions.filter(
+        (question) => question.QuestionLevel === "beginner"
+      ).length;
+      const L1count = Math.ceil(totalL1Question / 3);
+  
+      const totalL2Question = topic.questions.filter(
+        (question) => question.QuestionLevel === "intermediate"
+      ).length;
+  
+      const L2count = Math.ceil(totalL2Question / 2);
+  
+      const totalL3Question = topic.questions.filter(
+        (question) => question.QuestionLevel === "advanced"
+      ).length;
+      const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question - 1) : 1;
+  
+      // let L3count = topic.questions.length - L1count - L2count;
+  
+      if (isAdaptive) {
+        return {
+          ...topic,
+          topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
+          L1count,
+          L2count,
+          L3count,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      } else {
+        return {
+          ...topic,
+          // only calculating mcqs for beginner , intermediate and advanced
+          topicMarks: topic.questions.length,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      }
     });
-  } else {
-    console.log("recentQuestion found", topics);
-    recentQuestion.topics = recentQuestion.topics || [];
-    recentQuestion.topics.push(...topics);
-
-    console.log("recentQuestion found", recentQuestion);
-
-    await recentQuestion.save();
-  }
-
-  await credit.save();
-  await college.save();
-  await assessment.save();
-
-  res.status(201).json({
-    success: true,
-    assessment,
-    newTopics,
-  });
-});
+  
+    let totalMarks = 0;
+  
+    if (req.body.level === "adaptive") {
+      totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
+    } else if (req.body.level === "beginner") {
+      totalMarks = newTopics.reduce(
+        (acc, topic) => acc + topic.totalL1Question,
+        0
+      );
+    } else if (req.body.level === "intermediate") {
+      totalMarks = newTopics.reduce(
+        (acc, topic) => acc + topic.totalL2Question,
+        0
+      );
+    } else if (req.body.level === "advanced") {
+      totalMarks = newTopics.reduce(
+        (acc, topic) => acc + topic.totalL3Question,
+        0
+      );
+    }
+  
+    // Need to calculate the marks of subjective questions also
+  
+    // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
+  
+    let assessment = await Assessments.create({
+      ...req.body,
+      topics: newTopics,
+      createdBy: id,
+      // college: id,
+      // company: id,
+      startDate: req.body.startDate,
+      endDate: req.body.endDate,
+      totalQuestionsCount: req.body.totalQuestions,
+      totalTime: req.body.totalDuration,
+      totalMarks,
+      createdByCompany,
+    });
+  
+    const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
+  
+    if (!recentQuestion) {
+      console.log("recentQuestion not found", topics);
+  
+      await RecentQuestions.create({
+        createdBy: id,
+        topics,
+      });
+    } else {
+      console.log("recentQuestion found", topics);
+      recentQuestion.topics = recentQuestion.topics || [];
+      recentQuestion.topics.push(...topics);
+  
+      console.log("recentQuestion found", recentQuestion);
+  
+      await recentQuestion.save();
+    }
+  
+    await credit.save();
+    await college.save();
+    await assessment.save();
+  
+    res.status(201).json({
+      success: true,
+      assessment,
+      newTopics,
+    });
+  
+  }catch(error){
+    console.log(error)
+  }}
+);
 
 // ===================================================| Invite Student to Assessment |========================================================
 
