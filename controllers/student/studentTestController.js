@@ -910,8 +910,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       assessment.currentTopicMarks;
     studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     studentResponse.correctAnswers = assessment.correctAnswers;
-    studentResponse.percentage =
-      (assessment.marks / assessment.assessment.totalMarks) * 100;
+    const per = (assessment.marks / assessment.assessment.totalMarks) * 100;
+    studentResponse.percentage = per || 0;
     studentResponse.timeTaken = timeTaken;
 
     // console.log(
@@ -944,7 +944,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     });
     // ==================================================================================================
   } catch (error) {
-    console.log("Error", error);
+    // console.log("Error", error);
   }
 });
 
