@@ -18,13 +18,13 @@ const studentResponse = require("../../../models/student/studentResponse");
 // Create Assessment -- || College || Company || -- //
 
 const createAssessment = catchAsyncErrors(async (req, res, next) => {
-  try{
+  try {
     const { role, id } = req.user;
 
     let credit = await Credit.findOne({
       college: id,
     });
-  
+
     if (credit && credit.credit > 0) {
       credit.credit -= 1;
     } else {
@@ -36,7 +36,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         )
       );
     }
-  
+
     const college = await College.findById(id);
     if (!college) {
       return next(
@@ -46,9 +46,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         )
       );
     }
-  
+
     const assessments = await Assessments.find({ createdBy: id });
-  
+
     if (assessments.length > 0) {
       let assessmentExists = false;
       assessments.forEach((assessment) => {
@@ -56,7 +56,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           assessmentExists = true;
         }
       });
-  
+
       if (assessmentExists) {
         return next(
           new ErrorHandler(
@@ -66,26 +66,26 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         );
       }
     }
-  
+
     // const {testSections} = req.body;
     const { topics } = req.body;
-  
+
     // if (college.topics) {
     //   college.topics.push(...topics);
     // } else {
     //   college.topics = topics;
     // }
-  
+
     const createdByCompany = role === "company";
-  
+
     if (role !== "college" && role !== "company") {
       return next(new ErrorHandler("Invalid user role", 400));
     }
-  
+
     // calculate the total sections duration == test duration
     const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
     const isAdaptive = req.body.level === "adaptive";
-  
+
     let newTopics = topics.map((topic) => {
       if (!topic.questions) {
         return {
@@ -103,20 +103,20 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         (question) => question.QuestionLevel === "beginner"
       ).length;
       const L1count = Math.ceil(totalL1Question / 3);
-  
+
       const totalL2Question = topic.questions.filter(
         (question) => question.QuestionLevel === "intermediate"
       ).length;
-  
+
       const L2count = Math.ceil(totalL2Question / 2);
-  
+
       const totalL3Question = topic.questions.filter(
         (question) => question.QuestionLevel === "advanced"
       ).length;
       const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question - 1) : 1;
-  
+
       // let L3count = topic.questions.length - L1count - L2count;
-  
+
       if (isAdaptive) {
         return {
           ...topic,
@@ -139,9 +139,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         };
       }
     });
-  
+
     let totalMarks = 0;
-  
+
     if (req.body.level === "adaptive") {
       totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
     } else if (req.body.level === "beginner") {
@@ -160,11 +160,11 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         0
       );
     }
-  
+
     // Need to calculate the marks of subjective questions also
-  
+
     // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
-  
+
     let assessment = await Assessments.create({
       ...req.body,
       topics: newTopics,
@@ -178,12 +178,12 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       totalMarks,
       createdByCompany,
     });
-  
+
     const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
-  
+
     if (!recentQuestion) {
       console.log("recentQuestion not found", topics);
-  
+
       await RecentQuestions.create({
         createdBy: id,
         topics,
@@ -192,26 +192,25 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       console.log("recentQuestion found", topics);
       recentQuestion.topics = recentQuestion.topics || [];
       recentQuestion.topics.push(...topics);
-  
+
       console.log("recentQuestion found", recentQuestion);
-  
+
       await recentQuestion.save();
     }
-  
+
     await credit.save();
     await college.save();
     await assessment.save();
-  
+
     res.status(201).json({
       success: true,
       assessment,
       newTopics,
     });
-  
-  }catch(error){
-    console.log(error)
-  }}
-);
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 // ===================================================| Invite Student to Assessment |========================================================
 
