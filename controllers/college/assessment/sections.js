@@ -152,8 +152,6 @@ exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
     const userId = req.user.id;
     const role = req.user.role;
 
-    
-
     // Check if the user is authorized to delete the section
 
     // if (role === "college") {
@@ -169,24 +167,21 @@ exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
     // }
 
     // Delete the section
-for (let i = 0; i < ids.length; i++) {
-  let section = await Section.findById(ids[i]);
-  if (section) {
-    // return res.status(404).json({ error: "Section not found" });
-    await Section.findByIdAndDelete(ids[i]);
-  }
-
-
-}
-
+    for (let i = 0; i < ids.length; i++) {
+      let section = await Section.findById(ids[i]);
+      if (section) {
+        // return res.status(404).json({ error: "Section not found" });
+        await Section.findByIdAndDelete(ids[i]);
+      }
+    }
 
     // const assessment = await Assessment.findById(section.AssessmentId);
     // assessment.sections.pull(id);
     // await assessment.save();
 
-    const sections = await Section.find({ college: userId});
+    const sections = await Section.find({ college: userId });
 
-    res.json({ message: "Section deleted successfully" , sections });
+    res.json({ message: "Section deleted successfully", sections });
   } catch (error) {
     console.error("Error deleting section:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -411,7 +406,6 @@ exports.getTopics = async (req, res) => {
 
     // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
 
-
     return res.status(200).json({
       message: "Topics found",
       topics,
@@ -436,12 +430,16 @@ exports.getTopicsQB = async (req, res) => {
 
     let topics;
 
-    topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+    topics = await Section.find({ college: collegeId })
+      .populate("questions")
+      .populate("findAnswers")
+      .populate("essay")
+      .populate("video")
+      .populate("compiler");
 
     // console.log(topics, "topics");
 
     // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
-
 
     return res.status(200).json({
       message: "Topics found",
@@ -596,7 +594,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
 
     return res.status(201).json({
       message: "Question added successfully",
-      questions,
+      questions: [question],
     });
   } catch (error) {
     console.log(error);
