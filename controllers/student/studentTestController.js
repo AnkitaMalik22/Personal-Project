@@ -910,8 +910,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       assessment.currentTopicMarks;
     studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     studentResponse.correctAnswers = assessment.correctAnswers;
-    studentResponse.percentage =
-      (assessment.marks / assessment.assessment.totalMarks) * 100;
+    const per = (assessment.marks / assessment.assessment.totalMarks) * 100;
+    studentResponse.percentage = per || 0;
     studentResponse.timeTaken = timeTaken;
 
     // console.log(
@@ -944,7 +944,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     });
     // ==================================================================================================
   } catch (error) {
-    console.log("Error", error);
+    // console.log("Error", error);
   }
 });
 
@@ -1332,11 +1332,11 @@ async function completeAssessment(student, assessment, testId) {
   await student.save();
 
   const test = await Assessments.findById(testId).populate("studentResponses");
-  const totalPercentage = test.studentResponses.reduce(
-    (acc, response) => acc + response.percentage,
-    0
-  );
-  test.avgPercentage = totalPercentage / test.studentResponses.length;
+  // const totalPercentage = test.studentResponses.reduce(
+  //   (acc, response) => acc + parseInt(response.percentage),
+  //   0
+  // );
+  // test.avgPercentage = totalPercentage / test.studentResponses.length;
   await test.save();
 
   const studentResponse = await StudentResponse.findOne({
@@ -1351,8 +1351,8 @@ async function completeAssessment(student, assessment, testId) {
   studentResponse.totalMarks = assessment.marks;
   studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
   studentResponse.correctAnswers = assessment.correctAnswers;
-  studentResponse.percentage =
-    (assessment.marks / assessment.assessment.totalMarks) * 100;
+  // studentResponse.percentage =
+  //   (assessment.marks / assessment.assessment.totalMarks) * 100;
   await studentResponse.save();
 }
 
@@ -1407,11 +1407,7 @@ function updateStudentResponse(
       });
       break;
     case "compiler":
-      currentTopic.compiler[questionIndex].testcase.forEach(
-        (testcase, index) => {
-          testcase.studentOutput = response[index] || "";
-        }
-      );
+      currentTopic.compiler[questionIndex] = response;
       break;
   }
 
@@ -1524,17 +1520,17 @@ exports.getStudentResult = catchAsyncErrors(async (req, res, next) => {
         }
         totalMCQandCodingQuestions += 1;
       });
-    } else if (topic.type === "compiler") {
-      topic.questions.forEach((question) => {
-        if (
-          question.testcase.every(
-            (testcase) => testcase.studentOutput === testcase.output
-          )
-        ) {
-          codingMarks += 1;
-        }
-        totalMCQandCodingQuestions += 1;
-      });
+      // } else if (topic.type === "compiler") {
+      //   topic.questions.forEach((question) => {
+      //     if (
+      //       question.testcase.every(
+      //         (testcase) => testcase.studentOutput === testcase.output
+      //       )
+      //     ) {
+      //       codingMarks += 1;
+      //     }
+      //     totalMCQandCodingQuestions += 1;
+      //   });
     }
   });
   // totalMCQandCodingQuestions =
