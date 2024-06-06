@@ -85,7 +85,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     // calculate the total sections duration == test duration
     const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
     const isAdaptive = req.body.level === "adaptive";
-
+    const beginnerCodeMarks = 10;
+    const interCodeMarks = 20;
+    const advCodeMarks = 30;
     let newTopics = topics.map((topic) => {
       if (!topic.questions) {
         return {
@@ -145,20 +147,29 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     if (req.body.level === "adaptive") {
       totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
     } else if (req.body.level === "beginner") {
-      totalMarks = newTopics.reduce(
-        (acc, topic) => acc + topic.totalL1Question,
-        0
-      );
+      totalMarks = newTopics.reduce((acc, topic) => {
+        if (topic.Type === "mcq") {
+          return acc + topic.totalL1Question;
+        } else if (topic.Type === "compiler") {
+          return acc + topic.compiler.length * beginnerCodeMarks;
+        }
+      }, 0);
     } else if (req.body.level === "intermediate") {
-      totalMarks = newTopics.reduce(
-        (acc, topic) => acc + topic.totalL2Question,
-        0
-      );
+      totalMarks = newTopics.reduce((acc, topic) => {
+        if (topic.Type === "mcq") {
+          return acc + topic.totalL2Question * 2;
+        } else if (topic.Type === "compiler") {
+          return acc + topic.compiler.length * interCodeMarks;
+        }
+      }, 0);
     } else if (req.body.level === "advanced") {
-      totalMarks = newTopics.reduce(
-        (acc, topic) => acc + topic.totalL3Question,
-        0
-      );
+      totalMarks = newTopics.reduce((acc, topic) => {
+        if (topic.Type === "mcq") {
+          return acc + topic.totalL3Question * 3;
+        } else if (topic.Type === "compiler") {
+          return acc + topic.compiler.length * advCodeMarks;
+        }
+      }, 0);
     }
 
     // Need to calculate the marks of subjective questions also
