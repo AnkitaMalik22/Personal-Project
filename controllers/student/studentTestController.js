@@ -425,7 +425,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       studentId: studentId,
       assessmentId: testId,
       attempt: assessment.attempts,
-    });
+    }).populate("assessmentId");
 
     if (!studentResponse) {
       return next(new ErrorHandler("Student response not found", 404));
@@ -437,8 +437,8 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     // studentResponse.timeTaken = timeTaken;
     // studentResponse.correctAnswers = assessment.correctAnswers;
-    // studentResponse.percentage =
-    //   (assessment.marks / assessment.assessment.totalMarks) * 100;
+    studentResponse.percentage =
+      (studentResponse.marks / studentResponse.assessmentId.totalMarks) * 100;
 
     await studentResponse.save();
 
@@ -470,9 +470,9 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
 
     let totalStudentResponses = test.studentResponses.length;
     let totalPercentage = 0;
-
+    console.log("ending");
     test.studentResponses?.forEach((response) => {
-      console.log(response.percentage, response, "response");
+      // console.log(response.percentage, response, "response");
       totalPercentage += response.percentage;
     });
 
@@ -508,7 +508,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //  console.log("caalling adaptive.....")
     const { testId } = req.params;
     const { response, timeTaken } = req.body;
-    console.log("body", req.body);
+
     // console.log(response);
     const studentId = req.user.id;
     const student = await CollegeAssessInv.findOne({
@@ -1278,9 +1278,11 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     const question = topic[typeDir][questionIndex];
     if (type === "mcq") {
       calculateMcqMarks(assessment, question, response);
+    } else if (type === "compiler") {
+      calculateCodeMarks(assessment, question, response);
     }
 
-    updateStudentResponse(
+    await updateStudentResponse(
       studentResponse,
       type,
       topicIndex,
@@ -1297,6 +1299,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
         await completeAssessment(student, assessment, testId);
+        console.log("comp");
         return res.status(200).json({ message: "Test completed" });
       }
 
@@ -1332,27 +1335,33 @@ async function completeAssessment(student, assessment, testId) {
   await student.save();
 
   const test = await Assessments.findById(testId).populate("studentResponses");
-  // const totalPercentage = test.studentResponses.reduce(
-  //   (acc, response) => acc + parseInt(response.percentage),
-  //   0
-  // );
-  // test.avgPercentage = totalPercentage / test.studentResponses.length;
+  const totalPercentage = test.studentResponses.reduce(
+    (acc, response) => acc + parseInt(response.percentage),
+    0
+  );
+  test.avgPercentage = totalPercentage / test.studentResponses.length;
+
   await test.save();
 
   const studentResponse = await StudentResponse.findOne({
     studentId: student.student,
     assessmentId: testId,
     attempt: assessment.attempts,
-  });
-  // console.log("student response", studentResponse);
+  }).populate("assessmentId");
 
   studentResponse.completed = true;
   studentResponse.completedAt = Date.now();
-  studentResponse.totalMarks = assessment.marks;
-  studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
-  studentResponse.correctAnswers = assessment.correctAnswers;
-  // studentResponse.percentage =
-  //   (assessment.marks / assessment.assessment.totalMarks) * 100;
+  studentResponse.totalMarks = studentResponse.assessmentId.marks;
+  studentResponse.totalQuestionsAttempted =
+    studentResponse.assessmentId.totalStudentAttempted;
+  studentResponse.correctAnswers = studentResponse.assessmentId.correctAnswers;
+  let per =
+    (parseInt(studentResponse.marks) /
+      parseInt(studentResponse.assessmentId.totalMarks)) *
+    100;
+  console.log(parseInt(per), "percentage");
+  studentResponse.percentage = parseInt(per);
+
   await studentResponse.save();
 }
 
@@ -1408,6 +1417,9 @@ function updateStudentResponse(
       break;
     case "compiler":
       currentTopic.compiler[questionIndex] = response;
+      studentResponse.percentage =
+        (assessment.marks / assessment.assessment.totalMarks) * 100;
+      console.log(assessment.marks, assessment.assessment.totalMarks);
       break;
   }
 
@@ -1446,6 +1458,36 @@ function calculateMcqMarks(assessment, question, response) {
   }
 }
 
+function calculateCodeMarks(assessment, question, response) {
+  assessment.correctAnswers += 1;
+  const level = question.QuestionLevel;
+  let marks = 0;
+  let totalCases = question.testcase.length;
+  let passed = 0;
+  let passedCount = 0;
+
+  question.testcase.forEach((testcase) => {
+    if (testcase.passed) {
+      passedCount += 1;
+    }
+  });
+
+  if (level === "beginner") {
+    let passedValue = 10 / totalCases;
+    marks = passedCount * passedValue;
+    // assessment.L1Correct += 1;
+  } else if (level === "intermediate") {
+    let passedValue = 20 / totalCases;
+    marks = passedCount * passedValue;
+    // assessment.L2Correct += 1;
+  } else if (level === "advanced") {
+    let passedValue = 30 / totalCases;
+    marks = passedCount * passedValue;
+    // assessment.L3Correct += 1;
+  }
+  assessment.marks += marks;
+  assessment.currentTopicMarks += marks;
+}
 // ====================================== get student result ===================
 
 exports.getStudentResult = catchAsyncErrors(async (req, res, next) => {

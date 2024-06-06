@@ -959,7 +959,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         email: Email,
         subject: "Invitation to join College",
         // <<<<<<< sidd333
-        message: `Hello ${FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}`,
+        message: `Hello ${FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
         // =======
         //         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
         // >>>>>>> master
