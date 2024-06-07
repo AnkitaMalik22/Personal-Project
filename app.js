@@ -46,8 +46,8 @@ app.use(
       "https://skillaccess.vercel.app",
       "https://skillaccess-student.vercel.app",
       "https://skillaccess-college.vercel.app",
-      "https://skillaccess-student-iota.vercel.app",
-      "https://skillaccess-admin-alpha.vercel.app",
+      "https://skillaccess-student-ten.vercel.app/",
+      "https://skillaccess-student-ten.vercel.app/",
     ],
     credentials: true,
   })
