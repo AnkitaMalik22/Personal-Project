@@ -107,6 +107,9 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
   const testSections = await Assessments.findById(req.params.id)
     .populate({
       path: "studentResponses",
+      populate: {
+        path: "studentId",
+      }
     })
     .populate({
       path: "selectedStudents",
@@ -115,7 +118,13 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     .populate({
       path: "rejectedStudents",
       // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
-    });
+    })
+    // .populate({
+    //     path: "students",
+    //     populate: {
+    //       path: "studentId",
+    //     }
+    //   })
   // console.log(testSections, "testSections");
 
   // Fetch all students
