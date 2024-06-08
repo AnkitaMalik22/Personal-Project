@@ -1087,7 +1087,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     sendEmail({
       email: student.Email,
       subject: "Invitation to join College",
-      message: `Hello ${FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,      
+      message: `Hello ${student.FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&${invite.invitationLink}&Email=${student.Email}&FirstName=${student.FirstName}&LastName=${student.LastName}`,      
       // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
     });
 
