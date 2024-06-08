@@ -190,9 +190,10 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     let testStatus;
 
-    console.log("Start Date: ", startDateString, typeof startDateString);
-    console.log("End Date: ", endDateString, typeof endDateString);
-    console.log("Current Date: ", nowString, typeof nowString);
+    // console.log("Start Date: ", startDateString, typeof startDateString);
+    // console.log("End Date: ", endDateString, typeof endDateString);
+    // console.log("Current Date: ", nowString, typeof nowString);
+    console.log("----------------------", assessment.assessment.topics[0].compiler," ---------------------");
 
     // Check if the current date is before the start date
     if (isBefore(nowString, startDateString)) {
@@ -260,6 +261,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     );
 
     const isAdaptive = adaptive === "true";
+  
+    console.log(assessment.assessment.topics[0].compiler ," -----------------------------------", assessment.assessment.topics[0]);
     const studentResponse = await StudentResponse.create({
       studentId: studentId,
       assessmentId: testId,
