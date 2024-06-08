@@ -431,12 +431,12 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Student response not found", 404));
     }
 
-    // studentResponse.totalMarks = assessment.marks;
+    studentResponse.totalMarks = assessment.marks;
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
-    // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
-    // studentResponse.timeTaken = timeTaken;
-    // studentResponse.correctAnswers = assessment.correctAnswers;
+    studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
+    studentResponse.timeTaken = timeTaken;
+    studentResponse.correctAnswers = assessment.correctAnswers;
     studentResponse.percentage =
       (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
 
