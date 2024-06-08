@@ -190,9 +190,10 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     let testStatus;
 
-    console.log("Start Date: ", startDateString, typeof startDateString);
-    console.log("End Date: ", endDateString, typeof endDateString);
-    console.log("Current Date: ", nowString, typeof nowString);
+    // console.log("Start Date: ", startDateString, typeof startDateString);
+    // console.log("End Date: ", endDateString, typeof endDateString);
+    // console.log("Current Date: ", nowString, typeof nowString);
+    console.log("----------------------", assessment.assessment.topics[0].compiler," ---------------------");
 
     // Check if the current date is before the start date
     if (isBefore(nowString, startDateString)) {
@@ -260,6 +261,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     );
 
     const isAdaptive = adaptive === "true";
+  
+    console.log(assessment.assessment.topics[0].compiler ," -----------------------------------", assessment.assessment.topics[0]);
     const studentResponse = await StudentResponse.create({
       studentId: studentId,
       assessmentId: testId,
@@ -432,13 +435,30 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     }
 
     // studentResponse.totalMarks = assessment.marks;
+    let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
+    let marks = parseFloat(assessment.marks) || 0;
+  
+    if (totalMarks > 0) {
+      studentResponse.percentage = (marks / totalMarks) * 100;
+    } else {
+      studentResponse.percentage = 0;
+    }
+  
+    studentResponse.totalMarks = marks;
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
+    studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
+    studentResponse.timeTaken = timeTaken;
+    studentResponse.correctAnswers = assessment.correctAnswers;
+    // studentResponse.percentage =
+    //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
     // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     // studentResponse.timeTaken = timeTaken;
     // studentResponse.correctAnswers = assessment.correctAnswers;
-    studentResponse.percentage =
-      (studentResponse.marks / studentResponse.assessmentId.totalMarks) * 100;
+    // studentResponse.percentage =
+    //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
+   
+  
 
     await studentResponse.save();
 
@@ -1392,9 +1412,6 @@ function updateStudentResponse(
     case "mcq":
       currentTopic.questions[questionIndex].StudentAnswerIndex =
         parseInt(response);
-      studentResponse.percentage =
-        (assessment.marks / assessment.assessment.totalMarks) * 100;
-
       break;
     case "findAnswer":
       currentTopic.findAnswers[questionIndex].questions.forEach(
@@ -1419,9 +1436,6 @@ function updateStudentResponse(
       break;
     case "compiler":
       currentTopic.compiler[questionIndex] = response;
-      studentResponse.percentage =
-        (assessment.marks / assessment.assessment.totalMarks) * 100;
-      console.log(assessment.marks, assessment.assessment.totalMarks);
       break;
   }
 
@@ -1429,7 +1443,18 @@ function updateStudentResponse(
   studentResponse.correctAnswers = assessment.correctAnswers;
   studentResponse.totalMarks = assessment.marks;
   currentTopic.totalMarks = assessment.currentTopicMarks;
+
+  // Ensure marks are numbers and handle percentage calculation
+  let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
+  let marks = parseFloat(assessment.marks) || 0;
+
+  if (totalMarks > 0) {
+    studentResponse.percentage = (marks / totalMarks) * 100;
+  } else {
+    studentResponse.percentage = 0;
+  }
 }
+
 
 function calculateMcqMarks(assessment, question, response) {
   if (parseInt(question.AnswerIndex) === parseInt(response)) {

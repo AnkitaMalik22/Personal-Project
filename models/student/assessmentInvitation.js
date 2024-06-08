@@ -19,6 +19,7 @@ const collegeAssessInvSchema = new mongoose.Schema({
         ref: "StudentResponse",
       },
       percentage: {
+        default: 0,
         type: Number,
       },
       level: {

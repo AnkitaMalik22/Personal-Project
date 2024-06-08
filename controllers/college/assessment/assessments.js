@@ -147,19 +147,20 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     if (req.body.level === "adaptive") {
       totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
     } else if (req.body.level === "beginner") {
-      const totalMarks = newTopics.reduce((acc, topic) => {
+      totalMarks = newTopics.reduce((acc, topic) => {
         if (topic.Type === "mcq") {
+          console.log(topic.totalL1Question, "+", acc);
           return acc + parseInt(topic.totalL1Question);
         } else if (topic.Type === "compiler") {
           console.log(acc, topic.compiler.length, "-------------------");
-          return acc + topic.compiler.length * beginnerCodeMarks;
+          return acc + parseInt(topic.compiler.length) * beginnerCodeMarks;
         } else {
           return acc;
         }
       }, 0); // Initial value of accumulator set to 0
       console.log(totalMarks);
     } else if (req.body.level === "intermediate") {
-      const totalMarks = newTopics.reduce((acc, topic) => {
+      totalMarks = newTopics.reduce((acc, topic) => {
         if (topic.Type === "mcq") {
           return acc + parseInt(topic.totalL2Question) * 2;
         } else if (topic.Type === "compiler") {
@@ -168,10 +169,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           return acc;
         }
       }, 0);
-
       console.log(totalMarks);
     } else if (req.body.level === "advanced") {
-      const totalMarks = newTopics.reduce((acc, topic) => {
+      totalMarks = newTopics.reduce((acc, topic) => {
         if (topic.Type === "mcq") {
           return acc + parseInt(topic.totalL3Question) * 3;
         } else if (topic.Type === "compiler") {
@@ -212,11 +212,8 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         topics,
       });
     } else {
-      console.log("recentQuestion found", topics);
       recentQuestion.topics = recentQuestion.topics || [];
       recentQuestion.topics.push(...topics);
-
-      console.log("recentQuestion found", recentQuestion);
 
       await recentQuestion.save();
     }
