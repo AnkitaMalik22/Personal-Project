@@ -434,13 +434,13 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.totalMarks = assessment.marks;
     let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
     let marks = parseFloat(assessment.marks) || 0;
-  
+
     if (totalMarks > 0) {
       studentResponse.percentage = (marks / totalMarks) * 100;
     } else {
       studentResponse.percentage = 0;
     }
-  
+
     studentResponse.totalMarks = marks;
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
@@ -454,8 +454,6 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.correctAnswers = assessment.correctAnswers;
     // studentResponse.percentage =
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
-   
-  
 
     await studentResponse.save();
 
@@ -1452,7 +1450,6 @@ function updateStudentResponse(
   }
 }
 
-
 function calculateMcqMarks(assessment, question, response) {
   if (parseInt(question.AnswerIndex) === parseInt(response)) {
     assessment.correctAnswers += 1;
@@ -1483,14 +1480,14 @@ function calculateMcqMarks(assessment, question, response) {
 }
 
 function calculateCodeMarks(assessment, question, response) {
-  assessment.correctAnswers += 1;
   const level = question.QuestionLevel;
   let marks = 0;
   let totalCases = question.testcase.length;
   let passed = 0;
   let passedCount = 0;
 
-  question.testcase.forEach((testcase) => {
+  response.testcase.forEach((testcase) => {
+    console.log(testcase);
     if (testcase.passed) {
       passedCount += 1;
     }
@@ -1499,14 +1496,29 @@ function calculateCodeMarks(assessment, question, response) {
   if (level === "beginner") {
     let passedValue = 10 / totalCases;
     marks = passedCount * passedValue;
+    if (marks < 5) {
+      marks = 0;
+    } else {
+      assessment.correctAnswers += 1;
+    }
     // assessment.L1Correct += 1;
   } else if (level === "intermediate") {
     let passedValue = 20 / totalCases;
     marks = passedCount * passedValue;
     // assessment.L2Correct += 1;
+    if (marks < 10) {
+      marks = 0;
+    } else {
+      assessment.correctAnswers += 1;
+    }
   } else if (level === "advanced") {
     let passedValue = 30 / totalCases;
     marks = passedCount * passedValue;
+    if (marks < 15) {
+      marks = 0;
+    } else {
+      assessment.correctAnswers += 1;
+    }
     // assessment.L3Correct += 1;
   }
   assessment.marks += marks;
