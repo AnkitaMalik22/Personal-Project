@@ -5,6 +5,7 @@ const College = require("../../models/college/collegeModel");
 const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
+
 const Company = require("../../models/company/companyModel");
 const Credit = require("../../models/college/account/creditModel");
 
