@@ -147,29 +147,41 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     if (req.body.level === "adaptive") {
       totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
     } else if (req.body.level === "beginner") {
-      totalMarks = newTopics.reduce((acc, topic) => {
+      const totalMarks = newTopics.reduce((acc, topic) => {
         if (topic.Type === "mcq") {
-          return acc + topic.totalL1Question;
+          return acc + parseInt(topic.totalL1Question);
         } else if (topic.Type === "compiler") {
+          console.log(acc, topic.compiler.length, "-------------------");
           return acc + topic.compiler.length * beginnerCodeMarks;
+        } else {
+          return acc;
         }
-      }, 0);
+      }, 0); // Initial value of accumulator set to 0
+      console.log(totalMarks);
     } else if (req.body.level === "intermediate") {
-      totalMarks = newTopics.reduce((acc, topic) => {
+      const totalMarks = newTopics.reduce((acc, topic) => {
         if (topic.Type === "mcq") {
-          return acc + topic.totalL2Question * 2;
+          return acc + parseInt(topic.totalL2Question) * 2;
         } else if (topic.Type === "compiler") {
-          return acc + topic.compiler.length * interCodeMarks;
+          return acc + parseInt(topic.compiler.length) * interCodeMarks;
+        } else {
+          return acc;
         }
       }, 0);
+
+      console.log(totalMarks);
     } else if (req.body.level === "advanced") {
-      totalMarks = newTopics.reduce((acc, topic) => {
+      const totalMarks = newTopics.reduce((acc, topic) => {
         if (topic.Type === "mcq") {
-          return acc + topic.totalL3Question * 3;
+          return acc + parseInt(topic.totalL3Question) * 3;
         } else if (topic.Type === "compiler") {
           return acc + topic.compiler.length * advCodeMarks;
+        } else {
+          return acc; // Return the accumulator unchanged if the type doesn't match
         }
       }, 0);
+
+      console.log(totalMarks);
     }
 
     // Need to calculate the marks of subjective questions also

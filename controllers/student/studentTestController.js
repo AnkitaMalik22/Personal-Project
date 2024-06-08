@@ -1335,10 +1335,12 @@ async function completeAssessment(student, assessment, testId) {
   await student.save();
 
   const test = await Assessments.findById(testId).populate("studentResponses");
-  const totalPercentage = test.studentResponses.reduce(
-    (acc, response) => acc + parseInt(response.percentage),
-    0
-  );
+  const totalPercentage = test.studentResponses.reduce((acc, response) => {
+    const percentage = parseInt(response.percentage);
+    return acc + (isNaN(percentage) ? 0 : percentage);
+  }, 0);
+
+  console.log(totalPercentage, test.studentResponses.length);
   test.avgPercentage = totalPercentage / test.studentResponses.length;
 
   await test.save();
@@ -1360,7 +1362,7 @@ async function completeAssessment(student, assessment, testId) {
       parseInt(studentResponse.assessmentId.totalMarks)) *
     100;
   console.log(parseInt(per), "percentage");
-  studentResponse.percentage = parseInt(per);
+  studentResponse.percentage = isNaN(parseInt(per)) ? 0 : parseInt(per);
 
   await studentResponse.save();
 }
