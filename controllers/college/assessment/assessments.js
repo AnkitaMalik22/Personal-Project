@@ -153,7 +153,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           return acc + parseInt(topic.totalL1Question);
         } else if (topic.Type === "compiler") {
           console.log(acc, topic.compiler.length, "-------------------");
-          return acc + topic.compiler.length * beginnerCodeMarks;
+          return acc + parseInt(topic.compiler.length) * beginnerCodeMarks;
         } else {
           return acc;
         }
