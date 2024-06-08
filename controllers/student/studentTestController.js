@@ -438,7 +438,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.timeTaken = timeTaken;
     // studentResponse.correctAnswers = assessment.correctAnswers;
     studentResponse.percentage =
-      (studentResponse.marks / studentResponse.assessmentId.totalMarks) * 100;
+      (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
 
     await studentResponse.save();
 
