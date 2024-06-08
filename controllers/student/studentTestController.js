@@ -437,8 +437,18 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     // studentResponse.timeTaken = timeTaken;
     // studentResponse.correctAnswers = assessment.correctAnswers;
-    studentResponse.percentage =
-      (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
+    // studentResponse.percentage =
+    //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
+    let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
+    let marks = parseFloat(assessment.marks) || 0;
+  
+    if (totalMarks > 0) {
+      studentResponse.percentage = (marks / totalMarks) * 100;
+    } else {
+      studentResponse.percentage = 0;
+    }
+  
+  
 
     await studentResponse.save();
 
@@ -1392,9 +1402,6 @@ function updateStudentResponse(
     case "mcq":
       currentTopic.questions[questionIndex].StudentAnswerIndex =
         parseInt(response);
-      studentResponse.percentage =
-        (assessment.marks / assessment.assessment.totalMarks) * 100;
-
       break;
     case "findAnswer":
       currentTopic.findAnswers[questionIndex].questions.forEach(
@@ -1419,9 +1426,6 @@ function updateStudentResponse(
       break;
     case "compiler":
       currentTopic.compiler[questionIndex] = response;
-      studentResponse.percentage =
-        (assessment.marks / assessment.assessment.totalMarks) * 100;
-      console.log(assessment.marks, assessment.assessment.totalMarks);
       break;
   }
 
@@ -1429,7 +1433,18 @@ function updateStudentResponse(
   studentResponse.correctAnswers = assessment.correctAnswers;
   studentResponse.totalMarks = assessment.marks;
   currentTopic.totalMarks = assessment.currentTopicMarks;
+
+  // Ensure marks are numbers and handle percentage calculation
+  let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
+  let marks = parseFloat(assessment.marks) || 0;
+
+  if (totalMarks > 0) {
+    studentResponse.percentage = (marks / totalMarks) * 100;
+  } else {
+    studentResponse.percentage = 0;
+  }
 }
+
 
 function calculateMcqMarks(assessment, question, response) {
   if (parseInt(question.AnswerIndex) === parseInt(response)) {
