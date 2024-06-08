@@ -431,7 +431,17 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Student response not found", 404));
     }
 
-    studentResponse.totalMarks = assessment.marks;
+    // studentResponse.totalMarks = assessment.marks;
+    let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
+    let marks = parseFloat(assessment.marks) || 0;
+  
+    if (totalMarks > 0) {
+      studentResponse.percentage = (marks / totalMarks) * 100;
+    } else {
+      studentResponse.percentage = 0;
+    }
+  
+    studentResponse.totalMarks = marks;
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
     studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
@@ -444,15 +454,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.correctAnswers = assessment.correctAnswers;
     // studentResponse.percentage =
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
-    let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
-    let marks = parseFloat(assessment.marks) || 0;
-  
-    if (totalMarks > 0) {
-      studentResponse.percentage = (marks / totalMarks) * 100;
-    } else {
-      studentResponse.percentage = 0;
-    }
-  
+   
   
 
     await studentResponse.save();

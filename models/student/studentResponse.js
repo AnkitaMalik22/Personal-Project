@@ -252,6 +252,8 @@ const studentResponseSchema = new mongoose.Schema(
               type: Number,
               default: 0,
             },
+            Title: String,
+            codeQuestion: String,
 
             code: {
               type: {
