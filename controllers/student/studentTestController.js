@@ -1322,6 +1322,12 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       assessment.currentQuestionIndex = 0;
       assessment.currentTopicIndex = topicIndex + 1;
       assessment.totalQuestionsAttempted = 0;
+      // assessment.topics[currentTopicIndex].totalMarks = 0;
+      assessment.currentTopicMarks = 0;
+
+      if (studentResponse.topics[topicIndex + 1]) {
+        studentResponse.topics[topicIndex + 1].totalMarks = 0;
+      }
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
         await completeAssessment(student, assessment, testId);
@@ -1337,6 +1343,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     }
 
     await student.save();
+    await assessment.save();
 
     res.json({
       success: true,
