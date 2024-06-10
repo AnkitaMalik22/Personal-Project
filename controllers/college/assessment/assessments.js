@@ -9,6 +9,7 @@ const sendEmail = require("../../../utils/sendEmail");
 const Credit = require("../../../models/college/account/creditModel");
 const CollegeAssessInv = require("../../../models/student/assessmentInvitation");
 const ApprovedStudents = require("../../../models/college/student/Approved");
+const studentResponse = require("../../../models/student/studentResponse");
 
 // =========================================================================================================================================
 
@@ -17,181 +18,238 @@ const ApprovedStudents = require("../../../models/college/student/Approved");
 // Create Assessment -- || College || Company || -- //
 
 const createAssessment = catchAsyncErrors(async (req, res, next) => {
-  const { role, id } = req.user;
+  try {
+    const { role, id } = req.user;
 
-  let credit = await Credit.findOne({
-    college: id,
-  });
-
-  if (credit && credit.credit > 0) {
-    credit.credit -= 1;
-  } else {
-    console.log("you cont have credits");
-    return next(
-      new ErrorHandler(
-        `You don't have enough credits to create assessment!`,
-        400
-      )
-    );
-  }
-
-  const college = await College.findById(id);
-  if (!college) {
-    return next(
-      new ErrorHandler(
-        "Reset Password Token is invalid or has been expired",
-        400
-      )
-    );
-  }
-
-  const assessments = await Assessments.find({ createdBy: id });
-
-  if (assessments.length > 0) {
-    let assessmentExists = false;
-    assessments.forEach((assessment) => {
-      if (assessment.name === req.body.name) {
-        assessmentExists = true;
-      }
+    let credit = await Credit.findOne({
+      college: id,
     });
 
-    if (assessmentExists) {
+    if (credit && credit.credit > 0) {
+      credit.credit -= 1;
+    } else {
+      console.log("you cont have credits");
       return next(
         new ErrorHandler(
-          `Assessment with name ${req.body.name} already exists`,
+          `You don't have enough credits to create assessment!`,
           400
         )
       );
     }
-  }
 
-  // const {testSections} = req.body;
-  const { topics } = req.body;
-
-  // if (college.topics) {
-  //   college.topics.push(...topics);
-  // } else {
-  //   college.topics = topics;
-  // }
-
-  const createdByCompany = role === "company";
-
-  if (role !== "college" && role !== "company") {
-    return next(new ErrorHandler("Invalid user role", 400));
-  }
-
-  // calculate the total sections duration == test duration
-  const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
-  const isAdaptive = req.body.level === "adaptive";
-
-  let newTopics = topics.map((topic) => {
-    const totalL1Question = topic.questions.filter(
-      (question) => question.QuestionLevel === "beginner"
-    ).length;
-    const L1count = Math.ceil(totalL1Question / 3);
-
-    const totalL2Question = topic.questions.filter(
-      (question) => question.QuestionLevel === "intermediate"
-    ).length;
-
-    const L2count = Math.ceil(totalL2Question / 2);
-    
-    const totalL3Question = topic.questions.filter(
-      (question) => question.QuestionLevel === "advanced"
-    ).length;
-    const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question-1) : 1;
-    
-    // let L3count = topic.questions.length - L1count - L2count;
-
-   if(isAdaptive){
-    return {
-      ...topic,
-      topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
-      L1count,
-      L2count,
-      L3count,
-      totalL1Question,
-      totalL2Question,
-      totalL3Question,
-    };
-   }else{
-    return{
-      ...topic,
-      // only calculating mcqs for beginner , intermediate and advanced
-      topicMarks: topic.questions.length,
-      totalL1Question,
-      totalL2Question,
-      totalL3Question,
+    const college = await College.findById(id);
+    if (!college) {
+      return next(
+        new ErrorHandler(
+          "Reset Password Token is invalid or has been expired",
+          400
+        )
+      );
     }
-   }
-  });
 
-let totalMarks = 0;
+    const assessments = await Assessments.find({ createdBy: id });
 
-if(req.body.level === "adaptive"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
-}
-else if (req.body.level === "beginner"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL1Question, 0);
-}
-else if (req.body.level === "intermediate"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL2Question, 0);
-}
-else if (req.body.level === "advanced"){
-  totalMarks = newTopics.reduce((acc, topic) => acc + topic.totalL3Question, 0);
-}
+    if (assessments.length > 0) {
+      let assessmentExists = false;
+      assessments.forEach((assessment) => {
+        if (assessment.name === req.body.name) {
+          assessmentExists = true;
+        }
+      });
 
+      if (assessmentExists) {
+        return next(
+          new ErrorHandler(
+            `Assessment with name ${req.body.name} already exists`,
+            400
+          )
+        );
+      }
+    }
 
+    // const {testSections} = req.body;
+    const { topics } = req.body;
 
+    // if (college.topics) {
+    //   college.topics.push(...topics);
+    // } else {
+    //   college.topics = topics;
+    // }
 
+    const createdByCompany = role === "company";
 
-  // Need to calculate the marks of subjective questions also
- 
+    if (role !== "college" && role !== "company") {
+      return next(new ErrorHandler("Invalid user role", 400));
+    }
 
-  // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
+    // calculate the total sections duration == test duration
+    const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
+    const isAdaptive = req.body.level === "adaptive";
+    const beginnerCodeMarks = 10;
+    const interCodeMarks = 20;
+    const advCodeMarks = 30;
+    let newTopics = topics.map((topic) => {
+      if (!topic.questions) {
+        return {
+          ...topic,
+          topicMarks: 0,
+          L1count: 0,
+          L2count: 0,
+          L3count: 0,
+          totalL1Question: 0,
+          totalL2Question: 0,
+          totalL3Question: 0,
+        };
+      }
+      const totalL1Question = topic.questions.filter(
+        (question) => question.QuestionLevel === "beginner"
+      ).length;
+      const L1count = Math.ceil(totalL1Question / 3);
 
-  let assessment = await Assessments.create({
-    ...req.body,
-    topics: newTopics,
-    createdBy: id,
-    // college: id,
-    // company: id,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-    totalQuestionsCount: req.body.totalQuestions,
-    totalTime: req.body.totalDuration,
-    totalMarks,
-    createdByCompany,
-  });
+      const totalL2Question = topic.questions.filter(
+        (question) => question.QuestionLevel === "intermediate"
+      ).length;
 
-  const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
+      const L2count = Math.ceil(totalL2Question / 2);
 
-  if (!recentQuestion) {
-    console.log("recentQuestion not found", topics);
+      const totalL3Question = topic.questions.filter(
+        (question) => question.QuestionLevel === "advanced"
+      ).length;
+      const L3count = totalL3Question > 1 ? Math.ceil(totalL3Question - 1) : 1;
 
-    await RecentQuestions.create({
-      createdBy: id,
-      topics,
+      // let L3count = topic.questions.length - L1count - L2count;
+
+      if (isAdaptive) {
+        return {
+          ...topic,
+          topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
+          L1count,
+          L2count,
+          L3count,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      } else if (req.body.level === "beginner") {
+
+        return {
+          ...topic,
+          // only calculating mcqs for beginner , intermediate and advanced
+          topicMarks: topic.questions.length,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      }else if(req.body.level === "intermediate") {
+        return {
+          ...topic,
+          // only calculating mcqs for beginner , intermediate and advanced
+          topicMarks: topic.questions.length * 2,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      }
+      else if(req.body.level === "advanced") {
+        return {
+          ...topic,
+          // only calculating mcqs for beginner , intermediate and advanced
+          topicMarks: topic.questions.length * 3,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      }
     });
-  } else {
-    console.log("recentQuestion found", topics);
-    recentQuestion.topics = recentQuestion.topics || [];
-    recentQuestion.topics.push(...topics);
 
-    console.log("recentQuestion found", recentQuestion);
+    let totalMarks = 0;
 
-    await recentQuestion.save();
+    if (req.body.level === "adaptive") {
+      totalMarks = newTopics.reduce((acc, topic) => acc + topic.topicMarks, 0);
+    } else if (req.body.level === "beginner") {
+      totalMarks = newTopics.reduce((acc, topic) => {
+        if (topic.Type === "mcq") {
+          console.log(topic.totalL1Question, "+", acc);
+          return acc + parseInt(topic.totalL1Question);
+        } else if (topic.Type === "compiler") {
+          console.log(acc, topic.compiler.length, "-------------------");
+          return acc + parseInt(topic.compiler.length) * beginnerCodeMarks;
+        } else {
+          return acc;
+        }
+      }, 0); // Initial value of accumulator set to 0
+      console.log(totalMarks);
+    } else if (req.body.level === "intermediate") {
+      totalMarks = newTopics.reduce((acc, topic) => {
+        if (topic.Type === "mcq") {
+          return acc + parseInt(topic.totalL2Question) * 2;
+        } else if (topic.Type === "compiler") {
+          return acc + parseInt(topic.compiler.length) * interCodeMarks;
+        } else {
+          return acc;
+        }
+      }, 0);
+      console.log(totalMarks);
+    } else if (req.body.level === "advanced") {
+      totalMarks = newTopics.reduce((acc, topic) => {
+        if (topic.Type === "mcq") {
+          return acc + parseInt(topic.totalL3Question) * 3;
+        } else if (topic.Type === "compiler") {
+          return acc + topic.compiler.length * advCodeMarks;
+        } else {
+          return acc; // Return the accumulator unchanged if the type doesn't match
+        }
+      }, 0);
+
+      console.log(totalMarks);
+    }
+
+    // Need to calculate the marks of subjective questions also
+
+    // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
+
+    let assessment = await Assessments.create({
+      ...req.body,
+      topics: newTopics,
+      createdBy: id,
+      // college: id,
+      // company: id,
+      startDate: req.body.startDate,
+      endDate: req.body.endDate,
+      totalQuestionsCount: req.body.totalQuestions,
+      totalTime: req.body.totalDuration,
+      totalMarks,
+      createdByCompany,
+    });
+
+    const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
+
+    if (!recentQuestion) {
+      console.log("recentQuestion not found", topics);
+
+      await RecentQuestions.create({
+        createdBy: id,
+        topics,
+      });
+    } else {
+      recentQuestion.topics = recentQuestion.topics || [];
+      recentQuestion.topics.push(...topics);
+
+      await recentQuestion.save();
+    }
+
+    await credit.save();
+    await college.save();
+    await assessment.save();
+
+    res.status(201).json({
+      success: true,
+      assessment,
+      newTopics,
+    });
+  } catch (error) {
+    console.log(error);
   }
-
-  await credit.save();
-  await college.save();
-  await assessment.save();
-
-  res.status(201).json({
-    success: true,
-    assessment,
-    newTopics,
-  });
 });
 
 // ===================================================| Invite Student to Assessment |========================================================
@@ -262,10 +320,12 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
               upsert: true,
             }
           );
+
+          let isAdaptive = assessment.level === "adaptive";
           sendEmail({
             email: Email,
             subject: "Invitation to join Test",
-            message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/login?CollegeId=${CollegeId}&test=${assessmentId}. If you are not registered yet, please register first.`,
+            message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName} college. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/test/${assessmentId}?isAdaptive=${isAdaptive}. If you are not registered yet, please register first.`,
           });
         }
       }
@@ -310,7 +370,7 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
     path: "studentResponses",
     populate: { path: "studentId" },
     // only send those res who completed the test
-    match: { completed: true }
+    match: { completed: true },
   });
 
   if (!assessment) {
@@ -527,7 +587,165 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+const getResultGraph = catchAsyncErrors(async (req, res, next) => {
+  const now = new Date();
+  const lastYear = new Date(
+    now.getFullYear() - 1,
+    now.getMonth(),
+    now.getDate()
+  );
+
+  let assessments;
+
+  console.log(req.query.duration);
+
+  switch (req.query.duration) {
+    case "month":
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              month: { $month: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+
+      break;
+    case "quater":
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              quarter: { $ceil: { $divide: [{ $month: "$endDate" }, 3] } },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+      break;
+    case "week":
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              week: { $week: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+
+      break;
+    case "day":
+      console.log("day");
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              month: { $month: "$endDate" },
+              day: { $dayOfMonth: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+      break;
+    default:
+      assessments = await Assessments.aggregate([
+        {
+          $match: {
+            endDate: {
+              $gte: lastYear,
+              $lte: now,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$endDate" },
+              month: { $month: "$endDate" },
+            },
+            records: { $push: "$$ROOT" },
+          },
+        },
+      ]);
+      break;
+  }
+
+  // Populate the nested studentResponses field
+  await studentResponse.populate(assessments, {
+    path: "records.studentResponses",
+    select: "status",
+  });
+
+  assessments.forEach((assessment) => {
+    let totalPlaced = 0; // Initialize total fulfilled count for the assessment
+    let totalAppearedCount = 0; // Initialize total appeared count for the assessment
+
+    assessment.records.forEach((record) => {
+      const fulfilledCount = record.studentResponses.reduce(
+        (count, response) => count + (response.status === "selected" ? 1 : 0),
+        0
+      );
+      record.topics = [];
+      record.fulfilledCount = fulfilledCount;
+      totalPlaced += fulfilledCount; // Add to the total fulfilled count
+
+      const appearedCount = record.studentResponses.length;
+      record.appearedCount = appearedCount;
+      totalAppearedCount += appearedCount; // Add to the total appeared count
+    });
+    assessment.totalPlaced = totalPlaced; // Assign the total fulfilled count to the assessment
+    assessment.totalAppearedCount = totalAppearedCount; // Assign the total appeared count to the assessment
+  });
+
+  return res.json({ assessments });
+});
+const now = new Date();
+const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+
 module.exports = {
+  getResultGraph,
   getStudentsForTest,
   removeRecentAssessment,
   getRecentAssessments,

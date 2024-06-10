@@ -64,9 +64,6 @@
 //   }
 // }
 
-
-
-
 //   await College.findByIdAndUpdate(
 //     user._id,
 //     {
@@ -82,7 +79,6 @@
 //   token: token
 // });
 
-
 // // Send response with token, user information, IP address, and device
 // res.status(statusCode).json({
 //   success: true,
@@ -94,8 +90,6 @@
 // };
 
 // module.exports = sendToken;
-
-
 
 // sendToken function
 const College = require("../models/college/collegeModel");
@@ -115,7 +109,7 @@ const sendToken = async (user, statusCode, res, ip, device) => {
   };
 
   // Set cookie with the token
-  res.cookie('token', token, options);
+  res.cookie("token", token, options);
 
   // Remove the token from the blacklist
   await BlacklistToken.deleteOne({ token });
@@ -162,28 +156,31 @@ const sendToken = async (user, statusCode, res, ip, device) => {
   // }
 
   // Check if login activity already contains the token
-// const existingLogin = user.loginActivity.find(activity => activity.token_id === token);
-const existingLogin = user.loginActivity.find(activity => activity.ip === ip);
+  // const existingLogin = user.loginActivity.find(activity => activity.token_id === token);
+  const existingLogin = user.loginActivity.find(
+    (activity) => activity.ip === ip
+  );
 
-if (existingLogin) {
-  console.log('Token already exists');
-  // Token already exists, update the existing entry
-  existingLogin.token_deleted = false;
-  existingLogin.device = device;
-  existingLogin.token_id = token;
-  existingLogin.logged_in_at = Date.now();
-} else {
-  console.log('Token does not exist');
-  // Token doesn't exist, add a new entry
-  user.loginActivity.push({
-    ip,
-    logged_in_at: Date.now(),
-    device,
-    token_id: token,
-    token_deleted: false,
-  });
-}
-
+  if (existingLogin) {
+    console.log("Token already exists");
+    // Token already exists, update the existing entry
+    existingLogin.qrVerify = false;
+    existingLogin.token_deleted = false;
+    existingLogin.device = device;
+    existingLogin.token_id = token;
+    existingLogin.logged_in_at = Date.now();
+  } else {
+    console.log("Token does not exist");
+    // Token doesn't exist, add a new entry
+    user.loginActivity.push({
+      qrVerify: false,
+      ip,
+      logged_in_at: Date.now(),
+      device,
+      token_id: token,
+      token_deleted: false,
+    });
+  }
 
   // Update the user document in the database
   await College.findByIdAndUpdate(
@@ -203,7 +200,3 @@ if (existingLogin) {
 };
 
 module.exports = sendToken;
-
-
-
-

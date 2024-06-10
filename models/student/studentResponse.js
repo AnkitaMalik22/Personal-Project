@@ -248,9 +248,48 @@ const studentResponseSchema = new mongoose.Schema(
               type: Number,
               default: 0,
             },
-            code: {
+            marks: {
+              type: Number,
+              default: 0,
+            },
+            Title: {
               type: String,
-              default: `printf('hello world')`,
+            },
+            
+
+            code: {
+              type: {
+                C: {
+                  defaultCode: String,
+                  solutionCode: String,
+                  // student answer
+                  answerCode: String,
+                },
+                Cpp: {
+                  defaultCode: String,
+                  solutionCode: String,
+                  answerCode: String,
+                },
+                Java:{
+                  defaultCode: String,
+                  solutionCode: String,
+                  answerCode: String,
+                },
+                Python: {
+                  defaultCode: String,
+                  solutionCode: String,
+                  answerCode: String,
+                },
+              
+              },
+            },
+            totalTestCases: {
+              type: Number,
+              default: 0,
+            },
+            totalPassedTestCases: {
+              type: Number,
+              default: 0,
             },
             verificationCode: {
               type: String,
@@ -277,7 +316,14 @@ const studentResponseSchema = new mongoose.Schema(
                   input: String,
                   expectedOutput: String,
                   studentOutput: String,
-                  passed: Boolean,
+                  passed: {
+                    type: Boolean,
+                    default: false,
+                  },
+                  isHidden: {
+                    type: Boolean,
+                    default: true,
+                  }
                 },
               ],
               // input : "",
@@ -285,6 +331,8 @@ const studentResponseSchema = new mongoose.Schema(
               // studentOutput : "",
               // passed : false,
             },
+
+            //  ---------------------------------   NOT IN USE -------------------------------
             output: {
               type: [],
             },
@@ -292,6 +340,7 @@ const studentResponseSchema = new mongoose.Schema(
               type: String,
               // required: [true, 'Please enter student answer']
             },
+            // ------------------------------------ NOT IN USE -------------------------------
           },
         ],
       },

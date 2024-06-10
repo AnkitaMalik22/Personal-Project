@@ -296,6 +296,7 @@ const studentSchema = new mongoose.Schema({
   // ---------------------
   loginActivity: [
     {
+      qrVerify: Boolean,
       ip: String,
       logged_in_at: Date,
       logged_out_at: Date,
