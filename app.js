@@ -47,8 +47,8 @@ app.use(
       "https://skillaccess.vercel.app",
       "https://skillaccess-student.vercel.app",
       "https://skillaccess-college.vercel.app",
-      "https://skillaccess-student-iota.vercel.app",
-      "https://skillaccess-admin-alpha.vercel.app",
+      "https://skillaccess-student-ten.vercel.app/",
+      "https://skillaccess-student-ten.vercel.app/",
     ],
     credentials: true,
   })
@@ -102,7 +102,7 @@ app.use(errorMiddleware);
 
 // ======================================================= SERVER ===================================================================
 
-const server = app.listen(process.env.PORT, () => {
+const server = app.listen(process.env.PORT, "0.0.0.0", () => {
   console.log(`Server is working on http://localhost:${process.env.PORT}`);
 });
 
