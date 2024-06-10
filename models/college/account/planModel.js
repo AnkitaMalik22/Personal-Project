@@ -1,39 +1,38 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema({
   planName: {
     type: String,
-    required: true
+    required: true,
   },
   price: {
     type: String,
-    required: true
+    required: true,
   },
   credit: {
     type: Number,
-    required: true
+    required: true,
   },
   limit: {
     type: Number,
-    required: true
+    required: true,
   },
   charges: {
     type: String,
-    required: true
+    required: true,
   },
   active: {
     type: Boolean,
-    default: false
+    default: false,
   },
-  members :[
+  members: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'College'
-    }
-  
-  ]
+      ref: "College",
+    },
+  ],
 });
 
-const PaymentPlan = mongoose.model('PaymentPlan', paymentSchema);
+const PaymentPlan = mongoose.model("PaymentPlan", paymentSchema);
 
 module.exports = PaymentPlan;
