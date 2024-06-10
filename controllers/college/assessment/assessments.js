@@ -130,11 +130,31 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           totalL2Question,
           totalL3Question,
         };
-      } else {
+      } else if (req.body.level === "beginner") {
+
         return {
           ...topic,
           // only calculating mcqs for beginner , intermediate and advanced
           topicMarks: topic.questions.length,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      }else if(req.body.level === "intermediate") {
+        return {
+          ...topic,
+          // only calculating mcqs for beginner , intermediate and advanced
+          topicMarks: topic.questions.length * 2,
+          totalL1Question,
+          totalL2Question,
+          totalL3Question,
+        };
+      }
+      else if(req.body.level === "advanced") {
+        return {
+          ...topic,
+          // only calculating mcqs for beginner , intermediate and advanced
+          topicMarks: topic.questions.length * 3,
           totalL1Question,
           totalL2Question,
           totalL3Question,
