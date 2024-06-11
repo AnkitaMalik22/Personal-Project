@@ -43,15 +43,10 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
   try {
     const studentId = req.user.id;
 
-    const student = await CollegeAssessInv.findOne({
-      student: studentId,
-    })
+    const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate({
         path: "assessments.assessment",
-
-        // deselect: "",
-
-        select: "-topics -studentResponses -totalQuestionsCount",
+        select: "name description createdAt  totalMarks totalAttempts startDate endDate topics",
       })
       .populate({
         path: "assessments.sender",
@@ -61,16 +56,19 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
-    const filteredAssessments = student.assessments.filter(
-      (assess) => assess.assessment
-    );
+
+    const filteredAssessments = student.assessments
+      .filter((assess) => assess.assessment)
+      .sort((a, b) => new Date(b.assessment.createdAt) - new Date(a.assessment.createdAt));
+
     res.status(200).json({
       success: true,
       assessments: filteredAssessments,
-      message: "Test found",
+      message: "Tests found",
     });
   } catch (error) {
     console.log(error);
+    return next(new ErrorHandler("Error fetching tests", 500));
   }
 });
 
