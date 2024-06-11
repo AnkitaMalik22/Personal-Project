@@ -43,15 +43,10 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
   try {
     const studentId = req.user.id;
 
-    const student = await CollegeAssessInv.findOne({
-      student: studentId,
-    })
+    const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate({
         path: "assessments.assessment",
-
-        // deselect: "",
-
-        select: "-topics -studentResponses -totalQuestionsCount",
+        select: "name description createdAt  totalMarks totalAttempts startDate endDate topics",
       })
       .populate({
         path: "assessments.sender",
@@ -61,16 +56,19 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
-    const filteredAssessments = student.assessments.filter(
-      (assess) => assess.assessment
-    );
+
+    const filteredAssessments = student.assessments
+      .filter((assess) => assess.assessment)
+      .sort((a, b) => new Date(b.assessment.createdAt) - new Date(a.assessment.createdAt));
+
     res.status(200).json({
       success: true,
       assessments: filteredAssessments,
-      message: "Test found",
+      message: "Tests found",
     });
   } catch (error) {
     console.log(error);
+    return next(new ErrorHandler("Error fetching tests", 500));
   }
 });
 
@@ -555,7 +553,11 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       console.log("Assessment not found");
       return next(new ErrorHandler("Assessment not found", 404));
     }
-
+    const studentResponse = await StudentResponse.findOne({
+      studentId: studentId,
+      assessmentId: testId,
+      attempt: assessment.attempts,
+    });
     if (!assessment.active) {
       return next(new ErrorHandler("Assessment not started", 404));
     }
@@ -639,6 +641,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         assessment.negativeCount += 1;
       }
     }
+    studentResponse.topics[topicIndex].totalMarks =
+      assessment.currentTopicMarks;
     // assessment.save();
     // console.log("Marks", assessment.marks ,question.AnswerIndex, response,question.AnswerIndex === parseInt(response))  ;
     //-----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -845,8 +849,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
             assessment.totalStudentAttempted;
           studentResponse.timeTaken = timeTaken;
           studentResponse.correctAnswers = assessment.correctAnswers;
-          studentResponse.topics[topicIndex].totalMarks =
-            assessment.currentTopicMarks;
+
           studentResponse.percentage =
             (assessment.marks / assessment.assessment.totalMarks) * 100;
           // console.log("student marks", assessment.marks);
@@ -910,11 +913,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // ======================================== STUDENT RESPONSE ==========================================
     //FIND THE STUDENT RESPONSE
     // console.log("attempts", assessment.attempts);
-    const studentResponse = await StudentResponse.findOne({
-      studentId: studentId,
-      assessmentId: testId,
-      attempt: assessment.attempts,
-    });
+
     // console.log(studentResponse);
     // UPDATE THE STUDENT RESPONSE
     studentResponse.topics[topicIndex].questions[
@@ -932,8 +931,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       questionIndex
     ].attempted = true;
     studentResponse.totalMarks = assessment.marks;
-    studentResponse.topics[topicIndex].totalMarks =
-      assessment.currentTopicMarks;
+
     studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     studentResponse.correctAnswers = assessment.correctAnswers;
     const per = (assessment.marks / assessment.assessment.totalMarks) * 100;

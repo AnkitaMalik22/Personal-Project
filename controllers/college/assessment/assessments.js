@@ -10,6 +10,7 @@ const Credit = require("../../../models/college/account/creditModel");
 const CollegeAssessInv = require("../../../models/student/assessmentInvitation");
 const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
+const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
 
 // =========================================================================================================================================
 
@@ -24,6 +25,15 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     let credit = await Credit.findOne({
       college: id,
     });
+
+    const newTransaction = new collegeTransaction({
+      creditUsed: 1,
+      for: "assessment creation",
+      collegeId: id,
+      date: new Date().toISOString(),
+    });
+
+    await newTransaction.save();
 
     if (credit && credit.credit > 0) {
       credit.credit -= 1;
@@ -131,7 +141,6 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           totalL3Question,
         };
       } else if (req.body.level === "beginner") {
-
         return {
           ...topic,
           // only calculating mcqs for beginner , intermediate and advanced
@@ -140,7 +149,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           totalL2Question,
           totalL3Question,
         };
-      }else if(req.body.level === "intermediate") {
+      } else if (req.body.level === "intermediate") {
         return {
           ...topic,
           // only calculating mcqs for beginner , intermediate and advanced
@@ -149,8 +158,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           totalL2Question,
           totalL3Question,
         };
-      }
-      else if(req.body.level === "advanced") {
+      } else if (req.body.level === "advanced") {
         return {
           ...topic,
           // only calculating mcqs for beginner , intermediate and advanced
