@@ -998,8 +998,13 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       message: "Student already invited",
     });
   } else {
+
+const uploadedStudents = await InvitedStudents.findOne({ college: CollegeId });
+console.log(uploadedStudents , "uploaded students")
+
     res.status(200).json({
       success: true,
+      uploadedStudents : uploadedStudents?.students,
       message: "Students uploaded & Invited successfully",
     });
   }
