@@ -13,6 +13,7 @@ const {
   getCredit,
   addPlansAdmin,
   selectPlanCollege,
+  getAllCollegeTransactions,
   getAllPlans,
   getAllTransactions,
   cancelPlanCollege,
@@ -41,7 +42,11 @@ router.post("/add-plan", addPlansAdmin);
 router.post("/request-plan/:id", isAuthenticatedCollege, requestSelectedPlan);
 router.get("/all-plans", getAllPlans);
 router.get("/selected-plans/:id", getSelectedPlan);
-router.get("/all-transactions", isAuthenticatedCollege, getAllTransactions);
+router.get(
+  "/all-transactions",
+  isAuthenticatedCollege,
+  getAllCollegeTransactions
+);
 router.post("/cancel-plan/:id", isAuthenticatedCollege, cancelPlanCollege);
 
 module.exports = router;

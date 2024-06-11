@@ -9,6 +9,7 @@ const Credit = require("../../models/college/account/creditModel");
 const PaymentPlan = require("../../models/college/account/planModel");
 const requestPlan = require("../../models/college/account/requestPlanModel");
 const Transaction = require("../../models/college/account/Transactions");
+const collegeTransaction = require("../../models/college/account/collegeTransactionModel");
 
 //  ADMIN CAN CREATE TOPICS AND ADD QUESTIONS
 
@@ -237,6 +238,23 @@ const getAllTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
       user: req.user.id,
+    });
+    return res.status(200).json({
+      message: "All transactions",
+      transactions,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to get transactions",
+      error: error.message,
+    });
+  }
+};
+
+const getAllCollegeTransactions = async (req, res) => {
+  try {
+    const transactions = await collegeTransaction.find({
+      collegeId: req.user.id,
     });
     return res.status(200).json({
       message: "All transactions",
@@ -533,6 +551,7 @@ module.exports = {
   viewAllQuestionsInTopic,
   addPlansAdmin,
   // selectPlanCollege,
+  getAllCollegeTransactions,
   getSelectedPlan,
   getAllPlans,
   getAllTransactions,
