@@ -36,6 +36,7 @@ const {
   updateEducation,
   updateSkills,
   updateLinks,
+  editEducation,
 } = require("../../controllers/student/profileController");
 const { qrWare } = require("../../middlewares/qrWare");
 
@@ -72,10 +73,16 @@ router.put(
   isAuthenticatedStudent,
   updatePersonalInfo
 );
+// add
 router.post(
   "/profile/update/education",
   isAuthenticatedStudent,
   updateEducation
+);
+router.post(
+  "/profile/edit/education",
+  isAuthenticatedStudent,
+  editEducation
 );
 router.post("/profile/update/skill", isAuthenticatedStudent, updateSkills);
 router.post("/profile/update/link", isAuthenticatedStudent, updateLinks);
