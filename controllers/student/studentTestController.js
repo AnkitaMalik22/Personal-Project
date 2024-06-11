@@ -555,7 +555,11 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       console.log("Assessment not found");
       return next(new ErrorHandler("Assessment not found", 404));
     }
-
+    const studentResponse = await StudentResponse.findOne({
+      studentId: studentId,
+      assessmentId: testId,
+      attempt: assessment.attempts,
+    });
     if (!assessment.active) {
       return next(new ErrorHandler("Assessment not started", 404));
     }
@@ -639,6 +643,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         assessment.negativeCount += 1;
       }
     }
+    studentResponse.topics[topicIndex].totalMarks =
+      assessment.currentTopicMarks;
     // assessment.save();
     // console.log("Marks", assessment.marks ,question.AnswerIndex, response,question.AnswerIndex === parseInt(response))  ;
     //-----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -845,8 +851,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
             assessment.totalStudentAttempted;
           studentResponse.timeTaken = timeTaken;
           studentResponse.correctAnswers = assessment.correctAnswers;
-          studentResponse.topics[topicIndex].totalMarks =
-            assessment.currentTopicMarks;
+
           studentResponse.percentage =
             (assessment.marks / assessment.assessment.totalMarks) * 100;
           // console.log("student marks", assessment.marks);
@@ -910,11 +915,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // ======================================== STUDENT RESPONSE ==========================================
     //FIND THE STUDENT RESPONSE
     // console.log("attempts", assessment.attempts);
-    const studentResponse = await StudentResponse.findOne({
-      studentId: studentId,
-      assessmentId: testId,
-      attempt: assessment.attempts,
-    });
+
     // console.log(studentResponse);
     // UPDATE THE STUDENT RESPONSE
     studentResponse.topics[topicIndex].questions[
@@ -932,8 +933,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       questionIndex
     ].attempted = true;
     studentResponse.totalMarks = assessment.marks;
-    studentResponse.topics[topicIndex].totalMarks =
-      assessment.currentTopicMarks;
+
     studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
     studentResponse.correctAnswers = assessment.correctAnswers;
     const per = (assessment.marks / assessment.assessment.totalMarks) * 100;

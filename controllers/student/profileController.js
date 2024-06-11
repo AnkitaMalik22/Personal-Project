@@ -154,6 +154,86 @@ exports.updateEducation = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
+// exports.editEducation = catchAsyncErrors(async (req, res, next) => {
+//   try {
+//     const data = req.body;
+//     // console.log(data);
+//     const student = await Student.findById(req.user.id);
+//     if (!student) {
+//       return next(new ErrorHandler("Student not found", 404));
+//     }
+//     const { School, Description, Degree, StartDate, EndDate, Media, Place } =
+//       data;
+
+//     if (
+//       School === "" ||
+//       Description === "" ||
+//       Degree === "" ||
+//       StartDate === "" ||
+//       EndDate === "" ||
+//       Place === ""
+//     ) {
+//       return next(
+//         new ErrorHandler("Please provide the education details", 400)
+//       );
+//     }
+
+//     if (!Media) {
+//       return next(new ErrorHandler("Please upload a file", 400));
+//     }
+//     console.log(Media.length, "media");
+
+//     const allMedia = [];
+
+//     for (const media of Media) {
+//       console.log(media);
+//       const myCloud = await cloudinary.v2.uploader.upload(media, {
+//         folder: "education",
+//         width: 150,
+//         crop: "scale",
+//       });
+//       allMedia.push({
+//         public_id: myCloud.public_id,
+//         url: myCloud.secure_url,
+
+//         file_name: myCloud.original_filename,
+//       });
+//     }
+
+//     console.log(allMedia);
+
+//     const index = student.Education.findIndex(
+//       (edu) => edu._id.toString() === req.params.id
+//     );
+
+//     if (index === -1) {
+//       return next(new ErrorHandler("Education not found", 404));
+//     }
+
+//     student.Education[index] = {
+//       School,
+//       Description,
+//       Degree,
+//       StartDate,
+//       EndDate,
+//       Place,
+//       Media: allMedia,
+//     };
+
+//     await student.save();
+
+//     res.status(200).json({
+//       success: true,
+//       user: student,
+//       message: "Education updated successfully",
+//     });
+//   } catch (error) {
+
+//     console.log(error);
+//     return next(new ErrorHandler("Something went wrong", 500));
+//   }
+// });
+
 exports.editEducation = catchAsyncErrors(async (req, res, next) => {
   try {
     const data = req.body;
@@ -162,78 +242,55 @@ exports.editEducation = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
-    const { School, Description, Degree, StartDate, EndDate, Media, Place } =
-      data;
 
-    if (
-      School === "" ||
-      Description === "" ||
-      Degree === "" ||
-      StartDate === "" ||
-      EndDate === "" ||
-      Place === ""
-    ) {
-      return next(
-        new ErrorHandler("Please provide the education details", 400)
-      );
-    }
-
-    if (!Media) {
-      return next(new ErrorHandler("Please upload a file", 400));
-    }
-    console.log(Media.length, "media");
-
-    const allMedia = [];
-
-    for (const media of Media) {
-      console.log(media);
-      const myCloud = await cloudinary.v2.uploader.upload(media, {
-        folder: "education",
-        width: 150,
-        crop: "scale",
-      });
-      allMedia.push({
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-
-        file_name: myCloud.original_filename,
-      });
-    }
-
-    console.log(allMedia);
-
-    const index = student.Education.findIndex(
-      (edu) => edu._id.toString() === req.params.id
-    );
-
-    if (index === -1) {
-      return next(new ErrorHandler("Education not found", 404));
-    }
-
-    student.Education[index] = {
-      School,
-      Description,
-      Degree,
-      StartDate,
-      EndDate,
-      Place,
-      Media: allMedia,
-    };
+    student.Education = req.body.Education;
 
     await student.save();
-    
+
     res.status(200).json({
       success: true,
       user: student,
       message: "Education updated successfully",
     });
   } catch (error) {
-
     console.log(error);
     return next(new ErrorHandler("Something went wrong", 500));
   }
 });
 
+exports.uploadMedia = async (req, res) => {
+  try {
+    const uploadPromises = [];
+    let pics = [];
+    // Iterate over uploaded files
+
+    for (let i = 0; i < Object.values(req.files).length; i++) {
+      let file = Object.values(req.files)[i];
+      const result = await cloudinary.uploader.upload(file.tempFilePath, {
+        folder: "education",
+        filename_override: file.name,
+        resource_type: "auto",
+      });
+      uploadPromises.push(result);
+    }
+
+    const uploadedFiles = await Promise.all(uploadPromises);
+
+    uploadedFiles.forEach((file) => {
+      pics.push({
+        url: file.url,
+        name: file.original_filename,
+        format: file.format,
+        size: file.bytes,
+      });
+    });
+    console.log(uploadedFiles[0]);
+    res.status(200).json(pics);
+  } catch (error) {
+    console.log("err", error);
+    res.status(500).json(error);
+  }
+};
 
 exports.updateSkills = catchAsyncErrors(async (req, res, next) => {
   try {
