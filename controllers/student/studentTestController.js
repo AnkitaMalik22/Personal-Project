@@ -46,7 +46,8 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
     const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate({
         path: "assessments.assessment",
-        select: "name description createdAt  totalMarks totalAttempts startDate endDate topics",
+        select:
+          "name description createdAt  totalMarks totalAttempts startDate endDate topics level",
       })
       .populate({
         path: "assessments.sender",
@@ -59,7 +60,10 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
 
     const filteredAssessments = student.assessments
       .filter((assess) => assess.assessment)
-      .sort((a, b) => new Date(b.assessment.createdAt) - new Date(a.assessment.createdAt));
+      .sort(
+        (a, b) =>
+          new Date(b.assessment.createdAt) - new Date(a.assessment.createdAt)
+      );
 
     res.status(200).json({
       success: true,
