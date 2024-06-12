@@ -268,11 +268,6 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     const isAdaptive = adaptive === "true";
 
-    console.log(
-      assessment.assessment.topics[0].compiler,
-      " -----------------------------------",
-      assessment.assessment.topics[0]
-    );
     const studentResponse = await StudentResponse.create({
       studentId: studentId,
       assessmentId: testId,
