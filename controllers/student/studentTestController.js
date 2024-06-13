@@ -635,8 +635,18 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         assessment.negativeCount += 1;
       }
     }
+    await student.save();
+    console.log(
+      "marks============================================================",
+      assessment.currentTopicMarks
+    );
     studentResponse.topics[topicIndex].totalMarks =
       assessment.currentTopicMarks;
+    await studentResponse.save();
+    console.log(
+      studentResponse.topics[topicIndex].totalMarks,
+      "topic marks  totla"
+    );
     // assessment.save();
     // console.log("Marks", assessment.marks ,question.AnswerIndex, response,question.AnswerIndex === parseInt(response))  ;
     //-----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -682,11 +692,11 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //   topic.totalL1Question
     // );
     // totalL1question = l1correct + l2correct + l3correct
-    console.log(
-      "All questions completed ",
-      assessment.totalQuestionsAttempted,
-      topic.totalL1Question
-    );
+    // console.log(
+    //   "All questions completed ",
+    //   assessment.totalQuestionsAttempted,
+    //   topic.totalL1Question
+    // );
     if (assessment.totalQuestionsAttempted >= topic.totalL1Question) {
       // console.log(
       //   "All questions completed ",
