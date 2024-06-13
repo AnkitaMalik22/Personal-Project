@@ -27,6 +27,7 @@ const compilerLogSchema = new mongoose.Schema(
         answerCode: String,
       },
     },
+    question: { type: mongoose.Schema.Types.ObjectId, ref: "Compiler" },
     // {expectedOutput
     // :
     // "2 4"

@@ -20,6 +20,7 @@ exports.findLogCompiler = catchAsyncErrors(async (req, res, next) => {
     );
 
     const log = await CompilerLog.find({
+      question: req.query.question,
       attempt: assessment.attempts,
       assessment: assessment._id,
       student: req.user.id,
@@ -47,6 +48,7 @@ exports.addLog = catchAsyncErrors(async (req, res, next) => {
     );
     console.log(req.body);
     const log = await CompilerLog.create({
+      question: req.body.question,
       attempt: assessment.attempts,
       assessment: assessment._id,
       student: req.user.id,

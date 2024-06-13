@@ -636,17 +636,14 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       }
     }
     await student.save();
-    console.log(
-      "marks============================================================",
-      assessment.currentTopicMarks
-    );
+
     studentResponse.topics[topicIndex].totalMarks =
       assessment.currentTopicMarks;
     await studentResponse.save();
-    console.log(
-      studentResponse.topics[topicIndex].totalMarks,
-      "topic marks  totla"
-    );
+    // console.log(
+    //   studentResponse.topics[topicIndex].totalMarks,
+    //   "topic marks  totla"
+    // );
     // assessment.save();
     // console.log("Marks", assessment.marks ,question.AnswerIndex, response,question.AnswerIndex === parseInt(response))  ;
     //-----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -1309,7 +1306,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     } else if (type === "compiler") {
       calculateCodeMarks(assessment, question, response);
     }
-
+    await student.save();
     await updateStudentResponse(
       studentResponse,
       type,
