@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const {
   compileCode,
+  fetchCompilerTestCases,
 } = require("../../controllers/compiler/compilerController");
 const {
   findLogCompiler,
@@ -13,5 +14,4 @@ router
   .route("/log/:testId")
   .get(isAuthenticatedStudent, findLogCompiler)
   .post(isAuthenticatedStudent, addLog);
-
 module.exports = router;
