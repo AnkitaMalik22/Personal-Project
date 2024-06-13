@@ -449,7 +449,6 @@ const addQuestionsToTopic = async (req, res) => {
       } else if (type === "essay") {
         question = await Essay.create(questions[i]);
         section.essay.push(question._id);
-        console.log(section.essay);
       } else if (type === "video") {
         question = await Video.create(questions[i]);
         section.video.push(question._id);
