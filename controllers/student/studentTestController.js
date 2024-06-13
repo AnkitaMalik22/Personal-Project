@@ -156,6 +156,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     );
 
     const test = await Assessments.findById(testId);
+
+    console.log(test.topics[0], "comp");
     // console.log(assessment);
     console.log(test.totalAttempts, test.name);
 
@@ -320,6 +322,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       } else if (type === "video") {
         firstQuestion = assessment.assessment.topics[0].video[0];
       } else if (type === "compiler") {
+        console.log("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
         firstQuestion = assessment.assessment.topics[0].compiler[0];
       }
 
