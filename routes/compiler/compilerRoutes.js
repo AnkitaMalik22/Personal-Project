@@ -8,6 +8,7 @@ const {
   addLog,
 } = require("../../controllers/student/compiler");
 const { isAuthenticatedStudent } = require("../../middlewares/studentAuth");
+router.route("/testcases").get(fetchCompilerTestCases);
 
 router.route("/compile").post(compileCode);
 router
