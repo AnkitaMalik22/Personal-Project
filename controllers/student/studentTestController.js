@@ -145,7 +145,13 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     const student = await CollegeAssessInv.findOne({
       student: studentId,
       // "assessments.assessment": testId // Include testId in the query
-    }).populate("assessments.assessment");
+    }).populate({
+      path: "assessments",
+      populate: {
+        path: "assessment",
+        populate: { path: "topics.compiler", model: "Compiler" },
+      },
+    });
 
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
@@ -156,7 +162,9 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     );
 
     const test = await Assessments.findById(testId);
-    // console.log(assessment);
+
+    console.log(test.topics[0], "comp");
+    console.log(assessment, "sdsadwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww");
     console.log(test.totalAttempts, test.name);
 
     if (!assessment) {
@@ -260,10 +268,11 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     const topicNames = assessment.assessment.topics.map(
       (topic) => topic.Heading
     );
+    let newTopics = [];
 
     const isAdaptive = adaptive === "true";
 
-    const studentResponse = await StudentResponse.create({
+    let studentResponse = await StudentResponse.create({
       studentId: studentId,
       assessmentId: testId,
       topics: assessment.assessment.topics,
@@ -272,8 +281,6 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       time: assessment.assessment.totalTime,
       testType: isAdaptive ? "adaptive" : "non-adaptive", //but setting adaptive
     });
-
-    console.log(studentResponse.testType); //false
 
     assessment.response = studentResponse._id;
     test.studentResponses.push(studentResponse._id);
@@ -320,6 +327,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       } else if (type === "video") {
         firstQuestion = assessment.assessment.topics[0].video[0];
       } else if (type === "compiler") {
+        console.log("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
         firstQuestion = assessment.assessment.topics[0].compiler[0];
       }
 
@@ -635,8 +643,15 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         assessment.negativeCount += 1;
       }
     }
+    await student.save();
+
     studentResponse.topics[topicIndex].totalMarks =
       assessment.currentTopicMarks;
+    await studentResponse.save();
+    // console.log(
+    //   studentResponse.topics[topicIndex].totalMarks,
+    //   "topic marks  totla"
+    // );
     // assessment.save();
     // console.log("Marks", assessment.marks ,question.AnswerIndex, response,question.AnswerIndex === parseInt(response))  ;
     //-----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -682,11 +697,11 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //   topic.totalL1Question
     // );
     // totalL1question = l1correct + l2correct + l3correct
-    console.log(
-      "All questions completed ",
-      assessment.totalQuestionsAttempted,
-      topic.totalL1Question
-    );
+    // console.log(
+    //   "All questions completed ",
+    //   assessment.totalQuestionsAttempted,
+    //   topic.totalL1Question
+    // );
     if (assessment.totalQuestionsAttempted >= topic.totalL1Question) {
       // console.log(
       //   "All questions completed ",
@@ -947,6 +962,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     nextQuestion = { ...nextQuestion, AnswerIndex: null };
 
     await student.save();
+    // console.log({ topicName :assessment.assessment.topics[assessment?.currentTopicIndex].Heading,})
 
     // ================================================== RESPONSE ==========================================
     res.json({
@@ -956,6 +972,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       questionIndex: questionIndex,
       nextQuestion: nextQuestion,
       topic: { Heading: topic.Heading, Type: topic.Type },
+      topicName:
+        assessment.assessment.topics[assessment?.currentTopicIndex].Heading,
       topicIndex: topicIndex,
       studentResponse:
         studentResponse.topics[topicIndex].questions[questionIndex],
@@ -967,281 +985,6 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 });
 
 // ===============================================  NON ADAPTIVE || SEND STUDENT RESPONSE AND GET NEXT QUESTION ==============================
-
-// exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
-//   try {
-//     const { testId } = req.params;
-//     const { response } = req.body;
-
-//     const studentId = req.user.id;
-//     const student = await CollegeAssessInv.findOne({
-//       student: studentId,
-//     })
-//       .populate("assessments.assessment")
-//       .populate("assessments.assessment.questions")
-//       .populate("assessments.assessment.findAnswers")
-//       .populate("assessments.assessment.essay")
-//       .populate("assessments.assessment.video")
-//       .populate("assessments.assessment.compiler");
-
-//     if (!student) {
-//       return next(new ErrorHandler("Student not found", 404));
-//     }
-
-//     const assessment = student.assessments.find(
-//       (assessment) => assessment.assessment?._id.toString() === testId
-//     );
-
-//     if (!assessment) {
-//       return next(new ErrorHandler("Test not found", 404));
-//     }
-
-//     if (!assessment.active) {
-//       return next(new ErrorHandler("Assessment not started", 404));
-//     }
-//     // total questions student attepted
-//     assessment.totalStudentAttempted += 1;
-//     const topicIndex = assessment.currentTopicIndex;
-//     const topic = assessment.assessment?.topics[topicIndex];
-//     const questionIndex = assessment.currentQuestionIndex;
-
-//     if (!topic) {
-//       assessment.currentTopicIndex = 0;
-//       assessment.currentQuestionIndex = 0;
-//       assessment.active = false;
-
-//       await student.save();
-
-//       // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
-//       // const studentResponse = await StudentResponse.findOne({
-//       //   studentId: studentId,
-//       //   assessmentId: testId,
-//       //   attempt: assessment.attempts,
-//       // });
-
-//       // studentResponse.totalMarks = assessment.marks;
-//       // studentResponse.completed = true;
-//       // studentResponse.completedAt = Date.now();
-//       // console.log("time taken", timeTaken);
-//       // studentResponse.timeTaken = timeTaken;
-//       // console.log("student marks", assessment.marks);
-//       // await studentResponse.save();
-//       // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
-//       // --------------------- update the avgPercentage of the assessment -------------------
-
-//       const test = await Assessments.findById(testId).populate(
-//         "studentResponses"
-//       );
-//       let avgPercentage = test.avgPercentage;
-
-//       // duplicate student responses remove
-//       // let studentResponses = test.studentResponses.map((response) => response.studentId);
-
-//       let totalStudentResponses = test.studentResponses.length;
-//       let totalPercentage = 0;
-
-//       assessment.studentResponses?.forEach((response) => {
-//         totalPercentage += response.percentage;
-//       });
-//       console.log("totalPercentage", totalPercentage);
-
-//       avgPercentage = totalPercentage / totalStudentResponses;
-//       console.log("avgPercentage", avgPercentage);
-//       test.avgPercentage = avgPercentage;
-//       await test.save();
-
-//       // -------------------------------------------------------------------------------------
-
-//       return res.json({
-//         success: true,
-//         message: "Test Completed -- No Next Topic Found",
-//       });
-//     }
-
-//     let type = topic.Type;
-//     let question = {};
-
-//     if (type === "mcq") {
-//       typeDir = "questions";
-//     } else if (type === "findAnswer") {
-//       typeDir = "findAnswers";
-//     } else {
-//       typeDir = type;
-//     }
-
-//     let nextQuestion = {};
-//     const totalQuestions = topic[typeDir].length;
-//     console.log(type, "is");
-//     const studentResponse = await StudentResponse.findOne({
-//       studentId: studentId,
-//       assessmentId: testId,
-//       attempt: assessment.attempts,
-//     });
-
-//     console.log("totalQuestionsAttempted");
-//     switch (type) {
-//       case "mcq":
-//         studentResponse.topics[topicIndex].questions[
-//           questionIndex
-//         ].StudentAnswerIndex = parseInt(response);
-
-//         console.log(
-//           "mcq",
-//           studentResponse.topics[topicIndex].questions[questionIndex]
-//             .StudentAnswerIndex
-//         );
-//         break;
-//       case "findAnswer":
-//         // "response" : [
-//         //   {
-
-//         //     "studentAnswer": "The capital of France is Paris"
-//         //   },
-//         //   {
-
-//         //     "studentAnswer": "The capital of Spain is Madrid"
-//         //   }
-//         // ]
-//         if (response && response.length > 0) {
-//           studentResponse.topics[topicIndex].findAnswers[
-//             questionIndex
-//           ].questions.forEach((ques, index) => {
-//             ques.studentAnswer = response[index].studentAnswer;
-//           });
-//         } else {
-//           studentResponse.topics[topicIndex].findAnswers[
-//             questionIndex
-//           ].questions.forEach((ques, index) => {
-//             ques.studentAnswer = "";
-//           });
-//         }
-//         console.log(
-//           "findAnswer",
-//           studentResponse.topics[topicIndex].findAnswers[questionIndex]
-//             .questions
-//         );
-
-//         break;
-//       case "essay":
-//         // "response" : "The capital of France is Paris"
-//         if (response) {
-//           studentResponse.topics[topicIndex].essay[
-//             questionIndex
-//           ].studentAnswer = response;
-//         } else {
-//           studentResponse.topics[topicIndex].essay[
-//             questionIndex
-//           ].studentAnswer = "";
-//         }
-//         break;
-//       case "video":
-//         // "response" : {
-//         //   "long": [
-//         //     "The capital of France is Paris",
-//         //     "The capital of Spain is Madrid"
-//         //   ],
-//         //   "short": [
-//         //     "The capital of France is Paris",
-//         //     "The capital of Spain is Madrid"
-//         //   ],
-//         //   "mcq": [
-//         //     0,
-//         //     1
-//         //   ]
-
-//         studentResponse.topics[topicIndex].video[questionIndex].long.forEach(
-//           (long, index) => {
-//             // long = response.long[index];
-//             long.studentAnswer = response.long[index];
-//           }
-//         );
-//         studentResponse.topics[topicIndex].video[questionIndex].short.forEach(
-//           (short, index) => {
-//             short.studentAnswer = response.short[index];
-//           }
-//         );
-//         studentResponse.topics[topicIndex].video[
-//           questionIndex
-//         ].questions.forEach((mcq, index) => {
-//           mcq.StudentAnswerIndex = response.mcq[index];
-//         });
-
-//         break;
-//       case "compiler":
-//         // "response" : [
-//         //   {
-//         //     "studentOutput": "Hello World"
-//         //   },
-//         //   {
-//         //     "studentOutput": "Hello World"
-//         //   }
-//         // ]
-
-//         studentResponse.topics[topicIndex].compiler[
-//           questionIndex
-//         ].testcase.forEach((testcase, index) => {
-//           testcase.studentOutput = response[index];
-//         });
-//         break;
-//       default:
-//         break;
-//     }
-
-//     studentResponse.totalQuestionsAttempted += 1;
-//     studentResponse.correctAnswers = assessment.correctAnswers;
-//     studentResponse.totalMarks = assessment.marks;
-//     studentResponse.topics[topicIndex].totalMarks =
-//       assessment.currentTopicMarks;
-//     studentResponse.percentage =parseInt((assessment.marks / assessment.assessment?.totalMarks) * 100);
-
-//     await studentResponse.save();
-
-//     //for one topic
-//     assessment.totalQuestionsAttempted = assessment.totalQuestionsAttempted + 1;
-//     console.log(assessment.totalQuestionsAttempted, totalQuestions);
-//     if (assessment.totalQuestionsAttempted >= totalQuestions) {
-//       assessment.currentQuestionIndex = 0;
-//       assessment.currentTopicIndex = topicIndex + 1;
-//       assessment.totalQuestionsAttempted = 0;
-//       console.log("Next topic");
-
-//       if (assessment.assessment.topics.length === topicIndex + 1) {
-//         return res.status(200).json({ message: "test comp" });
-//       }
-
-//       type = assessment.assessment.topics[topicIndex + 1].Type;
-//       if (type === "mcq") {
-//         typeDir = "questions";
-//       } else if (type === "findAnswer") {
-//         typeDir = "findAnswers";
-//       } else {
-//         typeDir = type;
-//       }
-//       nextQuestion = assessment.assessment.topics[topicIndex + 1][typeDir][0];
-//     } else {
-//       assessment.currentQuestionIndex = questionIndex + 1;
-
-//       nextQuestion =
-//         assessment.assessment.topics[topicIndex][typeDir][questionIndex + 1];
-//     }
-
-//     await student.save();
-
-//     res.json({
-//       success: true,
-//       message: "Question sent",
-//       count: assessment.totalStudentAttempted + 1,
-//       questionIndex: questionIndex,
-//       topicIndex: topicIndex,
-//       nextQuestion: nextQuestion,
-//       topic: topic.Heading,
-//       studentResponse: question,
-//       result: studentResponse,
-//     });
-//   } catch (error) {
-//     console.log("Error", error);
-//   }
-// });
 
 exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -1299,7 +1042,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     } else if (type === "compiler") {
       calculateCodeMarks(assessment, question, response);
     }
-
+    await student.save();
     await updateStudentResponse(
       studentResponse,
       type,
@@ -1340,11 +1083,14 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     res.json({
       success: true,
       message: "Question sent",
-      count: assessment.totalStudentAttempted,
+      count: assessment.totalStudentAttempted + 1,
       questionIndex: questionIndex,
       topicIndex: topicIndex,
       nextQuestion: nextQuestion,
-      topic: topic.Heading,
+      topic:
+        assessment.assessment.topics[assessment?.currentTopicIndex]?.Heading,
+      topicType:
+        assessment.assessment.topics[assessment?.currentTopicIndex]?.Type,
       studentResponse: response,
       result: studentResponse,
     });
