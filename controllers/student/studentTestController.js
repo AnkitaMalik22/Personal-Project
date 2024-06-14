@@ -327,8 +327,11 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       } else if (type === "video") {
         firstQuestion = assessment.assessment.topics[0].video[0];
       } else if (type === "compiler") {
-        console.log("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
-        firstQuestion = assessment.assessment.topics[0].compiler[0];
+        console.log(
+          "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+          test.topics[0].compiler
+        );
+        firstQuestion = test.topics[0].compiler[0];
       }
 
       res.json({
