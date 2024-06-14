@@ -149,7 +149,13 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       path: "assessments",
       populate: {
         path: "assessment",
-        populate: { path: "topics.compiler", model: "Compiler" },
+        populate: {
+          path: "topics",
+          // populate: {
+          //   path: "compiler",
+          //   model: "Compiler",
+          // },
+        },
       },
     });
 
@@ -329,9 +335,9 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       } else if (type === "compiler") {
         console.log(
           "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
-          test.topics[0].compiler
+          assessment.assessment.topics[0]
         );
-        firstQuestion = test.topics[0].compiler[0];
+        firstQuestion = assessment.assessment.topics[0].compiler[0];
       }
 
       res.json({
