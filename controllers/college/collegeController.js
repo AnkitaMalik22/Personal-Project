@@ -178,7 +178,7 @@ exports.verifyOtp = catchAsyncErrors(async (req, res, next) => {
 //  SIDD
 exports.generateQr = async (req, res, next) => {
   try {
-    console.log(req.user);
+   
     let secret = speakeasy.generateSecret({
       name: `Skillaccess: ${req.user.FirstName}`,
     });
@@ -186,7 +186,7 @@ exports.generateQr = async (req, res, next) => {
     const user = await College.findById(req.params.id);
     if (!user) return res.status(404).send("College not found");
     const qr = await Qr.findOne({ user: req.params.id });
-    console.log(qr, "qrcode");
+  
     if (!qr) {
       function generateQRCodeDataURL(secret) {
         return new Promise((resolve, reject) => {
@@ -230,7 +230,7 @@ exports.verifyQr = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("College not found", 404));
   }
   const qr = await Qr.findOne({ user: college._id });
-  console.log(qr);
+
   let verified = speakeasy.totp.verify({
     secret: qr.secret.ascii,
     encoding: "ascii",
@@ -313,9 +313,9 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       // req.connection.remoteAddress||
       // req.socket.remoteAddress ||
       // req.connection.socket.remoteAddress;
-      console.log("ip = ", ip);
+     
       const device = req.headers["user-agent"];
-      console.log(device);
+    
 
       const college = await College.create({
         FirstName,
@@ -375,10 +375,10 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
     // req.connection.remoteAddress||
     // req.socket.remoteAddress ||
     // req.connection.socket.remoteAddress;
-    console.log("ip = ", ip);
+    // console.log("ip = ", ip);
     // console.log("req ip = ",req.ip)
     const device = req.headers["user-agent"];
-    console.log(device);
+    // console.log(device);
 
     // Create a new college
     const college = await College.create({
@@ -415,9 +415,9 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
           return res.status(404).json({ message: "User don't exist!" });
 
         // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        console.log(ip);
+        // console.log(ip);
         const device = req.headers["user-agent"];
-        console.log(device);
+        // console.log(device);
 
         sendToken(college, 200, res, ip, device);
       })
@@ -454,9 +454,9 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
     }
 
     // const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    console.log(ip);
+    // console.log(ip);
     const device = req.headers["user-agent"];
-    console.log(device);
+    // console.log(device);
 
     // Send JWT token in response
     sendToken(college, 200, res, ip, device);
@@ -483,7 +483,7 @@ exports.getAllLoggedInUsers = catchAsyncErrors(async (req, res, next) => {
 // logout a user
 
 exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
-  console.log("req.user.id", req.user.id);
+  // console.log("req.user.id", req.user.id);
   const college = await College.findById(req.user.id);
 
   if (!college) {
@@ -493,7 +493,7 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
   const token = req.params.token;
 
   college.loginActivity.forEach((login) => {
-    console.log(login.token_id === token);
+    // console.log(login.token_id === token);
     if (login.token_id === token) {
       login.qrVerify = false;
       login.token_deleted = true;
@@ -505,7 +505,7 @@ exports.logoutAUser = catchAsyncErrors(async (req, res, next) => {
     token: token,
   });
 
-  console.log("Token blacklisted", blacklist_token);
+  // console.log("Token blacklisted", blacklist_token);
 
   await college.save({ validateBeforeSave: false });
   const loggedInUsers = college.loginActivity;
@@ -560,14 +560,14 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
   const token = req.header("auth-token");
 
   college.loginActivity.forEach((login) => {
-    console.log(login.token_id === token, login.token_id, token);
+    // console.log(login.token_id === token, login.token_id, token);
     if (login.token_id === token) {
       login.qrVerify = false;
       login.token_deleted = true;
     }
   });
   college.qrVerify = false;
-  console.log(college.loginActivity);
+  // console.log(college.loginActivity);
 
   await college.save({ validateBeforeSave: false });
 
@@ -644,12 +644,12 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
 // ============================================================ RESET PASSWORD ===========================================================
 // Reset Password
 exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
-  console.log(req.body, "reset password body");
+  // console.log(req.body, "reset password body");
 
   const ip = req.body.ip;
-  console.log(ip);
+  // console.log(ip);
   const device = req.headers["user-agent"];
-  console.log(device);
+  // console.log(device);
 
   // Creating token hash
   const resetPasswordToken = crypto
@@ -669,7 +669,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
         400
       )
     );
-  }
+  } 
 
   // Check if passwords match
   if (req.body.password !== req.body.confirmPassword) {

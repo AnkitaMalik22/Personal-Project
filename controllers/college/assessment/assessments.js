@@ -130,9 +130,15 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       // let L3count = topic.questions.length - L1count - L2count;
 
       if (isAdaptive) {
+        let marksTopic = L1count * 1 + L2count * 2 + L3count * 3;
+        if (L1count === 2) {
+          marksTopic = 3;
+        } else if (L1count === 1) {
+          marksTopic = 1;
+        }
         return {
           ...topic,
-          topicMarks: L1count * 1 + L2count * 2 + L3count * 3,
+          topicMarks: marksTopic,
           L1count,
           L2count,
           L3count,
@@ -141,32 +147,65 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
           totalL3Question,
         };
       } else if (req.body.level === "beginner") {
-        return {
-          ...topic,
-          // only calculating mcqs for beginner , intermediate and advanced
-          topicMarks: topic.questions.length,
-          totalL1Question,
-          totalL2Question,
-          totalL3Question,
-        };
+        if (topic.Type === "mcq") {
+          return {
+            ...topic,
+            // only calculating mcqs for beginner , intermediate and advanced
+            topicMarks: topic.questions.length,
+            totalL1Question,
+            totalL2Question,
+            totalL3Question,
+          };
+        } else {
+          return {
+            ...topic,
+            // only calculating mcqs for beginner , intermediate and advanced
+            topicMarks: topic.compiler.length * 10,
+            totalL1Question,
+            totalL2Question,
+            totalL3Question,
+          };
+        }
       } else if (req.body.level === "intermediate") {
-        return {
-          ...topic,
-          // only calculating mcqs for beginner , intermediate and advanced
-          topicMarks: topic.questions.length * 2,
-          totalL1Question,
-          totalL2Question,
-          totalL3Question,
-        };
+        if (topic.Type === "mcq") {
+          return {
+            ...topic,
+            // only calculating mcqs for beginner , intermediate and advanced
+            topicMarks: topic.questions.length * 2,
+            totalL1Question,
+            totalL2Question,
+            totalL3Question,
+          };
+        } else {
+          return {
+            ...topic,
+            // only calculating mcqs for beginner , intermediate and advanced
+            topicMarks: topic.compiler.length * 20,
+            totalL1Question,
+            totalL2Question,
+            totalL3Question,
+          };
+        }
       } else if (req.body.level === "advanced") {
-        return {
-          ...topic,
-          // only calculating mcqs for beginner , intermediate and advanced
-          topicMarks: topic.questions.length * 3,
-          totalL1Question,
-          totalL2Question,
-          totalL3Question,
-        };
+        if (topic.Type === "mcq") {
+          return {
+            ...topic,
+            // only calculating mcqs for beginner , intermediate and advanced
+            topicMarks: topic.questions.length * 3,
+            totalL1Question,
+            totalL2Question,
+            totalL3Question,
+          };
+        } else {
+          return {
+            ...topic,
+            // only calculating mcqs for beginner , intermediate and advanced
+            topicMarks: topic.compiler.length * 30,
+            totalL1Question,
+            totalL2Question,
+            totalL3Question,
+          };
+        }
       }
     });
 
