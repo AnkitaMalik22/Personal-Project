@@ -131,9 +131,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
       if (isAdaptive) {
         let marksTopic = L1count * 1 + L2count * 2 + L3count * 3;
-        if (L1count === 2) {
+        if (totalL1Question === 2) {
           marksTopic = 3;
-        } else if (L1count === 1) {
+        } else if (totalL1Question === 1) {
           marksTopic = 1;
         }
         return {
