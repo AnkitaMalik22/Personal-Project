@@ -392,7 +392,9 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 // Get All Assessments -- // By College or Company //
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.user;
-  let assessments = await Assessments.find({ createdBy: id });
+  let assessments = await Assessments.find({ createdBy: id }).populate(
+    "invitedStudents"
+  );
 
   res.status(200).json({
     success: true,

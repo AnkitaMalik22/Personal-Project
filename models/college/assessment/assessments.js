@@ -125,7 +125,7 @@ const assessmentsSchema = new Schema(
     invitedStudents: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Student",
+        ref: "Students",
       },
     ],
     avgPercentage: {
