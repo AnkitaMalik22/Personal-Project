@@ -178,7 +178,6 @@ exports.verifyOtp = catchAsyncErrors(async (req, res, next) => {
 //  SIDD
 exports.generateQr = async (req, res, next) => {
   try {
-   
     let secret = speakeasy.generateSecret({
       name: `Skillaccess: ${req.user.FirstName}`,
     });
@@ -186,7 +185,7 @@ exports.generateQr = async (req, res, next) => {
     const user = await College.findById(req.params.id);
     if (!user) return res.status(404).send("College not found");
     const qr = await Qr.findOne({ user: req.params.id });
-  
+
     if (!qr) {
       function generateQRCodeDataURL(secret) {
         return new Promise((resolve, reject) => {
@@ -313,9 +312,8 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
       // req.connection.remoteAddress||
       // req.socket.remoteAddress ||
       // req.connection.socket.remoteAddress;
-     
+
       const device = req.headers["user-agent"];
-    
 
       const college = await College.create({
         FirstName,
@@ -669,7 +667,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
         400
       )
     );
-  } 
+  }
 
   // Check if passwords match
   if (req.body.password !== req.body.confirmPassword) {
@@ -960,7 +958,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         email: Email,
         subject: "Invitation to join College",
         // <<<<<<< sidd333
-        message: `Hello ${FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
+        message: `Hello ${FirstName},\n You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
         // =======
         //         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
         // >>>>>>> master
@@ -981,7 +979,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       sendEmail({
         email: Email,
         subject: "Invitation to join College",
-        message: `Hello ${FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,        // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+        message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       });
       await invited.save();
     }
@@ -998,13 +996,14 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       message: "Student already invited",
     });
   } else {
-
-const uploadedStudents = await InvitedStudents.findOne({ college: CollegeId });
-console.log(uploadedStudents , "uploaded students")
+    const uploadedStudents = await InvitedStudents.findOne({
+      college: CollegeId,
+    });
+    console.log(uploadedStudents, "uploaded students");
 
     res.status(200).json({
       success: true,
-      uploadedStudents : uploadedStudents?.students,
+      uploadedStudents: uploadedStudents?.students,
       message: "Students uploaded & Invited successfully",
     });
   }
@@ -1092,7 +1091,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     sendEmail({
       email: student.Email,
       subject: "Invitation to join College",
-      message: `Hello ${student.FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&${invite.invitationLink}&Email=${student.Email}&FirstName=${student.FirstName}&LastName=${student.LastName}`,      
+      message: `Hello ${student.FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&${invite.invitationLink}&Email=${student.Email}&FirstName=${student.FirstName}&LastName=${student.LastName}`,
       // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
     });
 

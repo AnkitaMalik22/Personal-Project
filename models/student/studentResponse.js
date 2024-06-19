@@ -255,7 +255,6 @@ const studentResponseSchema = new mongoose.Schema(
             Title: {
               type: String,
             },
-            
 
             code: {
               type: {
@@ -270,7 +269,7 @@ const studentResponseSchema = new mongoose.Schema(
                   solutionCode: String,
                   answerCode: String,
                 },
-                Java:{
+                Java: {
                   defaultCode: String,
                   solutionCode: String,
                   answerCode: String,
@@ -280,7 +279,6 @@ const studentResponseSchema = new mongoose.Schema(
                   solutionCode: String,
                   answerCode: String,
                 },
-              
               },
             },
             totalTestCases: {
@@ -323,7 +321,7 @@ const studentResponseSchema = new mongoose.Schema(
                   isHidden: {
                     type: Boolean,
                     default: true,
-                  }
+                  },
                 },
               ],
               // input : "",
