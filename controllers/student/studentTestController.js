@@ -467,7 +467,13 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
     studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
-    studentResponse.timeTaken = timeTaken;
+    console.log(
+      timeTaken,
+      "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    );
+    if (timeTaken > 0) {
+      studentResponse.timeTaken = timeTaken;
+    }
     studentResponse.correctAnswers = assessment.correctAnswers;
     // studentResponse.percentage =
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
@@ -623,8 +629,10 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       question.Title
     );
     //----------------------------------------------------------handle marks -------------------------------------------------------------------------------//
+    let isCorrectAnswer = false;
     if (parseInt(question.AnswerIndex) === parseInt(response)) {
       console.log("Correct Answer");
+      isCorrectAnswer = true;
       assessment.correctAnswers += 1;
       if (question.QuestionLevel === "beginner") {
         assessment.marks += 1;
@@ -759,6 +767,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         studentResponse.completedAt = Date.now();
         studentResponse.totalQuestionsAttempted =
           assessment.totalStudentAttempted;
+
         studentResponse.timeTaken = timeTaken;
         studentResponse.correctAnswers = assessment.correctAnswers;
         studentResponse.percentage =
@@ -770,6 +779,13 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         ].StudentAnswerIndex = response;
         await studentResponse.save();
         // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
+        console.log(
+          studentResponse.topics[topicIndex].questions[questionIndex]
+        );
+        console.log(
+          timeTaken,
+          "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+        );
         console.log("All topics completed 2");
         // --------------------- update the avgPercentage of the assessment -------------------
         const test = await Assessments.findById(testId).populate(
@@ -807,6 +823,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //------------------------------------------------------------------------------------------------------
 
     if (
+      isCorrectAnswer &&
       assessment.L1Correct >= topic.L1count &&
       assessment.L2Correct < topic.L2count &&
       assessment.L3Correct < topic.L3count
@@ -821,6 +838,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       }
       assessment.currentQuestionIndex = nextQuestionIndex;
     } else if (
+      isCorrectAnswer &&
       assessment.L1Correct >= topic.L1count &&
       assessment.L2Correct >= topic.L2count &&
       assessment.L3Correct < topic.L3count
@@ -830,12 +848,16 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       const nextQuestionIndex =
         topic.totalL1Question + topic.totalL2Question + assessment.L3Correct;
       console.log("Next question index L3 ", nextQuestionIndex);
+      console.log(
+        "Next question index",
+        nextQuestionIndex,
+        topic.questions.length
+      );
       if (nextQuestionIndex <= topic.questions.length) {
-        // console.log("Next question index", nextQuestionIndex);
         nextQuestion = topic.questions[nextQuestionIndex];
         assessment.currentQuestionIndex = nextQuestionIndex;
       }
-    } else if (assessment.L3Correct >= topic.L3count) {
+    } else if (isCorrectAnswer && assessment.L3Correct >= topic.L3count) {
       // console.log("All L3 questions completed ");
       // Send the next topic level 1 questions if the student has achieved the required marks for level 3
       const nextTopicIndex = topicIndex + 1;
@@ -940,11 +962,11 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       questionIndex
     ].StudentAnswerIndex = response;
 
-    console.log(
-      studentResponse.topics[topicIndex].questions[questionIndex]
-        .StudentAnswerIndex,
-      "is the response"
-    );
+    // console.log(
+    //   studentResponse.topics[topicIndex].questions[questionIndex]
+    //     .StudentAnswerIndex,
+    //   "is the response"
+    // );
 
     // for showing result to student -- show attemted=== true questions
     studentResponse.topics[topicIndex].questions[
