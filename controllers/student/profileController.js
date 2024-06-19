@@ -23,6 +23,11 @@ exports.uploadCV = catchAsyncErrors(async (req, res, next) => {
     if (!req.files) {
       return next(new ErrorHandler("Please upload a file", 400));
     }
+    // console.log(req.files);
+
+    if(req.files?.size > 50000){
+      return next(new ErrorHandler("File size should be less than 50kb", 400));
+    }
 
     for (let i = 0; i < Object.values(req.files).length; i++) {
       let file = Object.values(req.files)[i];
@@ -46,7 +51,7 @@ exports.uploadCV = catchAsyncErrors(async (req, res, next) => {
       Cv: {
         url: cvUrl,
         public_id: result.public_id,
-        file_name: result.original_filename,
+        file_name:Object.values(req.files)[0].name
       },
     });
     res.status(200).json({
@@ -56,7 +61,8 @@ exports.uploadCV = catchAsyncErrors(async (req, res, next) => {
       user: student,
     });
   } catch (error) {
-    console.log(error);
+    // console.log(error);
+    return next(new ErrorHandler("Something went wrong", 500));
   }
 });
 
@@ -119,7 +125,6 @@ exports.updateEducation = catchAsyncErrors(async (req, res, next) => {
     const allMedia = [];
 
     for (const media of Media) {
-      console.log(media);
       const myCloud = await cloudinary.v2.uploader.upload(media, {
         folder: "education",
         width: 150,
@@ -151,6 +156,7 @@ exports.updateEducation = catchAsyncErrors(async (req, res, next) => {
     });
   } catch (error) {
     console.log(error);
+    return next(new ErrorHandler("Something went wrong", 500));
   }
 });
 
