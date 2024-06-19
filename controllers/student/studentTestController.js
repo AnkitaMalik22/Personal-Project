@@ -275,13 +275,15 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       (topic) => topic.Heading
     );
     let newTopics = [];
-
+    assessment.assessment.topics.forEach((topic) => {
+      newTopics = [...newTopics, { ...topic, compiler: [] }];
+    });
     const isAdaptive = adaptive === "true";
 
     let studentResponse = await StudentResponse.create({
       studentId: studentId,
       assessmentId: testId,
-      topics: assessment.assessment.topics,
+      topics: isAdaptive ? newTopics : assessment.assessment.topics,
       attempt: assessment.attempts,
       marks: assessment.assessment.totalMarks,
       time: assessment.assessment.totalTime,
