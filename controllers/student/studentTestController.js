@@ -1287,8 +1287,7 @@ function calculateCodeMarks(assessment, question, response) {
   if (level === "beginner") {
     let passedValue = 10 / totalCases;
     marks = passedCount * passedValue;
-    if (marks < 5) {
-      marks = 0;
+    if (marks <0.3 *10) {
     } else {
       assessment.correctAnswers += 1;
     }
@@ -1297,16 +1296,14 @@ function calculateCodeMarks(assessment, question, response) {
     let passedValue = 20 / totalCases;
     marks = passedCount * passedValue;
     // assessment.L2Correct += 1;
-    if (marks < 10) {
-      marks = 0;
+    if (marks < 0.3 *20) {
     } else {
       assessment.correctAnswers += 1;
     }
   } else if (level === "advanced") {
     let passedValue = 30 / totalCases;
     marks = passedCount * passedValue;
-    if (marks < 15) {
-      marks = 0;
+    if (marks < 0.3 *30) {
     } else {
       assessment.correctAnswers += 1;
     }
