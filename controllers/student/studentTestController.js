@@ -457,24 +457,27 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
     let marks = parseFloat(assessment.marks) || 0;
 
-    if (totalMarks > 0) {
-      studentResponse.percentage = (marks / totalMarks) * 100;
-    } else {
-      studentResponse.percentage = 0;
-    }
+    if (marks != 0 && timeTaken > 0) {
+      if (totalMarks > 0) {
+        studentResponse.percentage = (marks / totalMarks) * 100;
+      } else {
+        studentResponse.percentage = 0;
+      }
 
-    studentResponse.totalMarks = marks;
-    studentResponse.completed = true;
-    studentResponse.completedAt = Date.now();
-    studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
-    console.log(
-      timeTaken,
-      "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-    );
-    if (timeTaken > 0) {
+      studentResponse.totalMarks = marks;
+      studentResponse.completed = true;
+      studentResponse.completedAt = Date.now();
+      studentResponse.totalQuestionsAttempted =
+        assessment.totalStudentAttempted;
+      studentResponse.correctAnswers = assessment.correctAnswers;
       studentResponse.timeTaken = timeTaken;
     }
-    studentResponse.correctAnswers = assessment.correctAnswers;
+
+    // console.log(
+    //   timeTaken,
+    //   "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    // );
+
     // studentResponse.percentage =
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
     // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
@@ -1287,8 +1290,7 @@ function calculateCodeMarks(assessment, question, response) {
   if (level === "beginner") {
     let passedValue = 10 / totalCases;
     marks = passedCount * passedValue;
-    if (marks < 5) {
-      marks = 0;
+    if (marks <0.3 *10) {
     } else {
       assessment.correctAnswers += 1;
     }
@@ -1297,16 +1299,14 @@ function calculateCodeMarks(assessment, question, response) {
     let passedValue = 20 / totalCases;
     marks = passedCount * passedValue;
     // assessment.L2Correct += 1;
-    if (marks < 10) {
-      marks = 0;
+    if (marks < 0.3 *20) {
     } else {
       assessment.correctAnswers += 1;
     }
   } else if (level === "advanced") {
     let passedValue = 30 / totalCases;
     marks = passedCount * passedValue;
-    if (marks < 15) {
-      marks = 0;
+    if (marks < 0.3 *30) {
     } else {
       assessment.correctAnswers += 1;
     }
