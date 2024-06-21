@@ -1085,7 +1085,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       assessment
     );
     await studentResponse.save();
-
+   
     if (++assessment.totalQuestionsAttempted >= totalQuestions) {
       assessment.currentQuestionIndex = 0;
       assessment.currentTopicIndex = topicIndex + 1;
@@ -1104,7 +1104,19 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       }
 
       const nextTopic = assessment.assessment.topics[topicIndex + 1];
+     
+     
       nextQuestion = nextTopic[getTypeDir(nextTopic.Type)][0];
+      for(let i = topicIndex+1 ; i<assessment.assessment.topics.length;i++){
+        if(!nextQuestion){
+          const nextTopic2 = assessment.assessment.topics[i+1];
+          assessment.currentTopicIndex = i +1;
+         nextQuestion = nextTopic2[getTypeDir(nextTopic2.Type)][0];
+        }
+      }
+     
+    
+      
     } else {
       assessment.currentQuestionIndex = questionIndex + 1;
       nextQuestion = topic[typeDir][questionIndex + 1];
@@ -1309,8 +1321,9 @@ function calculateCodeMarks(assessment, question, response) {
     }
     // assessment.L3Correct += 1;
   }
-  assessment.marks += marks;
-  assessment.currentTopicMarks += marks;
+  console.log(marks)
+  assessment.marks += isNaN(marks) ? 0 : marks;
+  assessment.currentTopicMarks += isNaN(marks) ? 0 : marks;
 }
 // ====================================== get student result ===================
 
