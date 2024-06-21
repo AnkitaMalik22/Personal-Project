@@ -457,24 +457,27 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     let totalMarks = parseFloat(assessment.assessment.totalMarks) || 0;
     let marks = parseFloat(assessment.marks) || 0;
 
-    if (totalMarks > 0) {
-      studentResponse.percentage = (marks / totalMarks) * 100;
-    } else {
-      studentResponse.percentage = 0;
-    }
+    if (marks != 0 && timeTaken > 0) {
+      if (totalMarks > 0) {
+        studentResponse.percentage = (marks / totalMarks) * 100;
+      } else {
+        studentResponse.percentage = 0;
+      }
 
-    studentResponse.totalMarks = marks;
-    studentResponse.completed = true;
-    studentResponse.completedAt = Date.now();
-    studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
-    console.log(
-      timeTaken,
-      "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-    );
-    if (timeTaken > 0) {
+      studentResponse.totalMarks = marks;
+      studentResponse.completed = true;
+      studentResponse.completedAt = Date.now();
+      studentResponse.totalQuestionsAttempted =
+        assessment.totalStudentAttempted;
+      studentResponse.correctAnswers = assessment.correctAnswers;
       studentResponse.timeTaken = timeTaken;
     }
-    studentResponse.correctAnswers = assessment.correctAnswers;
+
+    // console.log(
+    //   timeTaken,
+    //   "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    // );
+
     // studentResponse.percentage =
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
     // studentResponse.totalQuestionsAttempted = assessment.totalStudentAttempted;
