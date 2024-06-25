@@ -709,8 +709,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
         {
           $group: {
             _id: {
-              year: { $year: "$endDate" },
-              week: { $week: "$endDate" },
+              year: { $year: "$startDate" },
+              week: { $week: "$startDate" },
             },
             records: { $push: "$$ROOT" },
           },
@@ -747,7 +747,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
       assessments = await Assessments.aggregate([
         {
           $match: {
-            endDate: {
+            startDate: {
               $gte: lastYear,
               $lte: now,
             },
@@ -757,8 +757,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
         {
           $group: {
             _id: {
-              year: { $year: "$endDate" },
-              month: { $month: "$endDate" },
+              year: { $year: "$startDate" },
+              month: { $month: "$startDate" },
             },
             records: { $push: "$$ROOT" },
           },
