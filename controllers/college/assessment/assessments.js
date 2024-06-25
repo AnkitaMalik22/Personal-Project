@@ -11,7 +11,7 @@ const CollegeAssessInv = require("../../../models/student/assessmentInvitation")
 const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
-
+const mongoose = require('mongoose');
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -658,6 +658,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
+            createdBy: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -680,6 +681,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
+            createdBy: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -701,6 +703,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
+            createdBy: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -724,6 +727,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
+            createdBy: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -739,6 +743,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
       ]);
       break;
     default:
+      console.log(req.user.id);
       assessments = await Assessments.aggregate([
         {
           $match: {
@@ -746,6 +751,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
+            createdBy: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
