@@ -176,6 +176,65 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+
+// ----------  CHECK INVITATION ---------------------------
+
+exports.checkInvitation = async (req, res, next) => {
+  try {
+    const { inviteLink, CollegeId } = req.query;
+
+    // Validate input
+    if (!inviteLink || !CollegeId) {
+      return next(new ErrorHandler("Invalid invitation link or college ID", 400));
+    }
+
+    // Check if the college exists
+    const college = await College.findById(CollegeId);
+    if (!college) {
+      return next(new ErrorHandler("College not found", 404));
+    }
+
+    // Check if the invitation exists
+    const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
+    if (!collegeInv) {
+      return next(new ErrorHandler("Invalid invitation link", 400));
+    }
+
+    // Validate the invitation link and check if the student is already registered
+    let valid = false;
+    let email = "";
+    collegeInv.students.forEach(student => {
+      if (student.link === inviteLink) {
+        email = student.Email;
+        valid = true;
+      }
+    });
+
+    if (!valid) {
+      return next(new ErrorHandler("Invalid invitation link", 400));
+    }
+
+    // Check if the student is already registered
+    const existingStudent = await Student.findOne({ Email: email, CollegeId: CollegeId });
+    if (existingStudent) {
+      return next(new ErrorHandler("User already registered", 400));
+    }
+
+    // If valid and not registered, proceed to registration page
+    res.status(200).json({
+      success: true,
+      message: "Valid invitation link, proceed to registration",
+      email,
+      inviteLink,
+      collegeId: CollegeId
+    });
+
+  } catch (error) {
+    console.log(error);
+    next(new ErrorHandler("Internal server error", 500));
+  }
+};
+
 // --------------------------------------------- CREATE A STUDENT --------------------------------------------------------
 
 exports.createStudent = catchAsyncErrors(async (req, res, next) => {
