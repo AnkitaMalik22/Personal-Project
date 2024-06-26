@@ -276,7 +276,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     );
     let newTopics = [];
     assessment.assessment.topics.forEach((topic) => {
-      newTopics = [...newTopics, { ...topic, compiler: [] }];
+      newTopics = [...newTopics, { ...topic, compiler: [],findAnswers:[] ,essay:[],video:[]}];
     });
     const isAdaptive = adaptive === "true";
 
@@ -657,12 +657,14 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         // console.log("L3 correct", assessment.L3Correct);
       }
     } else {
-      if (assessment.negativeCount === 3) {
-        assessment.marks -= 1;
-        assessment.negativeCount = 0;
-        assessment.currentTopicMarks -= 1;
-      } else {
-        assessment.negativeCount += 1;
+      if (assessment.assessment.isNegativeMarking) {
+        if (question.QuestionLevel === "beginner") {
+          assessment.marks -= 1 / 3;
+        } else if (question.QuestionLevel === "intermediate") {
+          assessment.marks -= 2 / 3;
+        } else if (question.QuestionLevel === "advanced") {
+          assessment.marks -= 1;
+        }
       }
     }
     await student.save();
@@ -1107,10 +1109,14 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
 
       const nextTopic = assessment.assessment.topics[topicIndex + 1];
       nextQuestion = nextTopic[getTypeDir(nextTopic.Type)][0];
-      for(let i = topicIndex+1 ; i<assessment.assessment.topics.length;i++){
-        if(!nextQuestion){
-          const nextTopic2 = assessment.assessment.topics[i+1];
-          assessment.currentTopicIndex = i +1;
+      for (
+        let i = topicIndex + 1;
+        i < assessment.assessment.topics.length;
+        i++
+      ) {
+        if (!nextQuestion) {
+          const nextTopic2 = assessment.assessment.topics[i + 1];
+          assessment.currentTopicIndex = i + 1;
           nextQuestion = nextTopic2[getTypeDir(nextTopic2.Type)][0];
         }
       }
@@ -1171,10 +1177,10 @@ async function completeAssessment(student, assessment, testId) {
     studentResponse.assessmentId.totalStudentAttempted;
   studentResponse.correctAnswers = studentResponse.assessmentId.correctAnswers;
   let per =
-    (parseInt(studentResponse.marks) /
+    (parseInt(studentResponse.totalMarks) /
       parseInt(studentResponse.assessmentId.totalMarks)) *
     100;
-  console.log(parseInt(per), "percentage");
+  console.log(parseInt(per),parseInt(studentResponse.marks),parseInt(studentResponse.assessmentId.totalMarks), "percentage");
   studentResponse.percentage = isNaN(parseInt(per)) ? 0 : parseInt(per);
 
   await studentResponse.save();
@@ -1200,7 +1206,7 @@ function updateStudentResponse(
   assessment
 ) {
   const currentTopic = studentResponse.topics[topicIndex];
-  console.log(studentResponse.topics[topicIndex].compiler);
+  // console.log(studentResponse.topics[topicIndex].compiler);
   switch (type) {
     case "mcq":
       currentTopic.questions[questionIndex].StudentAnswerIndex =
@@ -1269,13 +1275,18 @@ function calculateMcqMarks(assessment, question, response) {
     assessment.currentTopicMarks += marks;
     console.log(`${level} correct`, assessment.marks);
   } else {
-    if (assessment.negativeCount === 3) {
-      assessment.marks -= 1;
-      assessment.negativeCount = 0;
-      assessment.currentTopicMarks -= 1;
-    } else {
-      assessment.negativeCount += 1;
+    if (assessment.assessment.isNegativeMarking) {
+      if (level === "beginner") {
+        assessment.marks -= 1 / 3;
+      } else if (level === "intermediate") {
+        assessment.marks -= 2 / 3;
+      } else if (level === "advanced") {
+        assessment.marks -= 1;
+      }
     }
+    // else {
+    //   assessment.negativeCount += 1;
+    // }
   }
 }
 
@@ -1296,7 +1307,7 @@ function calculateCodeMarks(assessment, question, response) {
   if (level === "beginner") {
     let passedValue = 10 / totalCases;
     marks = passedCount * passedValue;
-    if (marks <0.3 *10) {
+    if (marks < 0.3 * 10) {
     } else {
       assessment.correctAnswers += 1;
     }
@@ -1305,20 +1316,20 @@ function calculateCodeMarks(assessment, question, response) {
     let passedValue = 20 / totalCases;
     marks = passedCount * passedValue;
     // assessment.L2Correct += 1;
-    if (marks < 0.3 *20) {
+    if (marks < 0.3 * 20) {
     } else {
       assessment.correctAnswers += 1;
     }
   } else if (level === "advanced") {
     let passedValue = 30 / totalCases;
     marks = passedCount * passedValue;
-    if (marks < 0.3 *30) {
+    if (marks < 0.3 * 30) {
     } else {
       assessment.correctAnswers += 1;
     }
     // assessment.L3Correct += 1;
   }
-  console.log(marks)
+  console.log(marks);
   assessment.marks += isNaN(marks) ? 0 : marks;
   assessment.currentTopicMarks += isNaN(marks) ? 0 : marks;
 }

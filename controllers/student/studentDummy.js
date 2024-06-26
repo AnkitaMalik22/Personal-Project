@@ -109,7 +109,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
       path: "studentResponses",
       populate: {
         path: "studentId",
-      }
+      },
     })
     .populate({
       path: "selectedStudents",
@@ -118,13 +118,13 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
     .populate({
       path: "rejectedStudents",
       // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
-    })
-    // .populate({
-    //     path: "students",
-    //     populate: {
-    //       path: "studentId",
-    //     }
-    //   })
+    });
+  // .populate({
+  //     path: "students",
+  //     populate: {
+  //       path: "studentId",
+  //     }
+  //   })
   // console.log(testSections, "testSections");
 
   // Fetch all students
@@ -296,7 +296,7 @@ exports.getStudentResponse = catchAsyncErrors(async (req, res, next) => {
 // repsonse of a student by response id
 exports.getStudentResponseById = catchAsyncErrors(async (req, res, next) => {
   console.log(req.params.id);
-  const studentResponse = await StudentResponse.findById(req.params.id);
+  const studentResponse = await StudentResponse.findById(req.params.id).populate("assessmentId");
   console.log(studentResponse);
 
   res.status(200).json({
