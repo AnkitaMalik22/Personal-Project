@@ -24,6 +24,7 @@ const {
   generateQr,
   verifyQr,
   selectAuth,
+  checkInvitation,
 } = require("../../controllers/student/studentController");
 const {
   isAuthenticatedStudent,
@@ -48,6 +49,7 @@ router
 router.route("/selectAuth").put(isAuthenticatedStudent, selectAuth);
 // router.get('/all', getAllStudents);
 router.route("/me").get(isAuthenticatedStudent, qrWare, getStudent);
+router.get("/check/invite",checkInvitation)
 router.post("/register", createStudent);
 router.post("/login", loginStudent);
 router.put("/update", isAuthenticatedStudent, updateProfileStudent);
