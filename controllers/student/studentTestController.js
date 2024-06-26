@@ -1275,6 +1275,7 @@ function calculateMcqMarks(assessment, question, response) {
     assessment.currentTopicMarks += marks;
     console.log(`${level} correct`, assessment.marks);
   } else {
+    const level = question.QuestionLevel;
     if (assessment.assessment.isNegativeMarking) {
       if (level === "beginner") {
         assessment.marks -= 1 / 3;
