@@ -325,7 +325,7 @@ exports.getAllAssessmentAppperByStudentId = catchAsyncErrors(
   async (req, res, next) => {
     const studentResponse = await StudentResponse.find({
       studentId: req.query.studentId,
-    }).populate("assessmentId");
+    }).sort({ createdAt: -1 }).populate("assessmentId")
 
     res.status(200).json({
       success: true,
