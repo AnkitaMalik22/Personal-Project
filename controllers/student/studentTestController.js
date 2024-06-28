@@ -42,6 +42,8 @@ const { isBefore, isAfter } = require("date-fns");
 exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
   try {
     const studentId = req.user.id;
+    const { status} = req.query;
+    // let status = "upcoming";
 
     const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate({
@@ -57,13 +59,41 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+    let filteredAssessments = [];
 
-    const filteredAssessments = student.assessments
-      .filter((assess) => assess.assessment)
-      .sort(
-        (a, b) =>
-          new Date(b.assessment.createdAt) - new Date(a.assessment.createdAt)
-      );
+    if (status === "active") {
+      filteredAssessments = student.assessments
+        .filter((assess) => assess.assessment)
+        .filter((assess) => {
+          const startDate = new Date(assess.assessment.startDate);
+          const endDate = new Date(assess.assessment.endDate);
+          const now = new Date();
+          return startDate <= now && endDate >= now;
+        }).sort((a, b) => {
+          const startDateA = new Date(a.assessment.startDate);
+          const startDateB = new Date(b.assessment.startDate);
+          // console.log("Sorting active:", startDateA, startDateB);
+          return startDateB - startDateA;
+        });
+    } else if (status === "completed") {
+      filteredAssessments = student.assessments
+        .filter((assess) => assess.assessment)
+        .filter((assess) => new Date(assess.assessment.endDate) < Date.now())
+        .sort((a, b) => new Date(b.assessment.endDate) - new Date(a.assessment.endDate));
+    } else if (status === "upcoming") {
+      const now = new Date();
+      const startOfTomorrow = new Date(now);
+      startOfTomorrow.setHours(0, 0, 0, 0); // Reset to start of today
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1); // Move to start of tomorrow
+    
+      filteredAssessments = student.assessments
+        .filter((assess) => assess.assessment)
+        .filter((assess) => new Date(assess.assessment.startDate) >= startOfTomorrow)
+        .sort((a, b) => new Date(a.assessment.startDate) - new Date(b.assessment.startDate));
+    }
+    
+    
+    
 
     res.status(200).json({
       success: true,
