@@ -42,7 +42,7 @@ const { isBefore, isAfter } = require("date-fns");
 exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
   try {
     const studentId = req.user.id;
-    const { status} = req.query;
+    const { status } = req.query;
     // let status = "upcoming";
 
     const student = await CollegeAssessInv.findOne({ student: studentId })
@@ -69,7 +69,8 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
           const endDate = new Date(assess.assessment.endDate);
           const now = new Date();
           return startDate <= now && endDate >= now;
-        }).sort((a, b) => {
+        })
+        .sort((a, b) => {
           const startDateA = new Date(a.assessment.startDate);
           const startDateB = new Date(b.assessment.startDate);
           // console.log("Sorting active:", startDateA, startDateB);
@@ -79,21 +80,37 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
       filteredAssessments = student.assessments
         .filter((assess) => assess.assessment)
         .filter((assess) => new Date(assess.assessment.endDate) < Date.now())
-        .sort((a, b) => new Date(b.assessment.endDate) - new Date(a.assessment.endDate));
+        .sort(
+          (a, b) =>
+            new Date(b.assessment.endDate) - new Date(a.assessment.endDate)
+        );
     } else if (status === "upcoming") {
       const now = new Date();
-      const startOfTomorrow = new Date(now);
-      startOfTomorrow.setHours(0, 0, 0, 0); // Reset to start of today
-      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1); // Move to start of tomorrow
-    
+      const startOfNextMinute = new Date(now);
+      startOfNextMinute.setSeconds(0, 0); // Reset seconds and milliseconds to 0
+      startOfNextMinute.setMinutes(startOfNextMinute.getMinutes() + 1); // Move to start of the next minute
+
+      // console.log("Current Time:", now.toISOString());
+      // console.log("Start of Next Minute:", startOfNextMinute.toISOString());
+
+      // Example assessments with future dates for testing
+
       filteredAssessments = student.assessments
-        .filter((assess) => assess.assessment)
-        .filter((assess) => new Date(assess.assessment.startDate) >= startOfTomorrow)
-        .sort((a, b) => new Date(a.assessment.startDate) - new Date(b.assessment.startDate));
+        .filter((assess) => {
+          if (!assess.assessment) {
+            return false;
+          }
+          const assessmentStartDate = new Date(assess.assessment.startDate);
+          // console.log("Assessment Start Date:", assessmentStartDate.toISOString());
+          const comparisonResult = assessmentStartDate >= startOfNextMinute;
+          // console.log("Comparison Result:", comparisonResult);
+          return comparisonResult;
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.assessment.startDate) - new Date(b.assessment.startDate)
+        );
     }
-    
-    
-    
 
     res.status(200).json({
       success: true,
@@ -306,7 +323,10 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     );
     let newTopics = [];
     assessment.assessment.topics.forEach((topic) => {
-      newTopics = [...newTopics, { ...topic, compiler: [],findAnswers:[] ,essay:[],video:[]}];
+      newTopics = [
+        ...newTopics,
+        { ...topic, compiler: [], findAnswers: [], essay: [], video: [] },
+      ];
     });
     const isAdaptive = adaptive === "true";
 
@@ -1210,7 +1230,12 @@ async function completeAssessment(student, assessment, testId) {
     (parseInt(studentResponse.totalMarks) /
       parseInt(studentResponse.assessmentId.totalMarks)) *
     100;
-  console.log(parseInt(per),parseInt(studentResponse.marks),parseInt(studentResponse.assessmentId.totalMarks), "percentage");
+  console.log(
+    parseInt(per),
+    parseInt(studentResponse.marks),
+    parseInt(studentResponse.assessmentId.totalMarks),
+    "percentage"
+  );
   studentResponse.percentage = isNaN(parseInt(per)) ? 0 : parseInt(per);
 
   await studentResponse.save();
