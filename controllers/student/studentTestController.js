@@ -40,87 +40,79 @@ const { isBefore, isAfter } = require("date-fns");
 // desc   : gets all assessments for a student
 
 exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
-  try {
-    const studentId = req.user.id;
-    const { status } = req.query;
-    // let status = "upcoming";
+try {
+  const studentId = req.user.id;
+  const { status } = req.query;
 
-    const student = await CollegeAssessInv.findOne({ student: studentId })
-      .populate({
-        path: "assessments.assessment",
-        select:
-          "name description createdAt  totalMarks totalAttempts startDate endDate topics level",
-      })
-      .populate({
-        path: "assessments.sender",
-        select: "CollegeName Email _id avatar Address",
-      });
-
-    if (!student) {
-      return next(new ErrorHandler("Student not found", 404));
-    }
-    let filteredAssessments = [];
-
-    if (status === "active") {
-      filteredAssessments = student.assessments
-        .filter((assess) => assess.assessment)
-        .filter((assess) => {
-          const startDate = new Date(assess.assessment.startDate);
-          const endDate = new Date(assess.assessment.endDate);
-          const now = new Date();
-          return startDate <= now && endDate >= now;
-        })
-        .sort((a, b) => {
-          const startDateA = new Date(a.assessment.startDate);
-          const startDateB = new Date(b.assessment.startDate);
-          // console.log("Sorting active:", startDateA, startDateB);
-          return startDateB - startDateA;
-        });
-    } else if (status === "completed") {
-      filteredAssessments = student.assessments
-        .filter((assess) => assess.assessment)
-        .filter((assess) => new Date(assess.assessment.endDate) < Date.now())
-        .sort(
-          (a, b) =>
-            new Date(b.assessment.endDate) - new Date(a.assessment.endDate)
-        );
-    } else if (status === "upcoming") {
-      const now = new Date();
-      const startOfNextMinute = new Date(now);
-      startOfNextMinute.setSeconds(0, 0); // Reset seconds and milliseconds to 0
-      startOfNextMinute.setMinutes(startOfNextMinute.getMinutes() + 1); // Move to start of the next minute
-
-      // console.log("Current Time:", now.toISOString());
-      // console.log("Start of Next Minute:", startOfNextMinute.toISOString());
-
-      // Example assessments with future dates for testing
-
-      filteredAssessments = student.assessments
-        .filter((assess) => {
-          if (!assess.assessment) {
-            return false;
-          }
-          const assessmentStartDate = new Date(assess.assessment.startDate);
-          // console.log("Assessment Start Date:", assessmentStartDate.toISOString());
-          const comparisonResult = assessmentStartDate >= startOfNextMinute;
-          // console.log("Comparison Result:", comparisonResult);
-          return comparisonResult;
-        })
-        .sort(
-          (a, b) =>
-            new Date(a.assessment.startDate) - new Date(b.assessment.startDate)
-        );
-    }
-
-    res.status(200).json({
-      success: true,
-      assessments: filteredAssessments,
-      message: "Tests found",
+  const student = await CollegeAssessInv.findOne({ student: studentId })
+    .populate({
+      path: "assessments.assessment",
+      select: "name description createdAt totalMarks totalAttempts startDate endDate topics level",
+    })
+    .populate({
+      path: "assessments.sender",
+      select: "CollegeName Email _id avatar Address",
     });
-  } catch (error) {
-    console.log(error);
-    return next(new ErrorHandler("Error fetching tests", 500));
+
+  if (!student) {
+    return next(new ErrorHandler("Student not found", 404));
   }
+
+  let filteredAssessments = [];
+
+  if (status === "active") {
+    const now = new Date();
+    filteredAssessments = student.assessments
+      .filter((assess) => assess.assessment)
+      .filter((assess) => {
+        const startDate = new Date(assess.assessment.startDate);
+        // const startDate = new Date(assessment.assessment.startDate);
+        startDate.setHours(startDate.getHours() - 5);
+        startDate.setMinutes(startDate.getMinutes() - 30);
+        const endDate = new Date(assess.assessment.endDate);
+        endDate.setHours(endDate.getHours() - 5);
+        endDate.setMinutes(endDate.getMinutes() - 30);
+        // console.log(startDate, endDate, now,startDate <= now && endDate >= now);
+
+        return startDate <= now && endDate >= now;
+      })
+      .sort((a, b) => new Date(b.assessment.startDate) - new Date(a.assessment.startDate));
+  } else if (status === "completed") {
+    filteredAssessments = student.assessments
+      .filter((assess) => assess.assessment)
+      .filter((assess) => new Date(assess.assessment.endDate) < Date.now())
+      .sort((a, b) => new Date(b.assessment.endDate) - new Date(a.assessment.endDate));
+  } else if (status === "upcoming") {
+    const now = new Date();
+    const startOfNextMinute = new Date(now);
+    startOfNextMinute.setSeconds(0, 0); // Reset seconds and milliseconds to 0
+    startOfNextMinute.setMinutes(startOfNextMinute.getMinutes() + 1); // Move to start of the next minute
+
+    filteredAssessments = student.assessments
+      .filter((assess) => {
+        if (!assess.assessment) {
+          return false;
+        }
+        const assessmentStartDate = new Date(assess.assessment.startDate);
+        assessmentStartDate.setHours(assessmentStartDate.getHours() - 5);
+        assessmentStartDate.setMinutes(assessmentStartDate.getMinutes() - 30);
+        return assessmentStartDate >= startOfNextMinute;
+      })
+    
+      .sort((a, b) => new Date(a.assessment.startDate) - new Date(b.assessment.startDate));
+  }
+
+  res.status(200).json({
+    success: true,
+    assessments: filteredAssessments,
+    message: "Tests found",
+  });
+} catch (error) {
+  console.log(error);
+  return next(new ErrorHandler("Error fetching tests", 500));
+}
+
+
 });
 
 // ===================================================| Get Test For Student |========================================================
