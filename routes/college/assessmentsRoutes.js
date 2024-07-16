@@ -24,6 +24,7 @@ const {
   startAssessment,
   endAssessment,
   inviteStudentsToTest,
+  getAssessmentOverview,
 } = assessmentsController;
 const {
   getAllQuestions,
@@ -80,6 +81,11 @@ router.get(
   "/:id",
   isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
   getAssessmentById
+);
+router.get(
+  "/overview/:id",
+  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  getAssessmentOverview
 );
 router.post(
   "/create",

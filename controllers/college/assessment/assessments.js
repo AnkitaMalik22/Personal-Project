@@ -11,7 +11,7 @@ const CollegeAssessInv = require("../../../models/student/assessmentInvitation")
 const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -392,9 +392,9 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 // Get All Assessments -- // By College or Company //
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.user;
-  let assessments = await Assessments.find({ createdBy: id }).sort({createdAt:-1}).populate(
-    "invitedStudents"
-  );
+  let assessments = await Assessments.find({ createdBy: id })
+    .sort({ createdAt: -1 })
+    .populate("invitedStudents");
 
   res.status(200).json({
     success: true,
@@ -408,7 +408,6 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
   const collegeId = req.user.id;
-  console.log(collegeId, id);
 
   // const assessments = await College.findById(collegeId).populate("assessments");
   // const assessment = assessments.assessments.find(
@@ -417,7 +416,10 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
 
   const assessment = await Assessments.findById(id).populate({
     path: "studentResponses",
-    populate: { path: "studentId" },
+    populate: {
+      path: "studentId",
+      select: "FirstName LastName Email avatar Placed",
+    },
     // only send those res who completed the test
     match: { completed: true },
   });
@@ -426,7 +428,67 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
 
-  res.json(assessment);
+  res.status(200).json(assessment);
+});
+
+// Get Assessment by ID
+const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
+  const { id } = req.params;
+  const collegeId = req.user.id;
+
+  // const assessments = await College.findById(collegeId).populate("assessments");
+  // const assessment = assessments.assessments.find(
+  //   (assessment) => assessment._id == id
+  // );
+
+  const assessment = await Assessments.findById(id).populate({
+    path: "studentResponses",
+    populate: {
+      path: "studentId",
+      select: "FirstName LastName Email avatar Placed",
+    },
+    // only send those res who completed the test
+    match: { completed: true },
+  });
+
+  const startDate = new Date(assessment.startDate);
+  const endDate = new Date(assessment.endDate);
+  //arra to store the resopnses day-wise
+  // Calculate the difference in days
+  const dayDifference = Math.ceil(
+    (endDate - startDate) / (1000 * 60 * 60 * 24)
+  );
+
+  let abs = assessment.invitedStudents.length;
+  // Initialize the array with the desired object
+  const arr = Array.from({ length: dayDifference }, () => ({
+    selected: 0,
+    rejected: 0,
+    pending: 0,
+    absent: abs,
+  }));
+
+  assessment.studentResponses.forEach((elem) => {
+    const completedDate = new Date(elem.completedAt);
+    const day = Math.ceil((startDate - completedDate) / (1000 * 60 * 60 * 24));
+
+    const { selected, pending, rejected } = arr[day];
+    if (parseInt(elem.attempt) === 1) {
+      abs -= 1;
+    }
+    arr[day] = {
+      selected: elem.status === "selected" ? selected + 1 : selected,
+      pending: elem.status === "pending" ? pending + 1 : pending,
+      rejected: elem.status === "rejected" ? rejected + 1 : rejected,
+      absent: abs,
+    };
+  });
+
+  if (!assessment) {
+    return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+  }
+
+  res.status(200).json({ success: true, overview: arr });
 });
 
 // ===================================================| Update Assessment by ID |========================================================
@@ -812,4 +874,5 @@ module.exports = {
   startAssessment,
   endAssessment,
   inviteStudentsToTest,
+  getAssessmentOverview,
 };
