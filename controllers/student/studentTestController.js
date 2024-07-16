@@ -261,7 +261,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     // Check if the current date is before the start date
     if (isBefore(nowString, startDateString)) {
       testStatus = false;
-      return next(new ErrorHandler("Test not started yet", 404));
+      return next(new ErrorHandler("The assessment is scheduled for a future date. You cannot start it today.", 404));
     }
     // Check if the current date is after the end date
     else if (isAfter(nowString, endDateString)) {
