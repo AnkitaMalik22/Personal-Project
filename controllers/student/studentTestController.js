@@ -75,7 +75,6 @@ exports.getTestsForStudent = catchAsyncErrors(async (req, res, next) => {
           endDate.setHours(endDate.getHours() - 5);
           endDate.setMinutes(endDate.getMinutes() - 30);
           // console.log(startDate, endDate, now,startDate <= now && endDate >= now);
-
           return startDate <= now && endDate >= now;
         })
         .sort(
