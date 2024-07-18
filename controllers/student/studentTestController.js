@@ -262,7 +262,12 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     // Check if the current date is before the start date
     if (isBefore(nowString, startDateString)) {
       testStatus = false;
-      return next(new ErrorHandler("The assessment is scheduled for a future date. You cannot start it today.", 404));
+      return next(
+        new ErrorHandler(
+          "The assessment is scheduled for a future date. You cannot start it today.",
+          404
+        )
+      );
     }
     // Check if the current date is after the end date
     else if (isAfter(nowString, endDateString)) {
@@ -517,6 +522,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       }
 
       studentResponse.totalMarks = marks;
+      //  console.log(" Test Completed Save--1")
       studentResponse.completed = true;
       studentResponse.completedAt = Date.now();
       studentResponse.totalQuestionsAttempted =
@@ -537,6 +543,8 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     // studentResponse.correctAnswers = assessment.correctAnswers;
     // studentResponse.percentage =
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
+    studentResponse.completed = true;
+    studentResponse.completedAt = Date.now();
 
     await studentResponse.save();
 
@@ -544,6 +552,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     assessment.active = false;
     assessment.completed = true;
     assessment.completedAt = Date.now();
+    console.log(" Test Completed Save--2");
     assessment.currentQuestionIndex = 0;
     assessment.currentTopicIndex = 0;
     assessment.totalQuestionsAttempted = 0;
@@ -839,10 +848,10 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         console.log(
           studentResponse.topics[topicIndex].questions[questionIndex]
         );
-        console.log(
-          timeTaken,
-          "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
-        );
+        // console.log(
+        //   timeTaken,
+        //   "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+        // );
         console.log("All topics completed 2");
         // --------------------- update the avgPercentage of the assessment -------------------
         const test = await Assessments.findById(testId).populate(
