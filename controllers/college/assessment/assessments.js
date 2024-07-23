@@ -461,21 +461,22 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
 
   let abs = assessment.invitedStudents.length;
   // Initialize the array with the desired object
-  const arr = Array.from({ length: dayDifference }, () => ({
+  const arr = Array.from({ length: dayDifference + 1 }, () => ({
     selected: 0,
     rejected: 0,
     pending: 0,
     absent: abs,
   }));
-
+  console.log(arr, "day array");
   assessment.studentResponses.forEach((elem) => {
     const completedDate = new Date(elem.completedAt);
-    const day = Math.ceil((startDate - completedDate) / (1000 * 60 * 60 * 24));
-
+    const day = Math.ceil((completedDate - startDate) / (1000 * 60 * 60 * 24));
+    console.log(startDate, completedDate);
     const { selected, pending, rejected } = arr[day];
     if (parseInt(elem.attempt) === 1) {
       abs -= 1;
     }
+
     arr[day] = {
       selected: elem.status === "selected" ? selected + 1 : selected,
       pending: elem.status === "pending" ? pending + 1 : pending,
