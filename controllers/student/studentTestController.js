@@ -376,6 +376,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         topicIndex: 0,
         firstQuestion: assessment.assessment.topics[0].questions[0],
         totalTime: assessment.assessment.totalTime,
+        totalQuestions: assessment.assessment.totalQuestionsCount,
         // studentResponse
       });
     } else {
@@ -413,6 +414,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
           // student,
         },
         totalTime: assessment.assessment.totalTime,
+        totalQuestions: assessment.assessment.totalQuestionsCount,
         // studentResponse
       });
     }
@@ -1064,6 +1066,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 
     // ================================================== RESPONSE ==========================================
     res.json({
+      isLast:assessment.totalStudentAttempted === assessment.assessment.totalQuestionsCount -1,
       count: assessment.totalQuestionsAttempted + 1,
       success: true,
       message: "Question sent",
@@ -1189,6 +1192,8 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     await assessment.save();
 
     res.json({
+      attempted:assessment.totalStudentAttempted,
+      isLast:assessment.totalStudentAttempted === assessment.assessment.totalQuestionsCount -1,
       success: true,
       message: "Question sent",
       count: assessment.totalStudentAttempted + 1,
