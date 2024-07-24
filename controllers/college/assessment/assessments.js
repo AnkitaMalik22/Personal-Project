@@ -656,7 +656,10 @@ const getRecentAssessments = catchAsyncErrors(async (req, res, next) => {
     createdBy: id,
     $or: [{ visible: true }, { visible: { $exists: false } }],
     endDate: { $lt: Date.now() },
-  }).sort({ endDate: -1 });
+  })
+    .sort({ endDate: -1 })
+    .skip(req.query.skip || 0)
+    .limit(req.query.limit || 20);
 
   if (!assessment) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
