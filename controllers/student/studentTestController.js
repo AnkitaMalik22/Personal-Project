@@ -516,7 +516,6 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     let marks = parseFloat(assessment.marks) || 0;
 
     // console.log("Marks", marks, totalMarks ,  assessment.totalStudentAttempted, assessment.correctAnswers);
-   
 
     if (marks != 0 && timeTaken > 0) {
       if (totalMarks > 0) {
@@ -526,7 +525,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       }
 
       studentResponse.totalMarks = marks;
-       console.log(" Test Completed Save--1")
+      console.log(" Test Completed Save--1");
       studentResponse.completed = true;
       studentResponse.completedAt = Date.now();
       studentResponse.totalQuestionsAttempted =
@@ -551,7 +550,6 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
-    
 
     await studentResponse.save();
 
@@ -559,17 +557,6 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     assessment.active = false;
     assessment.completed = true;
     assessment.completedAt = Date.now();
-    console.log(" Test Completed Save--2");
-    assessment.currentQuestionIndex = 0;
-    assessment.currentTopicIndex = 0;
-    assessment.totalQuestionsAttempted = 0;
-    assessment.correctAnswers = 0;
-    assessment.totalStudentAttempted = 0;
-    assessment.marks = 0;
-    assessment.percentage = 0;
-    assessment.L1Correct = 0;
-    assessment.L2Correct = 0;
-    assessment.L3Correct = 0;
     await student.save();
 
     // --------------------- update the avgPercentage of the assessment -------------------
@@ -1072,7 +1059,9 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
 
     // ================================================== RESPONSE ==========================================
     res.json({
-      isLast:assessment.totalStudentAttempted === assessment.assessment.totalQuestionsCount -1,
+      isLast:
+        assessment.totalStudentAttempted ===
+        assessment.assessment.totalQuestionsCount - 1,
       count: assessment.totalQuestionsAttempted + 1,
       success: true,
       message: "Question sent",
@@ -1171,26 +1160,32 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       }
       await student.save();
       await assessment.save();
-  
+
       if (assessment.assessment.topics.length === topicIndex + 1) {
         // await completeAssessment(student, assessment, testId);
-        console.log("comp" , );
-        return res.status(200).json({ message: "Test completed" , data: {
-          attempted:assessment.totalStudentAttempted,
-          isLast:assessment.totalStudentAttempted === assessment.assessment.totalQuestionsCount -1,
-          success: true,
-          message: "Question sent",
-          count: assessment.totalStudentAttempted + 1,
-          questionIndex: questionIndex,
-          topicIndex: topicIndex,
-          nextQuestion: nextQuestion,
-          topic:
-            assessment.assessment.topics[assessment?.currentTopicIndex]?.Heading,
-          topicType:
-            assessment.assessment.topics[assessment?.currentTopicIndex]?.Type,
-          studentResponse: response,
-          result: studentResponse,
-        }});
+        console.log("comp");
+        return res.status(200).json({
+          message: "Test completed",
+          data: {
+            attempted: assessment.totalStudentAttempted,
+            isLast:
+              assessment.totalStudentAttempted ===
+              assessment.assessment.totalQuestionsCount - 1,
+            success: true,
+            message: "Question sent",
+            count: assessment.totalStudentAttempted + 1,
+            questionIndex: questionIndex,
+            topicIndex: topicIndex,
+            nextQuestion: nextQuestion,
+            topic:
+              assessment.assessment.topics[assessment?.currentTopicIndex]
+                ?.Heading,
+            topicType:
+              assessment.assessment.topics[assessment?.currentTopicIndex]?.Type,
+            studentResponse: response,
+            result: studentResponse,
+          },
+        });
       }
 
       const nextTopic = assessment.assessment.topics[topicIndex + 1];
@@ -1215,8 +1210,10 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     await assessment.save();
 
     res.json({
-      attempted:assessment.totalStudentAttempted,
-      isLast:assessment.totalStudentAttempted === assessment.assessment.totalQuestionsCount -1,
+      attempted: assessment.totalStudentAttempted,
+      isLast:
+        assessment.totalStudentAttempted ===
+        assessment.assessment.totalQuestionsCount - 1,
       success: true,
       message: "Question sent",
       count: assessment.totalStudentAttempted + 1,
@@ -1260,7 +1257,7 @@ async function completeAssessment(student, assessment, testId) {
 
   studentResponse.completed = true;
   studentResponse.completedAt = Date.now();
-  
+
   studentResponse.totalMarks = studentResponse.marks;
   // studentResponse.totalQuestionsAttempted =
   //   studentResponse.totalStudentAttempted;
@@ -1269,17 +1266,17 @@ async function completeAssessment(student, assessment, testId) {
     (parseInt(studentResponse.totalMarks) /
       parseInt(studentResponse.assessmentId.totalMarks)) *
     100;
-    console.log(
-      parseInt(per),
-      parseInt(studentResponse.marks),
-      parseInt(studentResponse.totalMarks),
-      studentResponse.totalStudentAttempted,
-      studentResponse.totalQuestionsAttempted,
-      studentResponse.correctAnswers,
-      // studentResponse,
-  
-      "percentage"
-    );
+  console.log(
+    parseInt(per),
+    parseInt(studentResponse.marks),
+    parseInt(studentResponse.totalMarks),
+    studentResponse.totalStudentAttempted,
+    studentResponse.totalQuestionsAttempted,
+    studentResponse.correctAnswers,
+    // studentResponse,
+
+    "percentage"
+  );
   studentResponse.percentage = isNaN(parseInt(per)) ? 0 : parseInt(per);
 
   await studentResponse.save();
