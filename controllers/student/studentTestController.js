@@ -1162,7 +1162,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       await assessment.save();
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
-        // await completeAssessment(student, assessment, testId);
+        await completeAssessment(student, assessment, testId);
         console.log("comp");
         return res.status(200).json({
           message: "Test completed",
