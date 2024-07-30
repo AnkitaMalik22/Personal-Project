@@ -114,7 +114,7 @@ exports.sendOtp = catchAsyncErrors(async (req, res, next) => {
         .send({ to, from, text })
         .then((resp) => {
           console.log("Message sent successfully");
-          console.log(resp);
+          // console.log(resp);
         })
         .catch((err) => {
           console.log("There was an error sending the messages.");
