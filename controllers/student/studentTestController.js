@@ -1258,7 +1258,7 @@ async function completeAssessment(student, assessment, testId) {
   studentResponse.completed = true;
   studentResponse.completedAt = Date.now();
 
-  studentResponse.totalMarks = studentResponse.marks;
+  studentResponse.totalMarks = assessment.marks;
   // studentResponse.totalQuestionsAttempted =
   //   studentResponse.totalStudentAttempted;
   studentResponse.correctAnswers = studentResponse.correctAnswers;
