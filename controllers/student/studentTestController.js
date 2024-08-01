@@ -1405,12 +1405,13 @@ function calculateCodeMarks(assessment, question, response) {
   let passed = 0;
   let passedCount = 0;
 
-  response.testcase.forEach((testcase) => {
-    console.log(testcase);
-    if (testcase.passed) {
-      passedCount += 1;
-    }
-  });
+  response.testcase &&
+    response.testcase.forEach((testcase) => {
+      console.log(testcase);
+      if (testcase.passed) {
+        passedCount += 1;
+      }
+    });
 
   if (level === "beginner") {
     let passedValue = 10 / totalCases;
