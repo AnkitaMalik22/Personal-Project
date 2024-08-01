@@ -217,9 +217,9 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
 
     const test = await Assessments.findById(testId);
 
-    console.log(test.topics[0], "comp");
-    console.log(assessment, "sdsadwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww");
-    console.log(test.totalAttempts, test.name);
+    // console.log(test.topics[0], "comp");
+    // console.log(assessment, "sdsadwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww");
+    // console.log(test.totalAttempts, test.name);
 
     if (!assessment) {
       return next(new ErrorHandler("Test not found", 404));
@@ -278,7 +278,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       testStatus = true;
     }
 
-    console.log("Test Status: ", testStatus);
+    // console.log("Test Status: ", testStatus);
 
     // if(!testStatus){
 
@@ -361,11 +361,19 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     // await studentResponse.save();
 
     // send the first question
-
+    let isLast = false;
     if (isAdaptive) {
       const firstQuestion = assessment.assessment.topics[0].questions[0];
-      console.log(firstQuestion);
+      if (
+        assessment.assessment.topics.length < 2 &&
+        assessment.assessment.topics[0].questions.length < 3
+      ) {
+        isLast = true;
+      }
+      // console.log(firstQuestion);
+      console.log(isLast, "is last llllllllllllllllllllllllllllll");
       res.json({
+        isLast: true,
         success: true,
         message: "Assessment started",
         count: 1,
@@ -382,6 +390,18 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     } else {
       // check which type of test it is
       const type = assessment.assessment.topics[0].Type;
+      if (
+        assessment.assessment.topics.length < 2 &&
+        assessment.assessment.topics[0][
+          type === "mcq"
+            ? "questions"
+            : type === "findAnswer"
+            ? "findAnswers"
+            : type
+        ].length < 2
+      ) {
+        isLast = true;
+      }
       let firstQuestion = {};
       if (type === "mcq") {
         firstQuestion = assessment.assessment.topics[0].questions[0];
@@ -392,14 +412,15 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       } else if (type === "video") {
         firstQuestion = assessment.assessment.topics[0].video[0];
       } else if (type === "compiler") {
-        console.log(
-          "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
-          assessment.assessment.topics[0]
-        );
+        // console.log(
+        //   "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+        //   assessment.assessment.topics[0]
+        // );
         firstQuestion = assessment.assessment.topics[0].compiler[0];
       }
-
+      console.log(isLast, "is last llllllllllllllllllllllllllllll");
       res.json({
+        isLast: true,
         success: true,
         message: "Assessment started",
         count: 1,
@@ -1162,7 +1183,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       await assessment.save();
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
-        // await completeAssessment(student, assessment, testId);
+        await completeAssessment(student, assessment, testId);
         console.log("comp");
         return res.status(200).json({
           message: "Test completed",
@@ -1258,7 +1279,7 @@ async function completeAssessment(student, assessment, testId) {
   studentResponse.completed = true;
   studentResponse.completedAt = Date.now();
 
-  studentResponse.totalMarks = studentResponse.marks;
+  studentResponse.totalMarks = assessment.marks;
   // studentResponse.totalQuestionsAttempted =
   //   studentResponse.totalStudentAttempted;
   studentResponse.correctAnswers = studentResponse.correctAnswers;
@@ -1405,12 +1426,13 @@ function calculateCodeMarks(assessment, question, response) {
   let passed = 0;
   let passedCount = 0;
 
-  response.testcase.forEach((testcase) => {
-    console.log(testcase);
-    if (testcase.passed) {
-      passedCount += 1;
-    }
-  });
+  response.testcase &&
+    response.testcase.forEach((testcase) => {
+      console.log(testcase);
+      if (testcase.passed) {
+        passedCount += 1;
+      }
+    });
 
   if (level === "beginner") {
     let passedValue = 10 / totalCases;
