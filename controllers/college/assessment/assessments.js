@@ -332,8 +332,8 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
         if (assessment.invitedStudents.includes(_id)) {
           console.log("Student already invited");
           // return next(new ErrorHandler("Student already invited", 404));
-        } else {
-          console.log(assessment.invitedStudents.length + 1, credit.limit);
+        } else { 
+          console.log(assessment.invitedStudents.length + 1, credit.limit,"");
 
           if (
             credit.limit === 400 &&
@@ -345,12 +345,12 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
                 .json({ success: "true", message: i + " students invited" });
             }
 
-            credit -= 1;
+            credit.credit -= 1;
             await credit.save();
           } else if (assessment.invitedStudents.length + 1 > credit.limit) {
             return res
-              .status(200)
-              .json({ success: "true", message: i + "students invited" });
+              .status(429)
+              .json({ success: "false", message: "cannot invite more students with your current plan" });
           }
           assessment.invitedStudents.push(_id);
 
@@ -383,7 +383,7 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
       message: "Students Invited successfully for the test",
     });
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ success: "false", message: "something went wrong" });
   }
 });
 
