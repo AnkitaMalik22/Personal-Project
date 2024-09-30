@@ -954,16 +954,29 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         // student: stu._id,
       });
 
-      sendEmail({
-        email: Email,
-        subject: "Invitation to join College",
-        // <<<<<<< sidd333
-        message: `Hello ${FirstName},\n You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
-        // =======
-        //         message: `Hello ${FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${invite.invitationLink}`,
-        // >>>>>>> master
-        // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
-      });
+      // sendEmail({
+      //   email: Email,
+      //   subject: "Invitation to join College",
+      //   message: `Hello ${FirstName},\n You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
+      // });
+
+
+    sendEmail({
+  email: Email,
+  subject: "Invitation to join Skill Access",
+  message: `
+    <p>Hello ${FirstName},</p>
+    <p>You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:</p>
+    <p>
+      <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}" 
+      style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
+      Register Here
+      </a>
+    </p>
+    <p>We look forward to having you onboard!</p>
+    <p>Best regards,<br>Skill Access Team</p>
+  `,
+});
 
       await invited.save();
     } else {
@@ -976,11 +989,28 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         { Email: Email },
         { registrationLink: link }
       );
+      // sendEmail({
+      //   email: Email,
+      //   subject: "Invitation to join College",
+      //   message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+      // });
       sendEmail({
         email: Email,
-        subject: "Invitation to join College",
-        message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+        subject: "Invitation to join Skill Access",
+        message: `
+          <p>Hello ${FirstName},</p>
+          <p>You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:</p>
+          <p>
+            <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}" 
+            style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
+            Register Here
+            </a>
+          </p>
+          <p>We look forward to having you onboard!</p>
+          <p>Best regards,<br>Skill Access Team</p>
+        `,
       });
+      
       await invited.save();
     }
     // student.invited = true;
@@ -1088,11 +1118,27 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
       invitationLink: crypto.randomBytes(20).toString("hex"),
     });
 
+    // sendEmail({
+    //   email: student.Email,
+    //   subject: "Invitation to join College",
+    //   message: `Hello ${student.FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&${invite.invitationLink}&Email=${student.Email}&FirstName=${student.FirstName}&LastName=${student.LastName}`,
+    //   // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+    // });
     sendEmail({
-      email: student.Email,
-      subject: "Invitation to join College",
-      message: `Hello ${student.FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&${invite.invitationLink}&Email=${student.Email}&FirstName=${student.FirstName}&LastName=${student.LastName}`,
-      // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
+      email: Email,
+      subject: "Invitation to join Skill Access",
+      message: `
+        <p>Hello ${FirstName},</p>
+        <p>You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:</p>
+        <p>
+          <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}" 
+          style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
+          Register Here
+          </a>
+        </p>
+        <p>We look forward to having you onboard!</p>
+        <p>Best regards,<br>Skill Access Team</p>
+      `,
     });
 
     student.invited = true;
