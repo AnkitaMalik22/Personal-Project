@@ -350,7 +350,7 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
           } else if (assessment.invitedStudents.length + 1 > credit.limit) {
             return res
               .status(429)
-              .json({ success: "false", message: "cannot invite more students with your current plan" });
+              .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
           }
           assessment.invitedStudents.push(_id);
 
