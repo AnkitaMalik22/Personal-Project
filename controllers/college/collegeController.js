@@ -961,21 +961,37 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       // });
 
 
+//     sendEmail({
+//   email: Email,
+//   subject: "Invitation to join Skill Access",
+//   message: `
+//     Hello ${FirstName},
+//     You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:
+    
+//       <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}" 
+//       style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
+//       Register Here
+//       </a>
+ 
+//     <p>We look forward to having you onboard!</p>
+//     <p>Best regards,<br>Skill Access Team</p>
+//   `,
+// });
+
       sendEmail({
-        email: Email,
-        subject: "Invitation to join Skill Access",
-        message: `Hello ${FirstName},
-      
-      You have been invited to join Skill Access. Please click the link below to register:
-      
-      Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-      
-      We look forward to having you onboard!
-      
-      Best regards,
-      Skill Access Team`,
-      });
-      
+      email: Email,
+      subject: "Invitation to join Skill Access",
+      message: `Hello ${FirstName},
+    
+    You have been invited to join Skill Access. Please click the link below to register:
+    
+    Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+    
+    We look forward to having you onboard!
+    
+    Best regards,
+    Skill Access Team`,
+    });
 
       await invited.save();
     } else {
@@ -997,17 +1013,17 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         email: Email,
         subject: "Invitation to join Skill Access",
         message: `Hello ${FirstName},
-      
-      You have been invited to join Skill Access. Please click the link below to register:
-      
-      Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-      
-      We look forward to having you onboard!
-      
-      Best regards,
-      Skill Access Team`,
-      });
-      
+    
+    You have been invited to join Skill Access. Please click the link below to register:
+    
+    Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+    
+    We look forward to having you onboard!
+    
+    Best regards,
+    Skill Access Team`,
+    });
+
       
       await invited.save();
     }
@@ -1125,7 +1141,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     sendEmail({
       email: Email,
       subject: "Invitation to join Skill Access",
-      message: `Hello ${FirstName},
+       message: `Hello ${FirstName},
     
     You have been invited to join Skill Access. Please click the link below to register:
     
