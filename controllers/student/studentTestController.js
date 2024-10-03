@@ -552,7 +552,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       studentResponse.totalQuestionsAttempted =
         assessment.totalStudentAttempted;
       studentResponse.correctAnswers = assessment.correctAnswers;
-      studentResponse.timeTaken = timeTaken;
+      // studentResponse.timeTaken = timeTaken;
     }
 
     // console.log("Marks --2", studentResponse.totalMarks, studentResponse.percentage);
@@ -571,6 +571,9 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     //   (assessment.marks / studentResponse.assessmentId.totalMarks) * 100;
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
+    studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
+    console.log("timeTaken1",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+    
 
     await studentResponse.save();
 
@@ -849,7 +852,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         studentResponse.totalQuestionsAttempted =
           assessment.totalStudentAttempted;
 
-        studentResponse.timeTaken = timeTaken;
+        studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
+        console.log("timeTaken2",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
         studentResponse.correctAnswers = assessment.correctAnswers;
         studentResponse.percentage =
           (assessment.marks / assessment.assessment.totalMarks) * 100;
@@ -970,7 +974,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           studentResponse.completedAt = Date.now();
           studentResponse.totalQuestionsAttempted =
             assessment.totalStudentAttempted;
-          studentResponse.timeTaken = timeTaken;
+          studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
+          console.log("timeTaken3",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
           studentResponse.correctAnswers = assessment.correctAnswers;
 
           studentResponse.percentage =
@@ -1059,7 +1064,8 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     studentResponse.correctAnswers = assessment.correctAnswers;
     const per = (assessment.marks / assessment.assessment.totalMarks) * 100;
     studentResponse.percentage = per || 0;
-    studentResponse.timeTaken = timeTaken;
+    studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
+    console.log("timeTaken4",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
 
     // console.log(
     //   studentResponse.topics[topicIndex].questions[questionIndex]
@@ -1184,7 +1190,10 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
 
       if (assessment.assessment.topics.length === topicIndex + 1) {
         await completeAssessment(student, assessment, testId);
-        console.log("comp");
+        studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
+        console.log("comp" , studentResponse.timeTaken);
+        console.log("timeTaken5",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+        await studentResponse.save();
         return res.status(200).json({
           message: "Test completed",
           data: {
