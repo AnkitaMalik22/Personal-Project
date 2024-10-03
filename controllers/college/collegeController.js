@@ -1152,6 +1152,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     Best regards,
     Skill Access Team`,
     });
+    
 
     student.invited = true;
     await student.save();
