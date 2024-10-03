@@ -12,6 +12,7 @@ const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
 const mongoose = require("mongoose");
+const XLSX = require('xlsx');
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -862,11 +863,174 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
 
   return res.json({ assessments });
 });
+
+
+
+const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const collegeId = req.user.id;
+
+    const assessmentId = new mongoose.Types.ObjectId(id);
+
+    const assessment = await Assessments.aggregate([
+      { $match: { _id: assessmentId } },
+      {
+        $lookup: {
+          from: 'studentresponses',
+          localField: 'studentResponses',
+          foreignField: '_id',
+          as: 'studentResponses',
+        },
+      },
+      { $unwind: "$studentResponses" },
+      { $match: { "studentResponses.completed": true } },
+      {
+        $lookup: {
+          from: 'students',
+          localField: 'studentResponses.studentId',
+          foreignField: '_id',
+          as: 'studentInfo',
+        },
+      },
+      { $unwind: "$studentInfo" },
+      {
+        $project: {
+          ID: "$studentResponses._id",
+          StudentID: "$studentResponses.studentId",
+          FirstName: "$studentInfo.FirstName",
+          LastName: "$studentInfo.LastName",
+          Email: "$studentInfo.Email",
+          Placed: "$studentInfo.Placed",
+          Status: "$studentResponses.status",
+          Percentage: "$studentResponses.percentage",
+          Marks: "$studentResponses.marks",
+          TotalMarks: "$studentResponses.totalMarks",
+          Time: "$studentResponses.time",
+          TimeTaken: "$studentResponses.timeTaken",
+          TotalQuestionsAttempted: "$studentResponses.totalQuestionsAttempted",
+          CorrectAnswers: "$studentResponses.correctAnswers",
+          Topics: "$studentResponses.topics"
+        },
+      },
+    ]);
+
+    if (!assessment || assessment.length === 0) {
+ 
+      return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+    }
+
+    // Combine marks for non-unique topic headings
+    const combinedAssessment = assessment.map(item => {
+      const topicMarksMap = {};
+
+      item.Topics.forEach(topic => {
+        if (!topicMarksMap[topic.Heading]) {
+          topicMarksMap[topic.Heading] = { 
+            Heading: topic.Heading,
+            TotalMarks: 0 
+          };
+        }
+        topicMarksMap[topic.Heading].TotalMarks += topic.totalMarks; // Combine totalMarks
+      });
+
+      // Convert the topicMarksMap back to an array
+      const combinedTopics = Object.values(topicMarksMap);
+
+      return {
+        ID: item.ID,
+        StudentID: item.StudentID,
+        FirstName: item.FirstName,
+        LastName: item.LastName,
+        Email: item.Email,
+        Placed: item.Placed,
+        Status: item.Status,
+        Percentage: item.Percentage,
+        Marks: item.Marks,
+        TotalMarks: item.TotalMarks,
+        Time: item.Time,
+        TimeTaken: item.TimeTaken,
+        TotalQuestionsAttempted: item.TotalQuestionsAttempted,
+        CorrectAnswers: item.CorrectAnswers,
+        Topics: combinedTopics,
+      };
+    });
+
+
+    // Prepare headers
+    const headers = [
+       'First Name', 'Last Name', 'Email',
+      'Placed', 'Status', 'Percentage', 'Marks', 'Total Marks',
+      'Time', 'Time Taken', 'Total Questions Attempted', 'Correct Answers'
+    ];
+
+    // Collect unique topic headings for dynamic columns
+    const topicHeadings = new Set();
+    combinedAssessment.forEach(item => {
+      item.Topics.forEach(topic => topicHeadings.add(topic.Heading));
+    });
+
+    // Add topic headings to the headers
+    headers.push(...Array.from(topicHeadings));
+
+    // Prepare data rows
+    const dataRows = combinedAssessment.map(item => {
+      const row = [
+      
+        item.FirstName,
+        item.LastName,
+        item.Email,
+        item.Placed,
+        item.Status,
+        item.Percentage,
+        item.Marks,
+        item.TotalMarks,
+        item.Time,
+        item.TimeTaken,
+        item.TotalQuestionsAttempted,
+        item.CorrectAnswers,
+      ];
+
+      // Create a map for topic marks
+      const topicMarks = {};
+      item.Topics.forEach(topic => {
+        topicMarks[topic.Heading] = topic.TotalMarks || 0; // Default to 0 if no marks
+      });
+
+      // Add topic marks to the row based on the headers
+      Array.from(topicHeadings).forEach(heading => {
+        row.push(topicMarks[heading] || 0); // Default to 0 if no marks
+      });
+
+      return row;
+    });
+
+    // Convert to worksheet
+    const worksheetData = [headers, ...dataRows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="data.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    res.send(buffer);
+
+  } catch (error) {
+
+    return next(new ErrorHandler("An error occurred while processing the request", 500));
+  }
+});
+
+
 const now = new Date();
 const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
 module.exports = {
   getResultGraph,
+  getResultInExcel,
   getStudentsForTest,
   removeRecentAssessment,
   getRecentAssessments,

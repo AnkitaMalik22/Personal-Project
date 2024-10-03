@@ -186,9 +186,9 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
     const { testId, timeout } = req.params;
     const { adaptive } = req.query;
 
-    console.log("isAdaptive", adaptive);
+    // console.log("isAdaptive", adaptive);
     const studentId = req.user.id;
-    console.log("test:" + testId + "student:" + studentId);
+    // console.log("test:" + testId + "student:" + studentId);
 
     const student = await CollegeAssessInv.findOne({
       student: studentId,
@@ -546,7 +546,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
       }
 
       studentResponse.totalMarks = marks;
-      console.log(" Test Completed Save--1");
+      // console.log(" Test Completed Save--1");
       studentResponse.completed = true;
       studentResponse.completedAt = Date.now();
       studentResponse.totalQuestionsAttempted =
@@ -595,7 +595,7 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
 
     let totalStudentResponses = test.studentResponses.length;
     let totalPercentage = 0;
-    console.log("ending");
+    // console.log("ending");
     test.studentResponses?.forEach((response) => {
       // console.log(response.percentage, response, "response");
       totalPercentage += response.percentage;
@@ -651,7 +651,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // ------------------- assessment started  or not ---------------------
 
     if (!assessment) {
-      console.log("Assessment not found");
+      // console.log("Assessment not found");
       return next(new ErrorHandler("Assessment not found", 404));
     }
     const studentResponse = await StudentResponse.findOne({
@@ -687,7 +687,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       // assessment.L2Correct = 0;
       // assessment.L3Correct = 0;
       await student.save();
-      console.log("All topics completed 1");
+      // console.log("All topics completed 1");
 
       // return next(new ErrorHandler("Topic not found", 404));
       return res.json({
@@ -698,7 +698,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // ==========================================================
     //find the question from topic
     const question = topic.questions[questionIndex];
-    console.log("question", questionIndex);
+    // console.log("question", questionIndex);
     if (!question) {
       return next(new ErrorHandler("Question not found", 404));
     }
@@ -713,7 +713,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //----------------------------------------------------------handle marks -------------------------------------------------------------------------------//
     let isCorrectAnswer = false;
     if (parseInt(question.AnswerIndex) === parseInt(response)) {
-      console.log("Correct Answer");
+      // console.log("Correct Answer");
       isCorrectAnswer = true;
       assessment.correctAnswers += 1;
       if (question.QuestionLevel === "beginner") {
@@ -721,18 +721,18 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         assessment.L1Correct += 1;
         assessment.currentTopicMarks += 1;
 
-        console.log("L1 correct", assessment.marks);
+        // console.log("L1 correct", assessment.marks);
       } else if (question.QuestionLevel === "intermediate") {
         assessment.marks += 2;
         assessment.L2Correct += 1;
         assessment.currentTopicMarks += 2;
-        console.log("L2 correct", assessment.marks);
+        // console.log("L2 correct", assessment.marks);
         // console.log("L2 correct", assessment.L2Correct);
       } else if (question.QuestionLevel === "advanced") {
         assessment.marks += 3;
         assessment.L3Correct += 1;
         assessment.currentTopicMarks += 3;
-        console.log("L3 correct", assessment.marks);
+        // console.log("L3 correct", assessment.marks);
         // console.log("L3 correct", assessment.L3Correct);
       }
     } else {
@@ -857,21 +857,21 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
         studentResponse.correctAnswers = assessment.correctAnswers;
         studentResponse.percentage =
           (assessment.marks / assessment.assessment.totalMarks) * 100;
-        console.log("student marks", assessment.marks);
+        // console.log("student marks", assessment.marks);
         // Fix : saving the last question response
         studentResponse.topics[topicIndex].questions[
           questionIndex
         ].StudentAnswerIndex = response;
         await studentResponse.save();
         // ------------------------------------------ STUDENT MARKS SAVE ------------------------------------------------
-        console.log(
-          studentResponse.topics[topicIndex].questions[questionIndex]
-        );
+        // console.log(
+        //   studentResponse.topics[topicIndex].questions[questionIndex]
+        // );
         // console.log(
         //   timeTaken,
         //   "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
         // );
-        console.log("All topics completed 2");
+        // console.log("All topics completed 2");
         // --------------------- update the avgPercentage of the assessment -------------------
         const test = await Assessments.findById(testId).populate(
           "studentResponses"
@@ -916,7 +916,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       // console.log("All L1 questions completed ");
       // Send the same topic level 2 questions if the student has achieved the required marks for level 1
       const nextQuestionIndex = topic.totalL1Question + assessment.L2Correct;
-      console.log("Next question index L2 ", nextQuestionIndex);
+      // console.log("Next question index L2 ", nextQuestionIndex);
 
       if (nextQuestionIndex < topic.questions.length) {
         nextQuestion = topic.questions[nextQuestionIndex];
@@ -932,12 +932,12 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       // Send the same topic level 3 questions if the student has achieved the required marks for level 2
       const nextQuestionIndex =
         topic.totalL1Question + topic.totalL2Question + assessment.L3Correct;
-      console.log("Next question index L3 ", nextQuestionIndex);
-      console.log(
-        "Next question index",
-        nextQuestionIndex,
-        topic.questions.length
-      );
+      // console.log("Next question index L3 ", nextQuestionIndex);
+      // console.log(
+      //   "Next question index",
+      //   nextQuestionIndex,
+      //   topic.questions.length
+      // );
       if (nextQuestionIndex <= topic.questions.length) {
         nextQuestion = topic.questions[nextQuestionIndex];
         assessment.currentQuestionIndex = nextQuestionIndex;
@@ -1114,7 +1114,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
     const { testId } = req.params;
     const { response } = req.body;
     const studentId = req.user.id;
-    console.log("Non Adaptive Response");
+    // console.log("Non Adaptive Response");
 
     const student = await CollegeAssessInv.findOne({ student: studentId })
       .populate("assessments.assessment")
@@ -1191,8 +1191,8 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       if (assessment.assessment.topics.length === topicIndex + 1) {
         await completeAssessment(student, assessment, testId);
         studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-        console.log("comp" , studentResponse.timeTaken);
-        console.log("timeTaken5",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+        // console.log("comp" , studentResponse.timeTaken);
+        // console.log("timeTaken5",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
         await studentResponse.save();
         return res.status(200).json({
           message: "Test completed",
@@ -1258,7 +1258,7 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       result: studentResponse,
     });
   } catch (error) {
-    console.log("Error", error);
+    // console.log("Error", error);
   }
 });
 
