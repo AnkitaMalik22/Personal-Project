@@ -24,7 +24,7 @@ const {
   startAssessment,
   endAssessment,
   inviteStudentsToTest,
-  getAssessmentOverview,
+  getAssessmentOverview,getResultInExcel
 } = assessmentsController;
 const {
   getAllQuestions,
@@ -76,6 +76,11 @@ router.get(
   "/",
   isAuthenticatedCollege || isAuthenticatedCompany,
   getAllAssessments
+);
+
+router.get(
+  "/download/:id",
+  isAuthenticatedCollege, getResultInExcel
 );
 router.get(
   "/:id",

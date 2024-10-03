@@ -12,6 +12,7 @@ const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
 const mongoose = require("mongoose");
+const XLSX = require('xlsx');
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -862,11 +863,395 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
 
   return res.json({ assessments });
 });
+
+// const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const collegeId = req.user.id;
+
+//     console.log("Starting getResultInExcel function");
+//     console.log("Received collegeId:", collegeId);
+//     console.log("Received assessmentId:", id);
+
+//     const assessmentId = new mongoose.Types.ObjectId(id);
+
+//     console.log("Starting aggregation");
+
+//     // const assessment = await Assessments.aggregate([
+//     //   { $match: { _id: assessmentId } },
+//     //   {
+//     //     $lookup: {
+//     //       from: 'studentresponses',
+//     //       localField: 'studentResponses',
+//     //       foreignField: '_id',
+//     //       as: 'studentResponses',
+//     //     },
+//     //   },
+//     //   { $unwind: "$studentResponses" },
+//     //   { $match: { "studentResponses.completed": true } },
+//     //    {
+//     //     $lookup: {
+//     //       from: 'students',
+//     //       localField: 'studentResponses.studentId',
+//     //       foreignField: '_id',
+//     //       as: 'studentInfo',
+//     //     },
+//     //   },
+//     //   {
+//     //     $project: {
+//     //       "studentResponses.topics": {
+//     //         $map: {
+//     //           input: "$studentResponses.topics",
+//     //           as: "topic",
+//     //           in: {
+//     //             _id: "$$topic._id",
+//     //             totalMarks: "$$topic.totalMarks",
+//     //             Heading: "$$topic.Heading",
+//     //             Description: "$$topic.Description",
+//     //             topicMarks: "$$topic.topicMarks",
+//     //             Type: "$$topic.Type",
+//     //           },
+//     //         },
+//     //       },
+//     //       "studentResponses.status": 1,
+//     //       "studentResponses.percentage": 1,
+//     //       "studentResponses.studentId": 1,
+//     //       "studentInfo.FirstName": 1,
+//     //       "studentInfo.LastName": 1,
+//     //       "studentInfo.Email": 1,
+//     //       "studentInfo.avatar": 1,
+//     //       "studentInfo.Placed": 1,
+//     //       "studentResponses.status": 1,
+//     //       "studentResponses.percentage": 1,
+//     //       "studentResponses.marks": 1,
+//     //       "studentResponses.totalMarks": 1,
+//     //       "studentResponses.time": 1,
+//     //       "studentResponses.timeTaken": 1,
+//     //       "studentResponses.totalQuestionsAttempted": 1,
+//     //       "studentResponses.correctAnswers": 1,
+//     //     },
+//     //   },
+//     // ]);
+
+//     // const assessment = await Assessments.aggregate([
+//     //   { $match: { _id: assessmentId } },
+//     //   {
+//     //     $lookup: {
+//     //       from: 'studentresponses',
+//     //       localField: 'studentResponses',
+//     //       foreignField: '_id',
+//     //       as: 'studentResponses',
+//     //     },
+//     //   },
+//     //   { $unwind: "$studentResponses" },
+//     //   { $match: { "studentResponses.completed": true } },
+//     //   {
+//     //     $lookup: {
+//     //       from: 'students',
+//     //       localField: 'studentResponses.studentId',
+//     //       foreignField: '_id',
+//     //       as: 'studentInfo',
+//     //     },
+//     //   },
+//     //   {
+//     //     $addFields: {
+//     //       studentMarks: "$studentResponses"
+//     //     }
+//     //   },
+//     //   {
+//     //     $project: {
+//     //       "studentMarks.topics": {
+//     //         $map: {
+//     //           input: "$studentMarks.topics",
+//     //           as: "topic",
+//     //           in: {
+//     //             _id: "$$topic._id",
+//     //             totalMarks: "$$topic.totalMarks",
+//     //             Heading: "$$topic.Heading",
+//     //             Description: "$$topic.Description",
+//     //             topicMarks: "$$topic.topicMarks",
+//     //             Type: "$$topic.Type",
+//     //           },
+//     //         },
+//     //       },
+//     //       "studentMarks.status": 1,
+//     //       "studentMarks.percentage": 1,
+//     //       "studentMarks.studentId": 1,
+//     //       "studentInfo.FirstName": 1,
+//     //       "studentInfo.LastName": 1,
+//     //       "studentInfo.Email": 1,
+//     //       "studentInfo.avatar": 1,
+//     //       "studentInfo.Placed": 1,
+//     //       "studentMarks.marks": 1,
+//     //       "studentMarks.totalMarks": 1,
+//     //       "studentMarks.time": 1,
+//     //       "studentMarks.timeTaken": 1,
+//     //       "studentMarks.totalQuestionsAttempted": 1,
+//     //       "studentMarks.correctAnswers": 1,
+//     //     },
+//     //   },
+//     // ]);
+    
+
+//     const assessment = await Assessments.aggregate([
+//       { $match: { _id: assessmentId } },
+//       {
+//         $lookup: {
+//           from: 'studentresponses',
+//           localField: 'studentResponses',
+//           foreignField: '_id',
+//           as: 'studentResponses',
+//         },
+//       },
+//       { $unwind: "$studentResponses" },
+//       { $match: { "studentResponses.completed": true } },
+//       {
+//         $lookup: {
+//           from: 'students',
+//           localField: 'studentResponses.studentId',
+//           foreignField: '_id',
+//           as: 'studentInfo',
+//         },
+//       },
+//       {
+//         $unwind: "$studentInfo" // Ensure studentInfo is unwound to access fields directly
+//       },
+//       {
+//         $project: {
+//           ID: "$studentResponses._id",
+//           StudentID: "$studentResponses.studentId",
+//           FirstName: "$studentInfo.FirstName",
+//           LastName: "$studentInfo.LastName",
+//           Email: "$studentInfo.Email",
+//           Placed: "$studentInfo.Placed",
+//           Status: "$studentResponses.status",
+//           Percentage: "$studentResponses.percentage",
+//           Marks: "$studentResponses.marks",
+//           TotalMarks: "$studentResponses.totalMarks",
+//           Time: "$studentResponses.time",
+//           TimeTaken: "$studentResponses.timeTaken",
+//           TotalQuestionsAttempted: "$studentResponses.totalQuestionsAttempted",
+//           CorrectAnswers: "$studentResponses.correctAnswers",
+//           // Flatten the topics details
+//           Topics: {
+//             $map: {
+//               input: "$studentResponses.topics",
+//               as: "topic",
+//               in: {
+//                 Heading: "$$topic.Heading",
+//                 Description: "$$topic.Description",
+//                 TopicMarks: "$$topic.topicMarks",
+//                 Type: "$$topic.Type"
+//               }
+//             }
+//           }
+//         },
+//       },
+//     ]);
+    
+   
+//     if (!assessment) {
+//       console.error(`Assessment not found with ID: ${id}`);
+//       return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+//     }
+
+//     console.log("Preparing Excel export");
+
+//     const worksheet = XLSX.utils.json_to_sheet(assessment);
+//     const workbook = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+//     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+//     res.setHeader('Content-Disposition', 'attachment; filename="data.xlsx"');
+//     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+//     console.log("Sending Excel file");
+//     res.send(buffer);
+
+//   } catch (error) {
+//     console.error("Error in getResultInExcel:", error);
+//     return next(new ErrorHandler("An error occurred while processing the request", 500));
+//   }
+// });
+
+
+const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const collegeId = req.user.id;
+
+    console.log("Starting getResultInExcel function");
+    console.log("Received collegeId:", collegeId);
+    console.log("Received assessmentId:", id);
+
+    const assessmentId = new mongoose.Types.ObjectId(id);
+
+    console.log("Starting aggregation");
+
+    const assessment = await Assessments.aggregate([
+      { $match: { _id: assessmentId } },
+      {
+        $lookup: {
+          from: 'studentresponses',
+          localField: 'studentResponses',
+          foreignField: '_id',
+          as: 'studentResponses',
+        },
+      },
+      { $unwind: "$studentResponses" },
+      { $match: { "studentResponses.completed": true } },
+      {
+        $lookup: {
+          from: 'students',
+          localField: 'studentResponses.studentId',
+          foreignField: '_id',
+          as: 'studentInfo',
+        },
+      },
+      { $unwind: "$studentInfo" },
+      {
+        $project: {
+          ID: "$studentResponses._id",
+          StudentID: "$studentResponses.studentId",
+          FirstName: "$studentInfo.FirstName",
+          LastName: "$studentInfo.LastName",
+          Email: "$studentInfo.Email",
+          Placed: "$studentInfo.Placed",
+          Status: "$studentResponses.status",
+          Percentage: "$studentResponses.percentage",
+          Marks: "$studentResponses.marks",
+          TotalMarks: "$studentResponses.totalMarks",
+          Time: "$studentResponses.time",
+          TimeTaken: "$studentResponses.timeTaken",
+          TotalQuestionsAttempted: "$studentResponses.totalQuestionsAttempted",
+          CorrectAnswers: "$studentResponses.correctAnswers",
+          Topics: "$studentResponses.topics"
+        },
+      },
+    ]);
+
+    if (!assessment || assessment.length === 0) {
+      console.error(`Assessment not found with ID: ${id}`);
+      return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+    }
+
+    console.log("Combining topic marks for non-unique headings");
+
+    // Combine marks for non-unique topic headings
+    const combinedAssessment = assessment.map(item => {
+      const topicMarksMap = {};
+
+      item.Topics.forEach(topic => {
+        if (!topicMarksMap[topic.Heading]) {
+          topicMarksMap[topic.Heading] = { 
+            Heading: topic.Heading,
+            TotalMarks: 0 
+          };
+        }
+        topicMarksMap[topic.Heading].TotalMarks += topic.totalMarks; // Combine totalMarks
+      });
+
+      // Convert the topicMarksMap back to an array
+      const combinedTopics = Object.values(topicMarksMap);
+
+      return {
+        ID: item.ID,
+        StudentID: item.StudentID,
+        FirstName: item.FirstName,
+        LastName: item.LastName,
+        Email: item.Email,
+        Placed: item.Placed,
+        Status: item.Status,
+        Percentage: item.Percentage,
+        Marks: item.Marks,
+        TotalMarks: item.TotalMarks,
+        Time: item.Time,
+        TimeTaken: item.TimeTaken,
+        TotalQuestionsAttempted: item.TotalQuestionsAttempted,
+        CorrectAnswers: item.CorrectAnswers,
+        Topics: combinedTopics,
+      };
+    });
+
+    console.log("Preparing data for Excel export");
+
+    // Prepare headers
+    const headers = [
+      'ID', 'Student ID', 'First Name', 'Last Name', 'Email',
+      'Placed', 'Status', 'Percentage', 'Marks', 'Total Marks',
+      'Time', 'Time Taken', 'Total Questions Attempted', 'Correct Answers'
+    ];
+
+    // Collect unique topic headings for dynamic columns
+    const topicHeadings = new Set();
+    combinedAssessment.forEach(item => {
+      item.Topics.forEach(topic => topicHeadings.add(topic.Heading));
+    });
+
+    // Add topic headings to the headers
+    headers.push(...Array.from(topicHeadings));
+
+    // Prepare data rows
+    const dataRows = combinedAssessment.map(item => {
+      const row = [
+        item.ID,
+        item.StudentID,
+        item.FirstName,
+        item.LastName,
+        item.Email,
+        item.Placed,
+        item.Status,
+        item.Percentage,
+        item.Marks,
+        item.TotalMarks,
+        item.Time,
+        item.TimeTaken,
+        item.TotalQuestionsAttempted,
+        item.CorrectAnswers,
+      ];
+
+      // Create a map for topic marks
+      const topicMarks = {};
+      item.Topics.forEach(topic => {
+        topicMarks[topic.Heading] = topic.TotalMarks || 0; // Default to 0 if no marks
+      });
+
+      // Add topic marks to the row based on the headers
+      Array.from(topicHeadings).forEach(heading => {
+        row.push(topicMarks[heading] || 0); // Default to 0 if no marks
+      });
+
+      return row;
+    });
+
+    // Convert to worksheet
+    const worksheetData = [headers, ...dataRows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="data.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    console.log("Sending Excel file");
+    res.send(buffer);
+
+  } catch (error) {
+    console.error("Error in getResultInExcel:", error);
+    return next(new ErrorHandler("An error occurred while processing the request", 500));
+  }
+});
+
+
 const now = new Date();
 const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
 module.exports = {
   getResultGraph,
+  getResultInExcel,
   getStudentsForTest,
   removeRecentAssessment,
   getRecentAssessments,
