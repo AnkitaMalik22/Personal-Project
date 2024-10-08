@@ -12,6 +12,12 @@ const studentScreenshotsSchema = new mongoose.Schema(
       ref: "Assessments",
       required: true,
     },
+    studentResponseId:
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentResponse",
+      required: true,
+    },
     screenshots: {
       type: Array,
       default: [
@@ -40,4 +46,5 @@ const studentScreenshotsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("StudentScreenshots", studentScreenshotsSchema);
+const StudentScreenshots = mongoose.model("StudentScreenshots", studentScreenshotsSchema);
+module.exports = StudentScreenshots ;
