@@ -408,6 +408,10 @@ const studentResponseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    examScreenShots : {
+      type : mongoose.Schema.Types.ObjectId,
+      ref : 'StudentScreenshots'
+    }
   },
   {
     timestamps: true,
