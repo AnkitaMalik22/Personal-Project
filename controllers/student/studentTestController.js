@@ -263,7 +263,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       testStatus = false;
       return next(
         new ErrorHandler(
-          "The assessment is scheduled for a future date. You cannot start it today.",
+          "The assessment has not stated yet.",
           404
         )
       );
