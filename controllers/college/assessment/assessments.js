@@ -689,14 +689,15 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
     const assessment = await Assessments.findById(req.params.id);
     const approved = await ApprovedStudents.findOne({ college: id }).populate(
       "students"
-    );
+    )
 
     const filtered = approved.students.filter(
-      (student) => !assessment.invitedStudents.includes(student._id)
-    );
+      (student) => !assessment.invitedStudents.includes(student._id) 
+    ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     res.status(200).json({
       success: true,
-      assessment,
+      assessment, 
       students: filtered,
     });
   } catch (error) {
