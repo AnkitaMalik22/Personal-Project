@@ -960,38 +960,47 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       //   message: `Hello ${FirstName},\n You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
       // });
 
+      //     sendEmail({
+      //   email: Email,
+      //   subject: "Invitation to join Skill Access",
+      //   message: `
+      //     Hello ${FirstName},
+      //     You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:
 
-//     sendEmail({
-//   email: Email,
-//   subject: "Invitation to join Skill Access",
-//   message: `
-//     Hello ${FirstName},
-//     You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:
-    
-//       <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}" 
-//       style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
-//       Register Here
-//       </a>
- 
-//     <p>We look forward to having you onboard!</p>
-//     <p>Best regards,<br>Skill Access Team</p>
-//   `,
-// });
+      //       <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}"
+      //       style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
+      //       Register Here
+      //       </a>
+
+      //     <p>We look forward to having you onboard!</p>
+      //     <p>Best regards,<br>Skill Access Team</p>
+      //   `,
+      // });
 
       sendEmail({
-      email: Email,
-      subject: "Invitation to join Skill Access",
-      message: `Hello ${FirstName},
-    
-    You have been invited to join Skill Access. Please click the link below to register:
-    
-    Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-    
-    We look forward to having you onboard!
-    
-    Best regards,
-    Skill Access Team`,
-    });
+        email: Email,
+        subject: "Invitation to join Skill Access",
+        message: `Dear ${FirstName},
+
+Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
+
+Step 1: Register and Complete Your Profile
+Click the link below to register:
+https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+
+During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
+
+Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
+
+Additional Guidelines:
+Double-Check Details: Ensure all provided information is accurate to avoid delays.
+Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
+
+Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
+
+Best regards,
+The Skill Access Team`,
+      });
 
       await invited.save();
     } else {
@@ -1012,19 +1021,28 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       sendEmail({
         email: Email,
         subject: "Invitation to join Skill Access",
-        message: `Hello ${FirstName},
-    
-    You have been invited to join Skill Access. Please click the link below to register:
-    
-    Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-    
-    We look forward to having you onboard!
-    
-    Best regards,
-    Skill Access Team`,
-    });
+        message: `Dear ${FirstName},
 
-      
+Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
+
+Step 1: Register and Complete Your Profile
+Click the link below to register:
+https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+
+During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
+
+Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
+
+Additional Guidelines:
+Double-Check Details: Ensure all provided information is accurate to avoid delays.
+Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
+
+Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
+
+Best regards,
+The Skill Access Team`,
+      });
+
       await invited.save();
     }
     // student.invited = true;
@@ -1141,7 +1159,7 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     sendEmail({
       email: Email,
       subject: "Invitation to join Skill Access",
-       message: `Hello ${FirstName},
+      message: `Hello ${FirstName},
     
     You have been invited to join Skill Access. Please click the link below to register:
     
@@ -1152,7 +1170,6 @@ exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
     Best regards,
     Skill Access Team`,
     });
-    
 
     student.invited = true;
     await student.save();
