@@ -373,7 +373,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
       // console.log(firstQuestion);
       console.log(isLast, "is last llllllllllllllllllllllllllllll");
       res.json({
-        isLast: true,
+        isLast: isLast,
         success: true,
         message: "Assessment started",
         count: 1,
