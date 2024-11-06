@@ -66,7 +66,7 @@ const collegeRoutes = require("./routes/college/collegeRoutes.js");
 const assessmentsRoutes = require("./routes/college/assessmentsRoutes.js");
 const studentRoutes = require("./routes/student/studentRoutes.js");
 const companyRoutes = require("./routes/company/companyRoutes.js");
-const adminRoutes = require("./routes/admin/adminTestRoutes.js");
+const adminTestRoutes = require("./routes/admin/adminTestRoutes.js");
 
 const studentDummyRoutes = require("./routes/student/studentDummyRoutes.js");
 const collegeTeamRoutes = require("./routes/college/teamRoutes.js");
@@ -90,7 +90,8 @@ app.use("/api/student/inbox", studentInboxRoutes);
 app.use("/api/student/graph", studentGraphRoutes);
 
 app.use("/api/company", companyRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminTestRoutes);
+app.use("/api/admin/approval", require("./routes/admin/approvalRoutes"));
 app.use("/api/qb", qbRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/compiler", require("./routes/compiler/compilerRoutes"));

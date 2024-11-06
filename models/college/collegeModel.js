@@ -12,6 +12,34 @@ const validateRef = function (value) {
 };
 
 const collegeSchema = new mongoose.Schema({
+  status: {
+    type: String,
+    enum: ['approved', 'pending', 'rejected'],
+    default: 'pending',
+  },
+  statusChangedAt: {
+    type: Date,
+  },
+  commentsByAdmin: {
+    type: Array,
+    default: [
+      {
+        comment: String,
+        commentedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Admin',
+        },
+        commentedAt: Date,
+      },
+    ],
+
+  },
+  tier: {
+    type: String,
+    enum: ["tier1", "tier2", "tier3"],
+    default: "tier1",
+  },
+
   qrVerify: {
     type: Boolean,
     default: false,
