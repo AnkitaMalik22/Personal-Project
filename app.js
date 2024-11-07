@@ -91,7 +91,7 @@ app.use("/api/student/graph", studentGraphRoutes);
 
 app.use("/api/company", companyRoutes);
 app.use("/api/admin", adminTestRoutes);
-app.use("/api/admin/approval", require("./routes/admin/approvalRoutes"));
+app.use("/api/admin/approval", require("./routes/admin/approvalRoutes.js"));
 app.use("/api/qb", qbRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/compiler", require("./routes/compiler/compilerRoutes"));

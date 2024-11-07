@@ -18,6 +18,8 @@ const crypto = require('crypto');
 exports.approveUser = catchAsyncErrors(async (req, res, next) => {
     try {
         const { type, id } = req.params;
+        // example api with type company and id 5f7b1b7b7f3b5b0017f3b5b0
+        // api/admin/approve-user/company/5f7b1b7b7f3b5b0017f3b5b0
 
         const { tier, status } = req.body;
         if (!status) {
@@ -53,7 +55,7 @@ exports.approveUser = catchAsyncErrors(async (req, res, next) => {
                 }
                 user.commentsByAdmin.push({
                     comment: req.body.comment,
-                    commentedBy: req.user.id,
+                    commentedBy: user._id,
                     commentedAt: Date.now()
                 })
             }
@@ -99,6 +101,7 @@ exports.approveUser = catchAsyncErrors(async (req, res, next) => {
             user
         })
     } catch (error) {
+        console.log(error);
         next(new ErrorHandler(error.message, 500));
     }
 }
@@ -108,17 +111,22 @@ exports.approveUser = catchAsyncErrors(async (req, res, next) => {
 
 exports.getColleges = catchAsyncErrors(async (req, res, next) => {
     try {
-        const { tier } = req.params;
-        if (!tier) {
-            return next(new ErrorHandler('Please provide tier', 400));
-        }
+        const { tier } = req.query;
+        // if (!tier) {
+        //     return next(new ErrorHandler('Please provide tier', 400));
+        // }
+      
         if (tier !== 'tier1' && tier !== 'tier2' && tier !== 'tier3') {
-            return next(new ErrorHandler('Invalid tier', 400));
+            const colleges = await College.find({status: 'approved'});
+            return res.status(200).json({
+                success: true,
+                colleges
+            })
         }
-        const colleges = await College.find({ tier });
-        res.status(200).json({
+        const collegesByTier = await College.find({ tier });
+       return  res.status(200).json({
             success: true,
-            colleges
+            colleges :collegesByTier
         })
     } catch (error) {
         next(new ErrorHandler(error.message, 500));
@@ -126,6 +134,22 @@ exports.getColleges = catchAsyncErrors(async (req, res, next) => {
 }
 
 );
+
+exports.getCompanies = catchAsyncErrors(async (req, res, next) => {
+    const { status } = req.query;
+    try {
+        const companies = await Company.find({status: status || 'pending'});
+        res.status(200).json({
+            success: true,
+            companies
+        })
+    } catch (error) {
+        next(new ErrorHandler(error.message, 500));
+    }
+
+});
+
+
 
 
 
