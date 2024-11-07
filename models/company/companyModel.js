@@ -38,10 +38,29 @@ const dashboardSchema = new mongoose.Schema({
 });
 
 const companySchema = new mongoose.Schema({
-  isApproved:{
-    type:Boolean,
-    default:false
+ status: {
+    type: String,
+    enum: ['approved', 'pending', 'rejected'],
+    default: 'pending',
   },
+  statusChangedAt: {
+    type: Date,
+  },
+  commentsByAdmin: {
+    type: Array,
+    default: [
+      {
+        comment: String,
+        commentedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Admin',
+        },
+        commentedAt: Date,
+      },
+    ],
+
+  },
+
   Email: {
     type: String,
     required: [true, 'Please provide your email'],
@@ -65,6 +84,16 @@ const companySchema = new mongoose.Schema({
     required: [true, 'Please provide your password'],
     minlength: 8,
     select: false,
+  },
+  avatar: {
+    public_id: {
+      type: String,
+      // required:true
+    },
+    url: {
+      type: String,
+      // required:true
+    },
   },
   basic: {
     coverPhoto: String,
