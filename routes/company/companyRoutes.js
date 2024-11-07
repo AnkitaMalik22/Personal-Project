@@ -2,7 +2,7 @@ const router = require('express').Router();
 const {isAuthenticatedCompany, isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
 
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
-const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout, getCompany} = require('../../controllers/company/companyController');
+const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout, getCompany, uploadLogo, uploadCompanyImage} = require('../../controllers/company/companyController');
 ;
 
 const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/company/placementController');
@@ -12,7 +12,7 @@ const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/com
 
 // ============================================= Comapny ROUTES ====================================================
 
-router.route("/register").post(registerCompany);
+// router.route("/register").post(registerCompany);
 router.route("/login").post(loginCompany);
 // router.route("/me").get(isAuthenticatedCompany, getCompanyDetails);
 router.route("/password/reset/:token").put(resetPassword);
@@ -25,6 +25,7 @@ router.put('/update', isAuthenticatedCompany,updateProfile);
 router.delete('/delete', isAuthenticatedCompany, deleteCompany);
 router.put('/update/logo', isAuthenticatedCompany, updateLogoCompany);
 router.put('/update/cover', isAuthenticatedCompany, updateCoverPictureCompany);
+router.post('/upload/image', uploadCompanyImage);
 
 // ============================================= JOB ROUTES ====================================================
 

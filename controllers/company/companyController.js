@@ -4,44 +4,133 @@ const Company = require("../../models/company/companyModel");
 const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
-
+const sendTokenCompany = require("../../utils/jwtTokenCompany");
+const { uploadPicture } = require("../../utils/uploadPicture");
+const { v2: cloudinary } = require("cloudinary");
+const bcrypt = require('bcryptjs');
 // ================================================================================================================================
 
 // =================================================== REGISTER Company ===========================================================
-
+ //TODO:
+ /**
+  * create new send token for company
+  * 
+  */
 exports.registerCompany = catchAsyncErrors(async (req, res, next) => {
-  const { Email, FirstName, LastName, Password } = req.body;
+  const {
+    // Step 1
+    companyName,
+    password,
+    email,
+    phone,
+    website,
+    type,
+    industry,
+    description,
+    // Step 2
+    locationName,
+    address,
+    town,
+    country,
+    postalCode,
+    // Step 3
+    linkedIn,
+    yearFounded,
+    mission,
+    baseLocation,
+    isMultinational,
+    executiveName,
+    executiveDesignation,
+  } = req.body;
 
   // Check if required fields are present
-  if (!Email || !FirstName || !LastName || !Password) {
-    return next(new ErrorHandler("Please Enter All Fields", 400));
+  if (!email || !password) {
+    return next(new ErrorHandler("Email and Password Required", 400));
   }
-
+const hashedPassword = bcrypt.hash(Password,10);
   // Create a new Company
-  const company = await Company.create(req.body);
+  const logo = await uploadPicture()
+  const company = await Company.create({ Email: email,
+    phone: data?.phone,
+    role: "company",
+    FirstName: "ADMIN",
+    LastName: "ADMIN",
+    Password: hashedPassword,
+    designatedColleges: [],
+    basic: {
+      coverPhoto: data?.coverPhoto,
+      logo: data?.logo,
+      companyName: data?.companyname,
+      website: data?.website,
+      totalEmployees: 0,
+      yearFounded: data?.founded || 0,
+      hqCity: "UNSET",
+      annualRevenue: 0,
+      sector: "UNSET",
+      industry: data?.industry,
+      companyType: data?.companytype,
+      status: "Active",
+      _id: new ObjectId(),
+    },
+    location: { ...data?.location, _id: new ObjectId() } || {
+      locName: "Location Name",
+      address: "123 Main St",
+      town: "Town",
+      state: "State",
+      country: "Country",
+      postalCode: "12345",
+      _id: new ObjectId(),
+    },
+    leader: { ...data?.leader, _id: new ObjectId() } || {
+      name: "UNSET",
+      title: "UNSET",
+      country: "UNSET",
+      isGlobalLeader: false,
+      _id: new ObjectId(),
+    },
+    about: {
+      description: data?.description || "UNSET",
+      missions: data?.about?.missions || "UNSET",
+      programs: data?.programs || "UNSET",
+      linkedIn: data?.about?.linkedIn || "UNSET",
+      _id: new ObjectId(),
+    },
+    awards: [
+      {
+        name: "EXAMPLE AWARD",
+        dateOfIssue: "2023-01-01T00:00:00.000Z",
+        media: ["example"],
+        _id: new ObjectId(),
+      },
+    ],
+    dashboard: {
+      totalJobs: 0,
+      studentsHired: 0,
+      approved: 0,
+      institutes: 0,
+      assessments: 0,
+      newJobs: 0,
+      _id: new ObjectId(),
+    },
+    students: [],
+    jobs: [],
+    assessments: [],
+    otp: null,
+    otpExpires: null,
+    otpVerified: false,
+    authType: "none",
+    createdAt: new Date().toISOString(),
+    loginActivity: [],
+    emails: [],
+    emailsSent: [],
+    __v: 0,});
 
-  // Log Company details
-  // console.log(company);
-
-  // Send JWT token in response
-const ip = '111 111 111 111'
-  // console.log("req ip = ",req.ip)
-  const device = req.headers["user-agent"];
-  console.log(device);
-
-  // Create a new college
-
-
-  // Log college details
-  // console.log(college);
-
-  // Send JWT token in response
-
-  sendToken(company, 201, res,ip, device);
+  sendTokenCompany(company, 201, res);
 });
 
 // =================================================== LOGIN Company ===========================================================
 // Login Company
+// /api/company/login
 exports.loginCompany = catchAsyncErrors(async (req, res, next) => {
   const { Email, Password,confirmPassword } = req.body;
 
@@ -72,7 +161,7 @@ exports.loginCompany = catchAsyncErrors(async (req, res, next) => {
   }
 
   // Send JWT token in response
-  sendToken(company, 200, res);
+  sendTokenCompany(company, 200, res);
 });
 
 // ====================================================== LOGOUT Company ===========================================================
@@ -332,11 +421,16 @@ exports.updateLogoCompany = catchAsyncErrors(async (req, res, next) => {
     }
 );
 
+exports.uploadCompanyImage = catchAsyncErrors(async (req,res,next)=>{
 
-
-
-
+  if(req.files.logo){
+    uploadPicture(req.files.logo,"company_logos")
+    console.log(req.files.logo);
+  }else if(req.files.cover){
+    console.log(req.files.cover);
+  }
   
+})
 
 
 

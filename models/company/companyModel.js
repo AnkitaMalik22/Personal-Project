@@ -38,6 +38,10 @@ const dashboardSchema = new mongoose.Schema({
 });
 
 const companySchema = new mongoose.Schema({
+  isApproved:{
+    type:Boolean,
+    default:false
+  },
   Email: {
     type: String,
     required: [true, 'Please provide your email'],
@@ -153,7 +157,6 @@ const companySchema = new mongoose.Schema({
     },
   ],
 
-  
 });
 
 
