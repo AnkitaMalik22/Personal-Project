@@ -1,19 +1,20 @@
 const router = require('express').Router();
-const {isAuthenticatedCompany, isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
+const { isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
 
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
-const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout, getCompany, uploadLogo, uploadCompanyImage} = require('../../controllers/company/companyController');
+const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany,  forgotPassword, resetPassword, updatePassword,logout, getCompany,  uploadCompanyImage, loginCompany} = require('../../controllers/company/companyController');
 ;
 
 const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/company/placementController');
+const { isAuthenticatedCompany } = require('../../middlewares/companyAuth');
 
 
 
 
 // ============================================= Comapny ROUTES ====================================================
 
-// router.route("/register").post(registerCompany);
-router.route("/login").post(loginCompany);
+router.route("/register").post(registerCompany);
+router.route("/signin").post(loginCompany);
 // router.route("/me").get(isAuthenticatedCompany, getCompanyDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);

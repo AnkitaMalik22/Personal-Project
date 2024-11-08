@@ -8,17 +8,18 @@ const sendTokenCompany = require("../../utils/jwtTokenCompany");
 const { uploadPicture } = require("../../utils/uploadPicture");
 const { v2: cloudinary } = require("cloudinary");
 const bcrypt = require('bcryptjs');
+
 // ================================================================================================================================
 
 // =================================================== REGISTER Company ===========================================================
- //TODO:
- /**
-  * create new send token for company
-  * 
-  */
+
 exports.registerCompany = catchAsyncErrors(async (req, res, next) => {
   const {
     // Step 1
+    cover,
+   logo,
+    publicIdLogo,
+    publicIdCover,
     companyName,
     password,
     email,
@@ -47,62 +48,59 @@ exports.registerCompany = catchAsyncErrors(async (req, res, next) => {
   if (!email || !password) {
     return next(new ErrorHandler("Email and Password Required", 400));
   }
-const hashedPassword = bcrypt.hash(Password,10);
+  const hashedPassword =await  bcrypt.hash(password, 10);
   // Create a new Company
-  const logo = await uploadPicture()
-  const company = await Company.create({ Email: email,
-    phone: data?.phone,
+
+  const company = await Company.create({
+    Email: email,
+    phone: phone,
+    status: "pending",
     role: "company",
     FirstName: "ADMIN",
     LastName: "ADMIN",
     Password: hashedPassword,
     designatedColleges: [],
     basic: {
-      coverPhoto: data?.coverPhoto,
-      logo: data?.logo,
-      companyName: data?.companyname,
-      website: data?.website,
+      publicIdCover: publicIdCover,
+      publicIdLogo: publicIdLogo,
+      coverPhoto: cover,
+      logo: logo,
+      companyName: companyName,
+      website: website,
       totalEmployees: 0,
-      yearFounded: data?.founded || 0,
-      hqCity: "UNSET",
+      yearFounded: yearFounded || 0,
+      hqCity: baseLocation,
       annualRevenue: 0,
       sector: "UNSET",
-      industry: data?.industry,
-      companyType: data?.companytype,
+      industry: industry,
+      companyType:type,
       status: "Active",
-      _id: new ObjectId(),
+      // _id: new ObjectId(),
     },
-    location: { ...data?.location, _id: new ObjectId() } || {
-      locName: "Location Name",
-      address: "123 Main St",
-      town: "Town",
-      state: "State",
-      country: "Country",
-      postalCode: "12345",
-      _id: new ObjectId(),
+    location:  {
+      locName: locationName,
+      address: address,
+      town: town,
+      state: town,
+      country: country,
+      postalCode: postalCode,
+      // _id: new ObjectId(),
     },
-    leader: { ...data?.leader, _id: new ObjectId() } || {
-      name: "UNSET",
-      title: "UNSET",
-      country: "UNSET",
+    leader: {
+      name: executiveName,
+      title: executiveDesignation,
+      country: country,
       isGlobalLeader: false,
-      _id: new ObjectId(),
+      // _id: new ObjectId(),
     },
     about: {
-      description: data?.description || "UNSET",
-      missions: data?.about?.missions || "UNSET",
-      programs: data?.programs || "UNSET",
-      linkedIn: data?.about?.linkedIn || "UNSET",
-      _id: new ObjectId(),
+      description: description || "UNSET",
+      missions: mission,
+      programs:  "UNSET",
+      linkedIn: linkedIn || "UNSET",
+      // _id: new ObjectId(),
     },
-    awards: [
-      {
-        name: "EXAMPLE AWARD",
-        dateOfIssue: "2023-01-01T00:00:00.000Z",
-        media: ["example"],
-        _id: new ObjectId(),
-      },
-    ],
+    
     dashboard: {
       totalJobs: 0,
       studentsHired: 0,
@@ -110,7 +108,7 @@ const hashedPassword = bcrypt.hash(Password,10);
       institutes: 0,
       assessments: 0,
       newJobs: 0,
-      _id: new ObjectId(),
+      // _id: new ObjectId(),
     },
     students: [],
     jobs: [],
@@ -123,7 +121,8 @@ const hashedPassword = bcrypt.hash(Password,10);
     loginActivity: [],
     emails: [],
     emailsSent: [],
-    __v: 0,});
+    __v: 0,
+  });
 
   sendTokenCompany(company, 201, res);
 });
@@ -132,32 +131,37 @@ const hashedPassword = bcrypt.hash(Password,10);
 // Login Company
 // /api/company/login
 exports.loginCompany = catchAsyncErrors(async (req, res, next) => {
-  const { Email, Password,confirmPassword } = req.body;
+console.log("logon");
 
+  const { Email, Password } = req.body;
 
   // Check if email and password are provided
   if (!Email || !Password) {
     return next(new ErrorHandler("Please Enter Email & Password", 400));
   }
 
-  if (Password !== confirmPassword) {
-    return next(new ErrorHandler("Passwords do not match", 400));
-  }
+  // if (Password !== confirmPassword) {
+  //   return next(new ErrorHandler("Passwords do not match", 400));
+  // }
 
   // Find Company by email
   const company = await Company.findOne({ Email }).select("+Password");
-
+console.log(company.Password,Password);
   // Check if Company exists
   if (!company) {
     return next(new ErrorHandler("Invalid email or password", 401));
   }
 
   // Check if password is correct
-  const isPasswordMatched = await company.comparePassword(Password);
+  const isPasswordMatched = await bcrypt.compare(Password, company.Password);
+
+
+ 
+  console.log(isPasswordMatched)
 
   // If password is incorrect, send an error response
   if (!isPasswordMatched) {
-    return next(new ErrorHandler("Invalid email or password", 401));
+    return next(new ErrorHandler("Invalid email or passwords", 401));
   }
 
   // Send JWT token in response
@@ -314,7 +318,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
 // ========================================= UPDATE Company PASSWORD ===========================================================
 // Update Company Password
 exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
- 
+
   const company = await Company.findById(req.user.id).select("+Password");
 
   // Check if old password is correct
@@ -365,71 +369,78 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 // ================================================ Update Cover Picture ===========================================================
 
 exports.updateCoverPictureCompany = catchAsyncErrors(async (req, res) => {
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.cover, {
-        folder: "covers",
-        width: 150,
-        crop: "scale",
-    });
-    
-    const company = await Company.findByIdAndUpdate(req.user.id, {
-        basic: {
-            coverPhoto: {
-                public_id: myCloud.public_id,
-                url: myCloud.secure_url,
-            },
-        
-        },
-    }, {
-        new: true,
-        runValidators: true,
-        useFindAndModify: false,
-    });
-    
-    res.status(200).json({
-        success: true,
-        company,
-    });
+  const myCloud = await cloudinary.v2.uploader.upload(req.body.cover, {
+    folder: "covers",
+    width: 150,
+    crop: "scale",
+  });
+
+  const company = await Company.findByIdAndUpdate(req.user.id, {
+    basic: {
+      coverPhoto: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      },
+
+    },
+  }, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false,
+  });
+
+  res.status(200).json({
+    success: true,
+    company,
+  });
 });
 
 // ================================================ Update Company Logo ===========================================================
 
 exports.updateLogoCompany = catchAsyncErrors(async (req, res, next) => {
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.logo, {
-        folder: "logos",
-        width: 150,
-        crop: "scale",
-    });
-    
-    const company = await Company.findByIdAndUpdate(  req.user.id,
-        {
-        logo: {
-            public_id: myCloud.public_id,
-            url: myCloud.secure_url,
-        },
-        },
-        {
-        new: true,
-        runValidators: true,
-        useFindAndModify: false,
-        }
-    );
-    
-    res.status(200).json({
-        success: true,
-        company,
-    });
+  const myCloud = await cloudinary.v2.uploader.upload(req.body.logo, {
+    folder: "logos",
+    width: 150,
+    crop: "scale",
+  });
+
+  const company = await Company.findByIdAndUpdate(req.user.id,
+    {
+      logo: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false,
     }
+  );
+
+  res.status(200).json({
+    success: true,
+    company,
+  });
+}
 );
 
-exports.uploadCompanyImage = catchAsyncErrors(async (req,res,next)=>{
+exports.uploadCompanyImage = catchAsyncErrors(async (req, res, next) => {
 
-  if(req.files.logo){
-    uploadPicture(req.files.logo,"company_logos")
-    console.log(req.files.logo);
-  }else if(req.files.cover){
-    console.log(req.files.cover);
+  console.log(req)
+  if (req.files.logo) {
+
+    const logo = await uploadPicture(req.files.logo, "company_logos");
+    return res.status(200).json({ success: true, data: logo });
+
+  } else if (req.files.cover) {
+
+    const cover = await uploadPicture(req.files.cover, "company_cover_photos");
+    return res.status(200).json({ success: true, data: cover });
+
   }
-  
+  return res.status(400).json({ success: false, message: "something went wrong" });
+
 })
 
 

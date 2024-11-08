@@ -67,7 +67,7 @@ const isAuthenticatedUser = (model) => {
 // Usage
 exports.isAuthenticatedStudent = isAuthenticatedUser(Student);
 exports.isAuthenticatedCollege = isAuthenticatedUser(College);
-exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
+// exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
 
 exports.authorizeRoles = (...roles) => {
   return (req, res, next) => {

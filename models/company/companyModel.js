@@ -97,6 +97,8 @@ const companySchema = new mongoose.Schema({
   },
   basic: {
     coverPhoto: String,
+    publicIdLogo:String,
+    publicIdCover:String,
     logo: String,
     companyName: String,
     website: String,
@@ -189,13 +191,13 @@ const companySchema = new mongoose.Schema({
 });
 
 
-companySchema.pre('save', async function (next) {
-  if (!this.isModified('Password')) {
-    next();
-  }
+// companySchema.pre('save', async function (next) {
+//   if (!this.isModified('Password')) {
+//     next();
+//   }
 
-  this.Password = await bcrypt.hash(this.Password, 10);
-});
+//   this.Password = await bcrypt.hash(this.Password, 10);
+// });
 
 // JWT TOKEN
 companySchema.methods.getJWTToken = function () {
