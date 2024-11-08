@@ -883,6 +883,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   // console.log(students)
 
   // console.log ("upload students called" , students , "students")
+  const Invitations = [];
+
 
   const CollegeId = req.user.id;
 
@@ -901,7 +903,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     }
   );
 
-  console.log(invited);
+
 
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
@@ -977,7 +979,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       //   `,
       // });
 
-      sendEmail({
+      const mail = await sendEmail({
         email: Email,
         subject: "Invitation to join Skill Access",
         message: `Dear ${FirstName},
@@ -1001,7 +1003,7 @@ Complete your profile as soon as possible to avoid delays. If you need assistanc
 Best regards,
 The Skill Access Team`,
       });
-
+      Invitations.push(mail);
       await invited.save();
     } else {
       invited.students.forEach((student, i) => {
@@ -1018,7 +1020,7 @@ The Skill Access Team`,
       //   subject: "Invitation to join College",
       //   message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       // });
-      sendEmail({
+      const mail = await sendEmail({
         email: Email,
         subject: "Invitation to join Skill Access",
         message: `Dear ${FirstName},
@@ -1042,7 +1044,7 @@ Complete your profile as soon as possible to avoid delays. If you need assistanc
 Best regards,
 The Skill Access Team`,
       });
-
+      Invitations.push(mail);
       await invited.save();
     }
     // student.invited = true;
@@ -1067,6 +1069,7 @@ The Skill Access Team`,
       success: true,
       uploadedStudents: uploadedStudents?.students,
       message: "Students uploaded & Invited successfully",
+      Invitations
     });
   }
 
