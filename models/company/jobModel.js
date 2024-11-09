@@ -3,6 +3,29 @@ const Student = require('../student/studentModel');
 const Company = require('./companyModel');
 
 const jobSchema = new mongoose.Schema({
+  isOpenforApply: {
+    type: Boolean,
+    default: true,
+  },
+  assessments : [
+    {
+  test :{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Assessment',
+  },
+  testStartDate: {
+    type: Date,
+  },
+  testEndDate: {
+    type: Date,
+  },
+  shortlistedStudents: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+  }
+],
+  }],
+
  company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',

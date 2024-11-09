@@ -124,10 +124,16 @@ exports.getAllJobsCollege = catchAsyncErrors(async (req, res, next) => {
 
 exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
   const { companyId } = req.params;
+  console.log(companyId, "company id");
 
   const jobs = await Job.find({
     company: companyId,
   });
+  console.log(jobs);
+
+  if (!jobs) {
+    return next(new ErrorHandler("No jobs available", 404));
+  }
 
   res.status(200).json({
     success: true,

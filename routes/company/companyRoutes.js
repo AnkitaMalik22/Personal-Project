@@ -43,6 +43,10 @@ router.delete('/jobs/:jobId', isAuthenticatedCompany,deleteJob);
 
 
 router.post('/jobs/:companyId', createJob);
+router.get('/all-jobs/:companyId', getAllJobsCompany);
+
+
+
 // router.post('/jobs/:companyId', isAuthenticatedCompany, createJob);
 router.post('/jobs/assessment/:jobId', isAuthenticatedCompany, createAssessmentForJob);
 router.get('/jobs/assessments/:comapnyId', isAuthenticatedCompany, getAllAssessmentsCompany);
@@ -56,7 +60,7 @@ router.post('/jobs/assessments/apply/college/:jobId', isAuthenticatedCollege, ad
 
 
 
-router.get('/jobs/:companyId', getAllJobsCompany);
+
 router.get('/jobs/:collegeId', getAllJobsCollege);
 router.get('/jobs/:studentId', isAuthenticatedStudent, getAllJobsStudent);
 
