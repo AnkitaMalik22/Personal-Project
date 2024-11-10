@@ -2,6 +2,7 @@ const Assessments = require("../../../models/college/assessment/assessments");
 const ErrorHandler = require("../../../utils/errorhandler");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
+const Company = require("../../../models/company/companyModel");
 const { Student } = require("../../../models/student/studentModel");
 const Section = require("../../../models/college/assessment/sections");
 const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
@@ -36,28 +37,31 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     await newTransaction.save();
 
-    if (credit && credit.credit > 0) {
-      credit.credit -= 1;
-    } else {
-      console.log("you cont have credits");
-      return next(
-        new ErrorHandler(
-          `You don't have enough credits to create assessment!`,
-          400
-        )
-      );
-    }
+  
 
     const college = await College.findById(id);
-    if (!college) {
+    const company = await Company.findById(id);
+    if (!college && !company) {
       return next(
         new ErrorHandler(
-          "Reset Password Token is invalid or has been expired",
+          "You are not authorized to create assessment. Please login as college or company",
           400
         )
       );
     }
-
+    if(college){
+      if ( credit && credit.credit > 0) {
+        credit.credit -= 1;
+      } else {
+        console.log("you cont have credits");
+        return next(
+          new ErrorHandler(
+            `You don't have enough credits to create assessment!`,
+            400
+          )
+        );
+      }
+    }
     const assessments = await Assessments.find({ createdBy: id });
 
     if (assessments.length > 0) {
@@ -94,12 +98,12 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     }
 
     // calculate the total sections duration == test duration
-    const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
+    const Duration = topics?.reduce((acc, topic) => acc + topic.Time, 0);
     const isAdaptive = req.body.level === "adaptive";
     const beginnerCodeMarks = 10;
     const interCodeMarks = 20;
     const advCodeMarks = 30;
-    let newTopics = topics.map((topic) => {
+    let newTopics = topics?.map((topic) => {
       if (!topic.questions) {
         return {
           ...topic,
@@ -281,13 +285,14 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       });
     } else {
       recentQuestion.topics = recentQuestion.topics || [];
-      recentQuestion.topics.push(...topics);
+      recentQuestion?.topics.push(...topics);
 
       await recentQuestion.save();
     }
-
+    if (college) {
     await credit.save();
     await college.save();
+    }
     await assessment.save();
 
     res.status(201).json({

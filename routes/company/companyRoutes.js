@@ -4,6 +4,7 @@ const { isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlew
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
 const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany,  forgotPassword, resetPassword, updatePassword,logout, getCompany,  uploadCompanyImage, loginCompany} = require('../../controllers/company/companyController');
 ;
+const { addTestToJob, removeTestFromJob,getJobTests } = require("../../controllers/company/jobTestController");
 
 const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/company/placementController');
 const { isAuthenticatedCompany } = require('../../middlewares/companyAuth');
@@ -75,6 +76,12 @@ router.route("/jobs/:jobId/place/:studentId").post( placeStudentInJob);
 
 //  GET ALL RECENT PLACE STUDENTS OF COLLEGE
 router.route("/jobs/placements/:collegeId").get( getAllPlacedStudents);
+
+// ======================================================= JOB TESTROUTES =======================================================
+router.post("/jobs/:jobId/:testId", isAuthenticatedCompany,addTestToJob);   
+router.delete("/jobs/:jobId/:testId", isAuthenticatedCompany,removeTestFromJob);
+router.get("/v2/jobs/:jobId", isAuthenticatedCompany,getJobTests);
+
 
 
 module.exports = router;

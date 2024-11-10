@@ -36,6 +36,7 @@ const isAuthenticatedUser = (model) => {
     let user = await College.findById(decodedData.id);
     // console.log(user, "college");
     if (!user) {
+      console.log("user not found -inside collegeAuth");
       return next(
         new ErrorHander(
           "User not found with this token. Please login again",

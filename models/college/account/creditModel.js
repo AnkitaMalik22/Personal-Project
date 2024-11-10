@@ -27,6 +27,10 @@ const creditSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'College',
     },
+    compny : {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+    },
     expiresAt : {
         type : Date,
         default : Date.now()

@@ -106,4 +106,7 @@ const jobSchema = new mongoose.Schema({
 
 const Job = mongoose.model('Job', jobSchema);
 
+jobSchema.index({ company: 1 });
+jobSchema.index({ 'assessments.test': 1 });
+
 module.exports = Job;

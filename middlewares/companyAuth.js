@@ -18,6 +18,7 @@ exports.isAuthenticatedCompany = catchAsyncErrors(async (req, res, next) => {
     // Check if user exists
     let user = await Company.findById(decodedData.id);
     if (!user) {
+      console.log("user not found -inside companyAuth");
       return next(new ErrorHander("User not found with this token. Please login again", 404));
     }
 
