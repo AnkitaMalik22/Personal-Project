@@ -11,7 +11,7 @@ const jobSchema = new mongoose.Schema({
     {
   test :{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Assessment',
+    ref: 'Assessments',
   },
   testStartDate: {
     type: Date,

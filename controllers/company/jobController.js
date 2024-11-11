@@ -12,9 +12,9 @@ const College = require("../../models/college/collegeModel");
 
 exports.getJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
-  console.log(jobId);
+  // console.log(jobId);
 
-  const job = await Job.findById(jobId).populate('company');
+  const job = await Job.findById(jobId).populate('company').populate('assessments.test');
 
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));

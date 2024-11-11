@@ -12,6 +12,7 @@ const CollegeAssessInv = require("../../../models/student/assessmentInvitation")
 const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
+const Job = require("../../../models/company/jobModel");
 const mongoose = require("mongoose");
 const XLSX = require('xlsx');
 // =========================================================================================================================================
@@ -293,6 +294,20 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     await credit.save();
     await college.save();
     }
+    if (company) {
+ // find the jobId and push the assessment id in the job
+      const job = await Job.findById(req.body.jobId);
+      if (!job) {
+        return next(new ErrorHandler("Job not found", 404));
+      }
+      assessment.job = req.body.jobId;
+
+      await  job.assessments.push({
+        test: assessment._id,
+      });
+
+      await job.save();
+    }
     await assessment.save();
 
     res.status(201).json({
@@ -412,8 +427,10 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 
 // Get Assessment by ID
 const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
+try {
   const { id } = req.params;
   const collegeId = req.user.id;
+
 
   // const assessments = await College.findById(collegeId).populate("assessments");
   // const assessment = assessments.assessments.find(
@@ -435,6 +452,12 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
   }
 
   res.status(200).json(assessment);
+}
+catch (error) {
+  console.log(error);
+  res.status(500).json({ success: "false", message: "something went wrong" });
+}
+
 });
 
 // Get Assessment by ID
@@ -690,23 +713,34 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
 const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.user;
+    const testId = req.params.id;
+    
+    let approved, filtered;
 
-    const assessment = await Assessments.findById(req.params.id);
-    const approved = await ApprovedStudents.findOne({ college: id }).populate(
-      "students"
-    )
-
-    const filtered = approved.students.filter(
-      (student) => !assessment.invitedStudents.includes(student._id) 
-    ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    res.status(200).json({
-      success: true,
-      assessment, 
-      students: filtered,
-    });
+    const assessment = await Assessments.findById(testId).populate( 
+      "invitedStudents"
+    );
+    if(!assessment){
+      return next(new ErrorHandler(`Assessment not found with ID: ${testId}`, 404));
+    }
+   if(!assessment.createdByCompany){
+      approved = await ApprovedStudents.findOne({ college: id });
+      filtered = approved.students.filter(
+        (student) => !assessment.invitedStudents.includes(student._id) 
+      ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+    }
+    else{
+      filtered = assessment.invitedStudents;
+  }
+  res.status(200).json({
+    success: true,
+    assessment, 
+    students: filtered,
+  });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ success: "false", message: "something went wrong" });
   }
 });
 
