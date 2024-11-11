@@ -413,9 +413,7 @@ exports.evaluateResponse = catchAsyncErrors(async (req, res, next) => {
   // studentResponse.essay.forEach(essay => {
   //     const ques = await Essay.findById(essay.questionId);
   //     essayMarks += req.body.essayMarks;
-
   // }
-
   // );
 
   // let videoMarks = 0;

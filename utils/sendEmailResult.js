@@ -39,8 +39,8 @@ const sendEmailResult = async (options) => {
         return (
           `<tr>
                 <td style="padding: 10px; border: 1px solid #ddd;">${topic.Heading}</td>
-                <td style="padding: 10px; border: 1px solid #ddd;">${topic.totalMarks +' out of ' + topic.topicMarks}</td>
-                <td style="padding: 10px; border: 1px solid #ddd;">${(topic.totalMarks/topic.topicMarks)*100}%</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${topic.totalMarks + ' out of ' + topic.topicMarks}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${(topic.totalMarks / topic.topicMarks) * 100}%</td>
               </tr>`
         )
       })}            

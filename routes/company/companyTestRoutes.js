@@ -54,6 +54,7 @@ const {
   getAllBookmarks,
   removeBookmark,
 } = require("../../controllers/college/assessment/bookmark");
+
 // ======================================================= ROUTES =======================================================
 
 
@@ -213,6 +214,19 @@ router.post(
   inviteStudentsToTest
 );
 
+router.post("/topics/create", isAuthenticatedCompany, sectionsController.createTopicCollege);
+
+router.get("/topics/all", isAuthenticatedCompany, sectionsController.getTopics);
+
+//college add topics to assessment // currently doing using frontend
+// router.post("/add-topics/:id", isAuthenticatedCollege, addTopicstoAssessment);
+
+
+router.post(
+  "/add-questions/:topicId/:type",
+  isAuthenticatedCompany,
+  sectionsController.addQuestionsToTopicCollege
+);
 
 
 
