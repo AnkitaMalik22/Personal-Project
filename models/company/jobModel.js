@@ -7,6 +7,11 @@ const jobSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  tier :{
+    type: String,
+    enum: ['tier1', 'tier2', 'tier3'],
+    default: 'tier1',
+  },
   assessments : [
     {
   test :{

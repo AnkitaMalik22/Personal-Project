@@ -5,7 +5,6 @@ const Assessment = require("../../models/college/assessment/assessments");
 const { Student } = require("../../models/student/studentModel");
 const College = require("../../models/college/collegeModel");
 
-
 // ============================================= JOB CONTROLLERS ====================================================
 
 // --------------------------------------------- GET A JOB ----------------------------------------------------------
@@ -14,7 +13,9 @@ exports.getJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
   // console.log(jobId);
 
-  const job = await Job.findById(jobId).populate('company').populate('assessments.test');
+  const job = await Job.findById(jobId)
+    .populate("company")
+    .populate("assessments.test");
 
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));
@@ -30,14 +31,59 @@ exports.getJob = catchAsyncErrors(async (req, res, next) => {
 
 exports.createJob = catchAsyncErrors(async (req, res, next) => {
   const { companyId } = req.params;
+  console.log(req.user, "company id");
+
+  // Based on job.tier, push job to tier1, tier2, or tier3 colleges. While pushing job to colleges,
+  // add the company to the college's company list if not already present.
+
+  if (req.user.role !== "company") {
+    return next(
+      new ErrorHandler("You are not authorized to create a job", 401)
+    );
+  }
+
+  if (req.user.id !== companyId) {
+    return next(
+      new ErrorHandler("You are not authorized to create a job", 401)
+    );
+  }
+
+  if (req.body.tier !== "tier1" && req.body.tier !== "tier2" && req.body.tier !== "tier3") {
+    return next(new ErrorHandler("Invalid tier", 400));
+  }
+
+
+
   const job = await Job.create({
     ...req.body,
     company: companyId,
   });
+  let colleges = [];
+
+  if (req.body.tier === "tier1") {
+    colleges = await College.find({ $text: { $search: "tier1" } });
+  } else if (req.body.tier === "tier2") {
+    colleges = await College.find({ $text: { $search: "tier2" } });
+  } else if (req.body.tier === "tier3") {
+    colleges = await College.find({ $text: { $search: "tier3" } });
+  }
+
+  colleges.forEach(async (college) => {
+    await College.findByIdAndUpdate(college._id, {
+      $push: {
+        jobs: job._id,
+      },
+      $addToSet: {
+        designatedCompanies: companyId,
+      },
+    });
+  });
 
   res.status(201).json({
     success: true,
+    message: "Job created successfully",
     job,
+    colleges,
   });
 });
 
@@ -109,14 +155,15 @@ exports.getAllJobsStudent = catchAsyncErrors(async (req, res, next) => {
 
 exports.getAllJobsCollege = catchAsyncErrors(async (req, res, next) => {
   const { collegeId } = req.params;
-
-  const jobs = await Job.find({
-    College: { $in: [collegeId] },
-  });
+  const college = await College.findById(collegeId).populate("jobs");
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
 
   res.status(200).json({
     success: true,
-    jobs,
+    jobs : college.jobs,
+    message: "All jobs fetched successfully",
   });
 });
 
@@ -203,12 +250,14 @@ exports.getAllAssessmentsStudent = catchAsyncErrors(async (req, res, next) => {
 
 exports.addStudentToJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
-  const {  studentIds } = req.body;
-    const collegeId = req.user.id;
+  const { studentIds } = req.body;
+  const collegeId = req.user.id;
 
-    if(req.user.role !== 'college'){
-        return next(new ErrorHandler("You are not authorized to invite students", 401));
-    }
+  if (req.user.role !== "college") {
+    return next(
+      new ErrorHandler("You are not authorized to invite students", 401)
+    );
+  }
 
   const college = await College.findById(collegeId);
   const job = await Job.findById(jobId);
@@ -268,7 +317,6 @@ exports.addStudentToJob = catchAsyncErrors(async (req, res, next) => {
     });
   }
 
-
   await Job.findByIdAndUpdate(jobId, {
     $push: {
       Student: studentIds,
@@ -289,7 +337,7 @@ exports.addStudentToJob = catchAsyncErrors(async (req, res, next) => {
 // save studentId --> Job.Students || Job.Colleges
 
 exports.applyJob = catchAsyncErrors(async (req, res, next) => {
-  const { jobId} = req.params;
+  const { jobId } = req.params;
   let studentId = req.user.id;
 
   const student = await Student.findById(studentId);
@@ -355,7 +403,7 @@ exports.getFilteredJobs = async (req, res, next) => {
     }
 
     console.log(query);
-    const jobs = await Job.find(query).populate('company')
+    const jobs = await Job.find(query).populate("company");
 
     res.status(200).json({
       success: true,
@@ -380,4 +428,3 @@ exports.searchJobs = async (req, res, next) => {
     next(error);
   }
 };
-
