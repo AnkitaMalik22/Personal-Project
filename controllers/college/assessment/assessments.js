@@ -710,34 +710,26 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, assessment });
 });
 
-const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
-  try {
-    const { id } = req.user;
-    const testId = req.params.id;
-    
-    let approved, filtered;
 
-    const assessment = await Assessments.findById(testId).populate( 
-      "invitedStudents"
-    );
-    if(!assessment){
-      return next(new ErrorHandler(`Assessment not found with ID: ${testId}`, 404));
-    }
-   if(!assessment.createdByCompany){
-      approved = await ApprovedStudents.findOne({ college: id });
-      filtered = approved.students.filter(
-        (student) => !assessment.invitedStudents.includes(student._id) 
-      ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
-    }
-    else{
-      filtered = assessment.invitedStudents;
-  }
-  res.status(200).json({
-    success: true,
-    assessment, 
-    students: filtered,
-  });
+const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
+      try {
+        const { id } = req.user;
+        
+    
+        const assessment = await Assessments.findById(req.params.id);
+
+        const approved = await ApprovedStudents.findOne({ college: id }).populate(
+          "students"
+        )
+        const filtered = approved.students.filter(
+          (student) => !assessment.invitedStudents.includes(student._id) 
+        ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        res.status(200).json({
+          success: true,
+          assessment, 
+          students: filtered,
+        });
+ 
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: "false", message: "something went wrong" });
