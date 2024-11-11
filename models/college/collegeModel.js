@@ -232,6 +232,12 @@ const collegeSchema = new mongoose.Schema({
       ref: "Company",
     },
   ],
+  jobs : [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Job',
+    }
+  ],
 });
 
 collegeSchema.pre("save", async function (next) {
@@ -272,4 +278,10 @@ collegeSchema.methods.getResetPasswordToken = function () {
 };
 
 const College = mongoose.model("College", collegeSchema);
+// create index on tier
+
+collegeSchema.index({ tier: 'text' });
+
+
+
 module.exports = College;
