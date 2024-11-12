@@ -55,6 +55,7 @@ const {
   removeBookmark,
 } = require("../../controllers/college/assessment/bookmark");
 const { getAllJobTestsByCollege } = require("../../controllers/company/jobTestController");
+const { getSelectedStudents } = require("../../controllers/college/collegeController");
 
 // ======================================================= ROUTES =======================================================
 
@@ -65,7 +66,11 @@ router.get("/1", isAuthenticatedCompany, (req, res) => {
 
 // Assessments Routes
 router.route("/result/graph").get(isAuthenticatedCompany, getResultGraph);
-
+router.get(
+  "/students/selected/:testId",
+  isAuthenticatedCompany,
+  getSelectedStudents
+);
 router.route("/students/:id").get(isAuthenticatedCompany, getStudentsForTest);
 router.route("/recent").get(isAuthenticatedCompany, getRecentAssessments);
 router

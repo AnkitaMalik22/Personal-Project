@@ -67,7 +67,7 @@ const {
 
 
 // Assessments Routes
-router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph);
+router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph)
 
 router.route("/students/:id").get(isAuthenticatedCollege, getStudentsForTest);
 router.route("/recent").get(isAuthenticatedCollege, getRecentAssessments);
