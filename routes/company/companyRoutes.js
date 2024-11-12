@@ -80,7 +80,7 @@ router.route("/jobs/:jobId/place/:studentId").post( placeStudentInJob);
 router.route("/jobs/placements/:collegeId").get( getAllPlacedStudents);
 
 // ======================================================= JOB TESTROUTES =======================================================
-router.post("/jobs/:jobId/:testId", isAuthenticatedCompany,addTestToJob);   
+router.post("/jobs/add-test/:jobId/:testId", isAuthenticatedCompany,addTestToJob);   
 router.delete("/jobs/:jobId/:testId", isAuthenticatedCompany,removeTestFromJob);
 router.get("/v2/jobs/:jobId", isAuthenticatedCompany,getJobTests);
 
