@@ -4,6 +4,7 @@ const ErrorHandler = require("../../utils/errorhandler");
 const Assessment = require("../../models/college/assessment/assessments");
 const { Student } = require("../../models/student/studentModel");
 const College = require("../../models/college/collegeModel");
+const mongoose = require("mongoose");
 
 // ============================================= JOB CONTROLLERS ====================================================
 
@@ -89,7 +90,7 @@ exports.createJob = catchAsyncErrors(async (req, res, next) => {
 
 // --------------------------------------------- UPDATE A JOB --------------------------------------------------------
 
-exports.updateJob = catchAsyncErrors(async (req, res) => {
+exports.updateJob = catchAsyncErrors(async (req, res,next) => {
   const { jobId } = req.params;
 
   const job = await Job.findById(jobId);
@@ -97,17 +98,22 @@ exports.updateJob = catchAsyncErrors(async (req, res) => {
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));
   }
-  if (job.company !== req.user.id) {
+  console.log(job.company, req.user.id, "company id");
+
+  if (!job.company.equals(new mongoose.Types.ObjectId(req.user.id))) {
     return next(
       new ErrorHandler("You are not authorized to update this job", 401)
     );
   }
 
-  await Job.updateOne(req.body);
+  const updatedJob = await Job.findByIdAndUpdate(jobId, req.body, {
+    new: true,
+    runValidators: true,
+  });
 
   res.status(200).json({
     success: true,
-    job,
+    job: updatedJob,
   });
 });
 

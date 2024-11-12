@@ -54,6 +54,7 @@ const {
   getAllBookmarks,
   removeBookmark,
 } = require("../../controllers/college/assessment/bookmark");
+const { getAllJobTestsByCollege } = require("../../controllers/company/jobTestController");
 
 // ======================================================= ROUTES =======================================================
 
@@ -70,7 +71,7 @@ router.route("/recent").get(isAuthenticatedCompany, getRecentAssessments);
 router
   .route("/recent/:id")
   .delete(isAuthenticatedCompany, removeRecentAssessment);
-router.get("/", isAuthenticatedCompany, getAllAssessments);
+router.get("/get-all", isAuthenticatedCompany, getAllAssessments);
 
 router.get("/download/:id", isAuthenticatedCompany, getResultInExcel);
 router.get("/:id", isAuthenticatedCompany, getAssessmentById);
@@ -227,6 +228,8 @@ router.post(
   isAuthenticatedCompany,
   sectionsController.addQuestionsToTopicCollege
 );
+
+router.get('/all-tests/:collegeId', isAuthenticatedCompany, getAllJobTestsByCollege);
 
 
 

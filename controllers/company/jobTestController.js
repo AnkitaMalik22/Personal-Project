@@ -11,16 +11,19 @@ exports.addTestToJob = catchAsyncErrors(async (req, res, next) => {
     const { testStartDate, testEndDate } = req.body; 
 
     // Find job and test in parallel for better performance
-    const [job, test] = await Promise.all([
-        Job.findById(jobId),
-        Assessment.findOne({ 
-            _id: testId,
-            $or: [
-                { createdByCompany: true },
-                { company: job?.company } 
-            ]
-        }).select('_id name totalTime totalMarks')
-    ]);
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+        return next(new ErrorHandler("Job not found", 404));
+    }
+
+    const test = await Assessment.findOne({ 
+        _id: testId,
+        $or: [
+            { createdByCompany: true },
+            { company: job.company } 
+        ]
+    }).select('_id name totalTime totalMarks');
 
     if (!job) {
         return next(new ErrorHandler("Job not found", 404));
@@ -31,14 +34,14 @@ exports.addTestToJob = catchAsyncErrors(async (req, res, next) => {
     }
 
     // Validate dates if provided
-    if (testStartDate && testEndDate) {
-        const start = new Date(testStartDate);
-        const end = new Date(testEndDate);
+    // if (testStartDate && testEndDate) {
+    //     const start = new Date(testStartDate);
+    //     const end = new Date(testEndDate);
         
-        if (end <= start) {
-            return next(new ErrorHandler("End date must be after start date", 400));
-        }
-    }
+    //     if (end <= start) {
+    //         return next(new ErrorHandler("End date must be after start date", 400));
+    //     }
+    // }
 
     // Check if test is already added to job
     const testExists = job.assessments.some(assessment => 
@@ -112,6 +115,22 @@ exports.getJobTests = catchAsyncErrors(async (req, res, next) => {
     res.status(200).json({
         success: true,
         job
+    });
+}
+);
+
+exports.getAllJobTestsByCollege = catchAsyncErrors(async (req, res, next) => {
+    const { collegeId } = req.params;
+
+    const jobs = await Job.find({ college: collegeId }).populate({ path: 'assessments.test', select: 'name totalTime totalMarks' });
+    // all tests of all jobs of a college
+   const tests = jobs.map(job => job.assessments.map(assessment => assessment.test));
+
+
+
+    res.status(200).json({
+        success: true,
+        tests,
     });
 }
 );

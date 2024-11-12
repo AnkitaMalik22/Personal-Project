@@ -297,17 +297,20 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     }
     if (company) {
  // find the jobId and push the assessment id in the job
-      const job = await Job.findById(req.body.jobId);
-      if (!job) {
-        return next(new ErrorHandler("Job not found", 404));
-      }
-      assessment.job = req.body.jobId;
+      // const job = await Job.findById(req.body.jobId);
+      // if (!job) {
+      //   return next(new ErrorHandler("Job not found", 404));
+      // }
+      // assessment.job = req.body.jobId;
 
-      await  job.assessments.push({
-        test: assessment._id,
-      });
+      // await  job.assessments.push({
+      //   test: assessment._id,
+      // });
 
-      await job.save();
+      // await job.save();
+
+      assessment.company = id;
+
     }
     await assessment.save();
 
@@ -320,6 +323,10 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+// ==================================================| Add Test to Job |=======================================================================
+
+
 
 // ===================================================| Invite Student to Assessment |========================================================
 
@@ -422,9 +429,11 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 // Get All Assessments -- // By College or Company //
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.user;
-  let assessments = await Assessments.find({ createdBy: id })
+  
+  let assessments = await Assessments.find({company : id })
     .sort({ createdAt: -1 })
     .populate("invitedStudents");
+    console.log(assessments);
 
   res.status(200).json({
     success: true,
@@ -725,18 +734,21 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
         const { id } = req.user;
         
     
-        const assessment = await Assessments.findById(req.params.id);
+        // const assessment = await Assessments.findById(req.params.id);
 
-        const approved = await ApprovedStudents.findOne({ college: id }).populate(
-          "students"
-        )
-        const filtered = approved.students.filter(
-          (student) => !assessment.invitedStudents.includes(student._id) 
-        ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        // const approved = await ApprovedStudents.findOne({ college: id }).populate(
+        //   "students"
+        // )
+        // const filtered = approved.students.filter(
+        //   (student) => !assessment.invitedStudents.includes(student._id) 
+        // ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+
+        const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
         res.status(200).json({
           success: true,
           assessment, 
-          students: filtered,
+          students: assessment.invitedStudents,
         });
  
   } catch (error) {
