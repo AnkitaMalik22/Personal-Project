@@ -722,17 +722,12 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
 
 const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       try {
-        const { id } = req.user;
+        const { id ,role } = req.user;
+
+        if(role === "company"){
         
     
-        // const assessment = await Assessments.findById(req.params.id);
-
-        // const approved = await ApprovedStudents.findOne({ college: id }).populate(
-        //   "students"
-        // )
-        // const filtered = approved.students.filter(
-        //   (student) => !assessment.invitedStudents.includes(student._id) 
-        // ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
 
 
         const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
@@ -741,6 +736,22 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
           assessment, 
           students: assessment.invitedStudents,
         });
+      }else{
+          const assessment = await Assessments.findById(req.params.id);
+
+        const approved = await ApprovedStudents.findOne({ college: id }).populate(
+          "students"
+        )
+        const filtered = approved.students.filter(
+          (student) => !assessment.invitedStudents.includes(student._id) 
+        ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        res.status(200).json({
+          success: true,
+          students: filtered,
+
+        });
+      }
  
   } catch (error) {
     console.log(error);
