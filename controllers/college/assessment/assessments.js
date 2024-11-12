@@ -15,6 +15,7 @@ const collegeTransaction = require("../../../models/college/account/collegeTrans
 const Job = require("../../../models/company/jobModel");
 const mongoose = require("mongoose");
 const XLSX = require('xlsx');
+const PaymentPlan = require("../../../models/college/account/planModel");
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -334,11 +335,18 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     const assessmentId = req.params.id;
 
     const college = await College.findById(CollegeId);
-    const assessment = await Assessments.findById(assessmentId);
+    const assessment = await Assessments.findById(assessmentId).populate("invitedStudents");
     const credit = await Credit.findOne({ college: CollegeId });
-    console.log(credit);
-    if (!college) {
-      return next(new ErrorHandler("College not found", 404));
+    const plan = await PaymentPlan.findById(college.selectedPlan);
+
+    const invitedStudentsByCollege = assessment.invitedStudents.filter((student)=>{
+      // console.log(student.CollegeId,CollegeId,student.CollegeId===CollegeId )
+     return student.CollegeId.toString()===CollegeId
+    });
+    // console.log(assessment.invitedStudents);
+
+    if (!college || !plan) {
+      return next(new ErrorHandler("College not found or plan has expired", 404));
     }
 
     if (!assessment) {
@@ -351,14 +359,14 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
         // send Email to attend the test
         if (assessment.invitedStudents.includes(_id)) {
-          console.log("Student already invited");
+          // console.log("Student already invited");
           // return next(new ErrorHandler("Student already invited", 404));
         } else { 
-          console.log(assessment.invitedStudents.length + 1, credit.limit,"");
-
+          // console.log(assessment.invitedStudents.length + 1, credit.limit,"");
+          console.log(invitedStudentsByCollege)
           if (
-            credit.limit === 400 &&
-            assessment.invitedStudents.length + 1 > credit.limit
+            plan.charges!="Not Allowed" &&
+            invitedStudentsByCollege.length + 1 > credit.limit
           ) {
             if (credit.credit === 0) {
               return res
@@ -368,12 +376,13 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
             credit.credit -= 1;
             await credit.save();
-          } else if (assessment.invitedStudents.length + 1 > credit.limit) {
+          } else if (invitedStudentsByCollege.length + 1 > credit.limit) {
             return res
               .status(429)
               .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
           }
           assessment.invitedStudents.push(_id);
+          invitedStudentsByCollege.push(_id);
 
           await assessment.save();
           await CollegeAssessInv.findOneAndUpdate(
