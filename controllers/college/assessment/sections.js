@@ -11,6 +11,7 @@ const Compiler = require("../../../models/college/assessment/Compiler");
 // const cloudinary = require("cloudinary");
 const cloudinary = require("cloudinary").v2;
 const path = require("path");
+const Company = require("../../../models/company/companyModel");
 
 // ===================================================| Create Section |===================================================================
 
@@ -193,48 +194,50 @@ exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
 // ----------------------------- CREATE TOPIC COLLGE-----------------------------
 
 exports.createTopicCollege = async (req, res) => {
-  try {
+   try {
     const { Heading, Description, TotalQuestions, Time } = req.body;
-    const collegeId = req.user.id;
-    console.log(collegeId, "collegeId");
-    const college = await College.findById(collegeId);
-    if (!college) {
-      return res.status(404).json({ error: "College not found" });
+    const source = req.user.role;
+    const userId = req.user.id;
+
+    // Determine if the user is a company or college based on the `source` query parameter
+    const isCompany = !source || source.toLowerCase() === "company";
+    const UserModel = isCompany ? Company : College;
+
+    // Fetch the user (Company or College)
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: `${isCompany ? "Company" : "College"} not found` });
     }
-    if (
-      Heading === "" ||
-      Description === "" ||
-      TotalQuestions === "" ||
-      Time === ""
-    ) {
+
+    // Validate input fields
+    if (!Heading || !Description ) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const topics = await Section.find({ college: collegeId });
-
-    let duplicateTopic = false;
-
-    topics &&
-      topics.forEach((topic) => {
-        if (topic.Heading === req.body.Heading) {
-          duplicateTopic = true;
-        }
-      });
+    // Check for duplicate topics based on the user type
+    const topics = await Section.find({
+      company: isCompany ? userId : undefined,
+      college: !isCompany ? userId : undefined
+    });
+    const duplicateTopic = topics.some(topic => topic.Heading === Heading);
 
     if (duplicateTopic) {
       return res.status(400).json({ error: "Topic already exists" });
     }
 
+    // Create the new topic, setting the appropriate fields
     const section = await Section.create({
       ...req.body,
       Type: "",
-      college: collegeId,
-      createdByCollege: true,
+      company: isCompany ? userId : undefined,
+      college: !isCompany ? userId : undefined,
+      createdByCompany: isCompany,
     });
+    if(!isCompany){
+      user.topics.push(section);
 
-    college.topics.push(section);
-
-    await college.save();
+      await user.save();
+    }
 
     return res.status(201).json({
       message: "Topic created successfully",
@@ -365,46 +368,48 @@ exports.createTopicCollege = async (req, res) => {
 
 exports.getTopics = async (req, res) => {
   try {
-    const collegeId = req.user.id;
-    const query = req.query.level;
-    const college = await College.findById(collegeId);
-    if (!college) {
-      return res.status(404).json({ error: "College not found" });
+    const {  level } = req.query; // Get source and level from req.query
+    const userId = req.user.id;
+const source = req.user.role;
+    // Determine if the request is from a college or company based on the `source` query parameter
+    const isCompany = source && source.toLowerCase() === "company";
+    const UserModel = isCompany ? Company : College;
+
+    // Fetch the user (Company or College)
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: `${isCompany ? "Company" : "College"} not found` });
     }
-    console.log(query, "query");
 
     let topics;
 
-    if (query === "adaptive") {
-      topics = await Section.find({ college: collegeId }).populate("questions");
+    // Check the level query parameter to filter topics
+    if (level === "adaptive") {
+      topics = await Section.find({ [isCompany ? "company" : "college"]: userId }).populate("questions");
     } else {
-      topics = await Section.find({ college: collegeId })
+      topics = await Section.find({ [isCompany ? "company" : "college"]: userId })
         .populate({
           path: "questions",
-          match: { QuestionLevel: query },
+          match: { QuestionLevel: level },
         })
         .populate({
           path: "findAnswers",
-          match: { QuestionLevel: query },
+          match: { QuestionLevel: level },
         })
         .populate({
           path: "essay",
-          match: { QuestionLevel: query },
+          match: { QuestionLevel: level },
         })
         .populate({
           path: "video",
-          match: { QuestionLevel: query },
+          match: { QuestionLevel: level },
         })
         .populate({
           path: "compiler",
-          match: { QuestionLevel: query },
+          match: { QuestionLevel: level },
         })
         .lean(); // Add the lean() method to populate the fields as plain JavaScript objects
     }
-
-    console.log(topics, "topics");
-
-    // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
 
     return res.status(200).json({
       message: "Topics found",
@@ -508,17 +513,20 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
 
     section = await Section.findById(topicId);
 
-    console.log(topicId, type);
+
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
       });
     }
-    let id = section.college.toString();
 
-    console.log(collegeId, id);
+    let id = "" ;
+    if(req.user.role==="company"){
+      id = section.company.toString();
+    }else {
+      section.college.toString();
+    }
 
-    console.log(id === collegeId);
 
     if (id != collegeId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -595,6 +603,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     return res.status(201).json({
       message: "Question added successfully",
       questions: [question],
+      topic:section
     });
   } catch (error) {
     console.log(error);

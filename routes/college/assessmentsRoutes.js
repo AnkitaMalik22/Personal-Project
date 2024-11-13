@@ -7,10 +7,10 @@ const answersController = require("../../controllers/college/assessment/answers"
 const {
   isAuthenticatedStudent,
   isAuthenticatedCollege,
-  isAuthenticatedCompany,
+  // isAuthenticatedCompany,
   authorizeRoles,
 } = require("../../middlewares/auth");
-
+const { isAuthenticatedCompany } = require("../../middlewares/companyAuth");
 const {
   getResultGraph,
   getStudentsForTest,
@@ -64,8 +64,10 @@ const {
 } = require("../../controllers/college/assessment/bookmark");
 // ======================================================= ROUTES =======================================================
 
+
+
 // Assessments Routes
-router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph);
+router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph)
 
 router.route("/students/:id").get(isAuthenticatedCollege, getStudentsForTest);
 router.route("/recent").get(isAuthenticatedCollege, getRecentAssessments);

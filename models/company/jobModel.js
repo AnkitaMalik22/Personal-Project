@@ -3,6 +3,38 @@ const Student = require('../student/studentModel');
 const Company = require('./companyModel');
 
 const jobSchema = new mongoose.Schema({
+  isOpenforApply: {
+    type: Boolean,
+    default: true,
+  },
+  tier :{
+    type: String,
+    enum: ['tier1', 'tier2', 'tier3'],
+    default: 'tier1',
+  },
+  GraduationBatch: {
+    type: String,
+    // required: true,
+  },
+  assessments : [
+    {
+  test :{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Assessments',
+  },
+  testStartDate: {
+    type: Date,
+  },
+  testEndDate: {
+    type: Date,
+  },
+  shortlistedStudents: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+  }
+],
+  }],
+
  company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
@@ -82,5 +114,8 @@ const jobSchema = new mongoose.Schema({
 });
 
 const Job = mongoose.model('Job', jobSchema);
+
+jobSchema.index({ company: 1 });
+jobSchema.index({ 'assessments.test': 1 });
 
 module.exports = Job;

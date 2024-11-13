@@ -16,7 +16,7 @@ const ApprovedStudents = require("../../../models/college/student/Approved");
 
 exports.uploadAttachment = async (req, res) => {
   try {
-    console.log(Object.values(req.files));
+    // console.log(Object.values(req.files));
     const uploadPromises = [];
     let pics = [];
     // Iterate over uploaded files

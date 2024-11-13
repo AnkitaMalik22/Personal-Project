@@ -36,6 +36,7 @@ const isAuthenticatedUser = (model) => {
     let user = await College.findById(decodedData.id);
     // console.log(user, "college");
     if (!user) {
+      console.log("user not found -inside collegeAuth");
       return next(
         new ErrorHander(
           "User not found with this token. Please login again",
@@ -67,7 +68,7 @@ const isAuthenticatedUser = (model) => {
 // Usage
 exports.isAuthenticatedStudent = isAuthenticatedUser(Student);
 exports.isAuthenticatedCollege = isAuthenticatedUser(College);
-exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
+// exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
 
 exports.authorizeRoles = (...roles) => {
   return (req, res, next) => {
