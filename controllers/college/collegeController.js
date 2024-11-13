@@ -1426,12 +1426,17 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
   // const college = await College.findById(req.user.id).populate({
   //   path: "jobs",
   // });
-  const jobs = await Job.find({}).populate("company");
+  const id = req.user.id;
+  const college = await College.findById(id).populate("jobs");
+  if (!college) {
+    return next(new ErrorHandler("College not found", 404));
+  }
 
   res.status(200).json({
     success: true,
-    jobs: jobs,
-    // totalJobs: college.jobs.length,
+    jobs : college.jobs,
+    
+    message: "All jobs fetched successfully",
   });
 });
 
@@ -1515,7 +1520,17 @@ exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
 
     // Map over the designatedCompanies array
     let designatedCompanies = companies.designatedCompanies.map((company) => {
-      return company;
+      let hiring = false;
+      console.log(company.jobs);
+      if (company.jobs && company.jobs.length > 0) {
+        // set it  based on isOpenForApplications later
+      hiring = true;
+      }
+      return {
+      ...company._doc,
+      hiring,
+      tier: college.tier,
+      };
     });
 
     res.status(200).json({
