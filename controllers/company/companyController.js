@@ -6,7 +6,7 @@ const sendEmail = require("../../utils/sendEmail");
 const crypto = require("crypto");
 const sendTokenCompany = require("../../utils/jwtTokenCompany");
 const { uploadPicture } = require("../../utils/uploadPicture");
-const { v2: cloudinary } = require("cloudinary");
+const cloudinary = require("cloudinary");
 const bcrypt = require('bcryptjs');
 
 // ================================================================================================================================
@@ -398,15 +398,18 @@ exports.updateCoverPictureCompany = catchAsyncErrors(async (req, res) => {
 // ================================================ Update Company Logo ===========================================================
 
 exports.updateLogoCompany = catchAsyncErrors(async (req, res, next) => {
+
+  // console.log(req.body.logo)
   const myCloud = await cloudinary.v2.uploader.upload(req.body.logo, {
     folder: "logos",
     width: 150,
     crop: "scale",
   });
 
+
   const company = await Company.findByIdAndUpdate(req.user.id,
     {
-      logo: {
+     avatar: {
         public_id: myCloud.public_id,
         url: myCloud.secure_url,
       },

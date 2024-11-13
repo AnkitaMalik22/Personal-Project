@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
+const {isAuthenticatedCollege} = require('../../middlewares/auth');
 
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
 const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany,  forgotPassword, resetPassword, updatePassword,logout, getCompany,  uploadCompanyImage, loginCompany} = require('../../controllers/company/companyController');
@@ -8,6 +8,7 @@ const { addTestToJob, removeTestFromJob,getJobTests } = require("../../controlle
 
 const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/company/placementController');
 const { isAuthenticatedCompany } = require('../../middlewares/companyAuth');
+const { isAuthenticatedStudent } = require('../../middlewares/studentAuth');
 
 
 
@@ -32,7 +33,7 @@ router.post('/upload/image', uploadCompanyImage);
 // ============================================= JOB ROUTES ====================================================
 
 // --------------Filter Jobs----------------------------------
-router.get('/jobs/filter', getFilteredJobs);
+router.get('/jobs/filter',isAuthenticatedStudent, getFilteredJobs);
 // search Jobs
 router.get('/jobs/search', searchJobs);
 // -----------------------------------------------------------
@@ -81,6 +82,7 @@ router.route("/jobs/placements/:collegeId").get( getAllPlacedStudents);
 
 // ======================================================= JOB TESTROUTES =======================================================
 router.post("/jobs/add-test/:jobId/:testId", isAuthenticatedCompany,addTestToJob);   
+router.delete("/jobs/:jobId/:testId", isAuthenticatedCompany,removeTestFromJob);
 router.delete("/jobs/:jobId/:testId", isAuthenticatedCompany,removeTestFromJob);
 router.get("/v2/jobs/:jobId", isAuthenticatedCompany,getJobTests);
 

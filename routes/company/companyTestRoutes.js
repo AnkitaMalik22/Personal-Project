@@ -56,6 +56,7 @@ const {
 } = require("../../controllers/college/assessment/bookmark");
 const { getAllJobTestsByCollege } = require("../../controllers/company/jobTestController");
 const { getSelectedStudents, selectStudentTest } = require("../../controllers/college/collegeController");
+const { getAllJobTestsByCompany } = require("../../controllers/company/jobTestController");
 
 // ======================================================= ROUTES =======================================================
 
@@ -235,6 +236,7 @@ router.post(
 );
 
 router.get('/all-tests/:collegeId', isAuthenticatedCompany, getAllJobTestsByCollege);
+router.get('/all-tests', isAuthenticatedCompany, getAllJobTestsByCompany);
 
 router.post(
   "/status/:testId/:responseId",

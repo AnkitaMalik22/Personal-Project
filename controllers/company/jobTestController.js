@@ -25,6 +25,9 @@ exports.addTestToJob = catchAsyncErrors(async (req, res, next) => {
         ]
     }).select('_id name totalTime totalMarks');
 
+    test.job =jobId;
+    await test.save();
+
     if (!job) {
         return next(new ErrorHandler("Job not found", 404));
     }
@@ -127,6 +130,21 @@ exports.getAllJobTestsByCollege = catchAsyncErrors(async (req, res, next) => {
    const tests = jobs.map(job => job.assessments.map(assessment => assessment.test));
 
 
+
+    res.status(200).json({
+        success: true,
+        tests,
+    });
+}
+);
+
+exports.getAllJobTestsByCompany = catchAsyncErrors(async (req, res, next) => {
+ const companyId = req.user.id;
+//  console.log("----------------------called----------------------");
+
+    const jobs = await Job.find({ company: companyId }).populate
+
+    const tests = jobs.map(job => job.assessments.map(assessment => assessment.test));
 
     res.status(200).json({
         success: true,

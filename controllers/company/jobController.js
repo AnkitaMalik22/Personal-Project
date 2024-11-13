@@ -4,6 +4,7 @@ const ErrorHandler = require("../../utils/errorhandler");
 const Assessment = require("../../models/college/assessment/assessments");
 const { Student } = require("../../models/student/studentModel");
 const College = require("../../models/college/collegeModel");
+const Company = require("../../models/company/companyModel");
 const mongoose = require("mongoose");
 
 // ============================================= JOB CONTROLLERS ====================================================
@@ -53,7 +54,11 @@ exports.createJob = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Invalid tier", 400));
   }
 
+const company = await Company.findById(companyId);
 
+  if (!company) {
+    return next(new ErrorHandler("Company not found", 404));
+  }
 
   const job = await Job.create({
     ...req.body,
@@ -79,6 +84,12 @@ exports.createJob = catchAsyncErrors(async (req, res, next) => {
       },
     });
   });
+
+
+  company.jobs.push(job._id);
+  await company.save();
+
+
 
   res.status(201).json({
     success: true,
@@ -169,6 +180,7 @@ exports.getAllJobsCollege = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     jobs : college.jobs,
+    
     message: "All jobs fetched successfully",
   });
 });
@@ -182,7 +194,7 @@ exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
   const jobs = await Job.find({
     company: companyId,
   });
-  console.log(jobs);
+  // console.log(jobs);
 
   if (!jobs) {
     return next(new ErrorHandler("No jobs available", 404));
@@ -391,6 +403,15 @@ exports.getFilteredJobs = async (req, res, next) => {
   try {
     let query = {};
 
+    const studentId = req.user.id;
+
+    const student = await Student.findById(studentId);
+    console.log(student.FirstName, "student");
+
+    const collegeId = student.CollegeId;
+
+   
+
     if (req.query.seniorityLevel) {
       query.SeniorityLevel = { $in: req.query.seniorityLevel };
     }
@@ -408,8 +429,24 @@ exports.getFilteredJobs = async (req, res, next) => {
       query.SalaryTo = { $lte: req.query.maxSalary };
     }
 
-    console.log(query);
-    const jobs = await Job.find(query).populate("company");
+    const college = await College.findById(collegeId).populate("jobs");
+    const jobs = college.jobs.filter(job =>
+      Object.entries(query).every(([key, condition]) => {
+        if (typeof condition === 'object' && condition.$in) {
+          return condition.$in.includes(job[key]);
+        }
+        if (typeof condition === 'object' && condition.$gte) {
+          return job[key] >= condition.$gte;
+        }
+        if (typeof condition === 'object' && condition.$lte) {
+          return job[key] <= condition.$lte;
+        }
+        return job[key] === condition;
+      })
+    );
+
+    // console.log(query);
+    // const jobs = await Job.find(query).populate("company");
 
     res.status(200).json({
       success: true,

@@ -12,6 +12,10 @@ const jobSchema = new mongoose.Schema({
     enum: ['tier1', 'tier2', 'tier3'],
     default: 'tier1',
   },
+  GraduationBatch: {
+    type: String,
+    // required: true,
+  },
   assessments : [
     {
   test :{
