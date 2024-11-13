@@ -1,11 +1,14 @@
 const router = require('express').Router();
-const {isAuthenticatedCompany, isAuthenticatedStudent, isAuthenticatedCollege} = require('../../middlewares/auth');
+const {isAuthenticatedCollege} = require('../../middlewares/auth');
 
 const {getJob, createJob, updateJob, getAllJobsCompany, getAllJobsCollege, getAllJobsStudent, createAssessmentForJob, getAllAssessmentsCompany, getAllAssessmentsStudent, deleteJob,addStudentToJob, applyJob,getFilteredJobs,searchJobs} = require('../../controllers/company/jobController');
-const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany, loginCompany, forgotPassword, resetPassword, updatePassword,logout, getCompany} = require('../../controllers/company/companyController');
+const { updateCoverPictureCompany, updateLogoCompany, getCompanyDetails, updateProfile, deleteCompany, registerCompany,  forgotPassword, resetPassword, updatePassword,logout, getCompany,  uploadCompanyImage, loginCompany} = require('../../controllers/company/companyController');
 ;
+const { addTestToJob, removeTestFromJob,getJobTests } = require("../../controllers/company/jobTestController");
 
 const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/company/placementController');
+const { isAuthenticatedCompany } = require('../../middlewares/companyAuth');
+const { isAuthenticatedStudent } = require('../../middlewares/studentAuth');
 
 
 
@@ -13,7 +16,7 @@ const {placeStudentInJob, getAllPlacedStudents} = require('../../controllers/com
 // ============================================= Comapny ROUTES ====================================================
 
 router.route("/register").post(registerCompany);
-router.route("/login").post(loginCompany);
+router.route("/signin").post(loginCompany);
 // router.route("/me").get(isAuthenticatedCompany, getCompanyDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
@@ -25,11 +28,12 @@ router.put('/update', isAuthenticatedCompany,updateProfile);
 router.delete('/delete', isAuthenticatedCompany, deleteCompany);
 router.put('/update/logo', isAuthenticatedCompany, updateLogoCompany);
 router.put('/update/cover', isAuthenticatedCompany, updateCoverPictureCompany);
+router.post('/upload/image', uploadCompanyImage);
 
 // ============================================= JOB ROUTES ====================================================
 
 // --------------Filter Jobs----------------------------------
-router.get('/jobs/filter', getFilteredJobs);
+router.get('/jobs/filter',isAuthenticatedStudent, getFilteredJobs);
 // search Jobs
 router.get('/jobs/search', searchJobs);
 // -----------------------------------------------------------
@@ -40,7 +44,12 @@ router.delete('/jobs/:jobId', isAuthenticatedCompany,deleteJob);
 
 
 
-router.post('/jobs/:companyId', createJob);
+router.post('/jobs/:companyId', isAuthenticatedCompany,  createJob);
+router.get('/all-jobs/:companyId', getAllJobsCompany);
+
+
+
+
 // router.post('/jobs/:companyId', isAuthenticatedCompany, createJob);
 router.post('/jobs/assessment/:jobId', isAuthenticatedCompany, createAssessmentForJob);
 router.get('/jobs/assessments/:comapnyId', isAuthenticatedCompany, getAllAssessmentsCompany);
@@ -54,8 +63,9 @@ router.post('/jobs/assessments/apply/college/:jobId', isAuthenticatedCollege, ad
 
 
 
-router.get('/jobs/:companyId', getAllJobsCompany);
+
 router.get('/jobs/:collegeId', getAllJobsCollege);
+router.get('/jobs/college/:collegeId', getAllJobsCollege);
 router.get('/jobs/:studentId', isAuthenticatedStudent, getAllJobsStudent);
 
 router.get('/:companyId', getCompany);
@@ -69,6 +79,13 @@ router.route("/jobs/:jobId/place/:studentId").post( placeStudentInJob);
 
 //  GET ALL RECENT PLACE STUDENTS OF COLLEGE
 router.route("/jobs/placements/:collegeId").get( getAllPlacedStudents);
+
+// ======================================================= JOB TESTROUTES =======================================================
+router.post("/jobs/add-test/:jobId/:testId", isAuthenticatedCompany,addTestToJob);   
+router.delete("/jobs/:jobId/:testId", isAuthenticatedCompany,removeTestFromJob);
+router.delete("/jobs/:jobId/:testId", isAuthenticatedCompany,removeTestFromJob);
+router.get("/v2/jobs/:jobId", isAuthenticatedCompany,getJobTests);
+
 
 
 module.exports = router;

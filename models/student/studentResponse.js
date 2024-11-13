@@ -347,7 +347,6 @@ const studentResponseSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
     mcqMarks: {
       type: Number,
       default: 0,

@@ -77,6 +77,10 @@ const collegeStudentRoutes = require("./routes/college/studentRoutes.js");
 const studentTestRoutes = require("./routes/student/studentTestRoutes.js");
 const studentInboxRoutes = require("./routes/student/studentInboxRoutes.js");
 const studentGraphRoutes = require("./routes/student/studentGraphRoutes.js");
+const companyTestRoutes = require("./routes/company/companyTestRoutes.js");
+const { isAuthenticatedCompany } = require("./middlewares/companyAuth.js");
+
+// ======================================================= ROUTES =======================================================
 
 // routes
 app.use("/api/college", collegeRoutes);
@@ -85,11 +89,12 @@ app.use("/api/college/student", collegeStudentRoutes);
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/studentDummy", studentDummyRoutes);
+app.use("/api/company/studentDummy", isAuthenticatedCompany, studentDummyRoutes);
 app.use("/api/student/test", studentTestRoutes);
 app.use("/api/student/inbox", studentInboxRoutes);
 app.use("/api/student/graph", studentGraphRoutes);
-
 app.use("/api/company", companyRoutes);
+app.use("/api/company/test", companyTestRoutes);
 app.use("/api/admin", adminTestRoutes);
 app.use("/api/admin/approval", require("./routes/admin/approvalRoutes.js"));
 app.use("/api/qb", qbRoutes);

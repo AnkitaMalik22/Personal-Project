@@ -173,7 +173,7 @@ router.post("/upload/video", isAuthenticatedCollege, uploadVideo);
 
 // router.post("/dashboard/jobs", isAuthenticatedCollege, getTotalJobs);
 
-router.get("/dashboard/jobs", getTotalJobs);
+router.get("/dashboard/jobs", isAuthenticatedCollege, getTotalJobs);
 
 // router.get('/dashboard/students',isAuthenticatedCollege, getTotalStudents);
 router.post(

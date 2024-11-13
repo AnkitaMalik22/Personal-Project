@@ -2,6 +2,7 @@ const Assessments = require("../../../models/college/assessment/assessments");
 const ErrorHandler = require("../../../utils/errorhandler");
 const catchAsyncErrors = require("../../../middlewares/catchAsyncErrors");
 const College = require("../../../models/college/collegeModel");
+const Company = require("../../../models/company/companyModel");
 const { Student } = require("../../../models/student/studentModel");
 const Section = require("../../../models/college/assessment/sections");
 const RecentQuestions = require("../../../models/college/qb/RecentQuestions");
@@ -11,8 +12,10 @@ const CollegeAssessInv = require("../../../models/student/assessmentInvitation")
 const ApprovedStudents = require("../../../models/college/student/Approved");
 const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
+const Job = require("../../../models/company/jobModel");
 const mongoose = require("mongoose");
 const XLSX = require('xlsx');
+const PaymentPlan = require("../../../models/college/account/planModel");
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -36,28 +39,31 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     await newTransaction.save();
 
-    if (credit && credit.credit > 0) {
-      credit.credit -= 1;
-    } else {
-      console.log("you cont have credits");
-      return next(
-        new ErrorHandler(
-          `You don't have enough credits to create assessment!`,
-          400
-        )
-      );
-    }
+  
 
     const college = await College.findById(id);
-    if (!college) {
+    const company = await Company.findById(id);
+    if (!college && !company) {
       return next(
         new ErrorHandler(
-          "Reset Password Token is invalid or has been expired",
+          "You are not authorized to create assessment. Please login as college or company",
           400
         )
       );
     }
-
+    if(college){
+      if ( credit && credit.credit > 0) {
+        credit.credit -= 1;
+      } else {
+        console.log("you cont have credits");
+        return next(
+          new ErrorHandler(
+            `You don't have enough credits to create assessment!`,
+            400
+          )
+        );
+      }
+    }
     const assessments = await Assessments.find({ createdBy: id });
 
     if (assessments.length > 0) {
@@ -94,12 +100,12 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     }
 
     // calculate the total sections duration == test duration
-    const Duration = topics.reduce((acc, topic) => acc + topic.Time, 0);
+    const Duration = topics?.reduce((acc, topic) => acc + topic.Time, 0);
     const isAdaptive = req.body.level === "adaptive";
     const beginnerCodeMarks = 10;
     const interCodeMarks = 20;
     const advCodeMarks = 30;
-    let newTopics = topics.map((topic) => {
+    let newTopics = topics?.map((topic) => {
       if (!topic.questions) {
         return {
           ...topic,
@@ -281,13 +287,31 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       });
     } else {
       recentQuestion.topics = recentQuestion.topics || [];
-      recentQuestion.topics.push(...topics);
+      recentQuestion?.topics.push(...topics);
 
       await recentQuestion.save();
     }
-
+    if (college) {
     await credit.save();
     await college.save();
+    }
+    if (company) {
+ // find the jobId and push the assessment id in the job
+      // const job = await Job.findById(req.body.jobId);
+      // if (!job) {
+      //   return next(new ErrorHandler("Job not found", 404));
+      // }
+      // assessment.job = req.body.jobId;
+
+      // await  job.assessments.push({
+      //   test: assessment._id,
+      // });
+
+      // await job.save();
+
+      assessment.company = id;
+
+    }
     await assessment.save();
 
     res.status(201).json({
@@ -299,6 +323,10 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     console.log(error);
   }
 });
+
+// ==================================================| Add Test to Job |=======================================================================
+
+
 
 // ===================================================| Invite Student to Assessment |========================================================
 
@@ -314,11 +342,18 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     const assessmentId = req.params.id;
 
     const college = await College.findById(CollegeId);
-    const assessment = await Assessments.findById(assessmentId);
+    const assessment = await Assessments.findById(assessmentId).populate("invitedStudents");
     const credit = await Credit.findOne({ college: CollegeId });
-    console.log(credit);
-    if (!college) {
-      return next(new ErrorHandler("College not found", 404));
+    const plan = await PaymentPlan.findById(college.selectedPlan);
+
+    const invitedStudentsByCollege = assessment.invitedStudents.filter((student)=>{
+      // console.log(student.CollegeId,CollegeId,student.CollegeId===CollegeId )
+     return student.CollegeId.toString()===CollegeId
+    });
+    // console.log(assessment.invitedStudents);
+
+    if (!college || !plan) {
+      return next(new ErrorHandler("College not found or plan has expired", 404));
     }
 
     if (!assessment) {
@@ -331,14 +366,14 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
         // send Email to attend the test
         if (assessment.invitedStudents.includes(_id)) {
-          console.log("Student already invited");
+          // console.log("Student already invited");
           // return next(new ErrorHandler("Student already invited", 404));
         } else { 
-          console.log(assessment.invitedStudents.length + 1, credit.limit,"");
-
+          // console.log(assessment.invitedStudents.length + 1, credit.limit,"");
+          console.log(invitedStudentsByCollege)
           if (
-            credit.limit === 400 &&
-            assessment.invitedStudents.length + 1 > credit.limit
+            plan.charges!="Not Allowed" &&
+            invitedStudentsByCollege.length + 1 > credit.limit
           ) {
             if (credit.credit === 0) {
               return res
@@ -348,12 +383,13 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
             credit.credit -= 1;
             await credit.save();
-          } else if (assessment.invitedStudents.length + 1 > credit.limit) {
+          } else if (invitedStudentsByCollege.length + 1 > credit.limit) {
             return res
               .status(429)
               .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
           }
           assessment.invitedStudents.push(_id);
+          invitedStudentsByCollege.push(_id);
 
           await assessment.save();
           await CollegeAssessInv.findOneAndUpdate(
@@ -392,10 +428,20 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
 // Get All Assessments -- // By College or Company //
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
-  const { id } = req.user;
-  let assessments = await Assessments.find({ createdBy: id })
+  const { id,role } = req.user;
+  let assessments=[];
+  if(role==="company"){
+    assessments = await Assessments.find({company: id ,job : { $exists: req.query.withJob==="true"? true:false }})
     .sort({ createdAt: -1 })
     .populate("invitedStudents");
+    console.log(assessments)
+  }else{
+    assessments = await Assessments.find({createdBy : id })
+    .sort({ createdAt: -1 })
+    .populate("invitedStudents");
+    console.log(assessments);
+  }
+
 
   res.status(200).json({
     success: true,
@@ -407,8 +453,10 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 
 // Get Assessment by ID
 const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
+try {
   const { id } = req.params;
   const collegeId = req.user.id;
+
 
   // const assessments = await College.findById(collegeId).populate("assessments");
   // const assessment = assessments.assessments.find(
@@ -430,6 +478,12 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
   }
 
   res.status(200).json(assessment);
+}
+catch (error) {
+  console.log(error);
+  res.status(500).json({ success: "false", message: "something went wrong" });
+}
+
 });
 
 // Get Assessment by ID
@@ -682,26 +736,43 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, assessment });
 });
 
+
 const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
-  try {
-    const { id } = req.user;
+      try {
+        const { id ,role } = req.user;
 
-    const assessment = await Assessments.findById(req.params.id);
-    const approved = await ApprovedStudents.findOne({ college: id }).populate(
-      "students"
-    )
+        if(role === "company"){
+        
+    
+      
 
-    const filtered = approved.students.filter(
-      (student) => !assessment.invitedStudents.includes(student._id) 
-    ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    res.status(200).json({
-      success: true,
-      assessment, 
-      students: filtered,
-    });
+        const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
+        res.status(200).json({
+          success: true,
+          assessment, 
+          students: assessment.invitedStudents,
+        });
+      }else{
+          const assessment = await Assessments.findById(req.params.id);
+
+        const approved = await ApprovedStudents.findOne({ college: id }).populate(
+          "students"
+        )
+        const filtered = approved.students.filter(
+          (student) => !assessment.invitedStudents.includes(student._id) 
+        ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        res.status(200).json({
+          success: true,
+          students: filtered,
+
+        });
+      }
+ 
   } catch (error) {
     console.log(error);
+    res.status(500).json({ success: "false", message: "something went wrong" });
   }
 });
 
@@ -918,7 +989,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
 
     if (!assessment || assessment.length === 0) {
  
-      return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+      return next(new ErrorHandler(`Assessment not found with ID: ${id} || No responses found`, 404));
     }
 
     // Combine marks for non-unique topic headings
