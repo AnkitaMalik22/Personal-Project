@@ -173,13 +173,22 @@ exports.getAllJobsStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getAllJobsCollege = catchAsyncErrors(async (req, res, next) => {
   const { collegeId } = req.params;
   const college = await College.findById(collegeId).populate("jobs");
-  if (!college) {
-    return next(new ErrorHandler("College not found", 404));
-  }
+ 
 
+  // if (!college) {
+  //   return next(new ErrorHandler("College not found", 404));
+  // }
+
+  const jobs = await Job.find({
+    company: { $in: college.designatedCompanies },
+    tier: { $in: college.tier }
+  }).populate('company');
+
+
+ 
   res.status(200).json({
     success: true,
-    jobs : college.jobs,
+    jobs : jobs,
     
     message: "All jobs fetched successfully",
   });
