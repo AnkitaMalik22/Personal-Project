@@ -431,15 +431,17 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id,role } = req.user;
   let assessments=[];
   if(role==="company"){
-    assessments = await Assessments.find({company: id ,job : { $exists: false }})
+    assessments = await Assessments.find({company: id ,job : { $exists: req.query.withJob==="true"? true:false }})
+    .sort({ createdAt: -1 })
+    .populate("invitedStudents");
+    console.log(assessments)
+  }else{
+    assessments = await Assessments.find({createdBy : id })
     .sort({ createdAt: -1 })
     .populate("invitedStudents");
     console.log(assessments);
   }
-  assessments = await Assessments.find({createdBy : id })
-    .sort({ createdAt: -1 })
-    .populate("invitedStudents");
-    console.log(assessments);
+
 
   res.status(200).json({
     success: true,
