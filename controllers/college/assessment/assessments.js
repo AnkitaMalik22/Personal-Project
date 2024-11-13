@@ -987,7 +987,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
 
     if (!assessment || assessment.length === 0) {
  
-      return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+      return next(new ErrorHandler(`Assessment not found with ID: ${id} || No responses found`, 404));
     }
 
     // Combine marks for non-unique topic headings

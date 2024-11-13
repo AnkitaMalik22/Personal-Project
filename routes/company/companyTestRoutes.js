@@ -55,7 +55,7 @@ const {
   removeBookmark,
 } = require("../../controllers/college/assessment/bookmark");
 const { getAllJobTestsByCollege } = require("../../controllers/company/jobTestController");
-const { getSelectedStudents } = require("../../controllers/college/collegeController");
+const { getSelectedStudents, selectStudentTest } = require("../../controllers/college/collegeController");
 
 // ======================================================= ROUTES =======================================================
 
@@ -236,6 +236,11 @@ router.post(
 
 router.get('/all-tests/:collegeId', isAuthenticatedCompany, getAllJobTestsByCollege);
 
+router.post(
+  "/status/:testId/:responseId",
+  isAuthenticatedCompany,
+  selectStudentTest
+);
 
 
 module.exports = router;
