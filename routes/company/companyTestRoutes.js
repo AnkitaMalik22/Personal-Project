@@ -55,6 +55,7 @@ const {
   removeBookmark,
 } = require("../../controllers/college/assessment/bookmark");
 const { getAllJobTestsByCollege } = require("../../controllers/company/jobTestController");
+const { getAllJobTestsByCompany } = require("../../controllers/company/jobTestController");
 
 // ======================================================= ROUTES =======================================================
 
@@ -229,7 +230,9 @@ router.post(
   sectionsController.addQuestionsToTopicCollege
 );
 
-router.get('/all-tests/:collegeId', isAuthenticatedCompany, getAllJobTestsByCollege);
+router.get('/all-tests/college/:collegeId', isAuthenticatedCompany, getAllJobTestsByCollege);
+router.get('/all-tests', isAuthenticatedCompany, getAllJobTestsByCompany);
+
 
 
 

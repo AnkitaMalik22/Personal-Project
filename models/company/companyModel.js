@@ -111,6 +111,7 @@ const companySchema = new mongoose.Schema({
     companyType: String,
     status: String,
   },
+  Phone : Number,
   location: locationSchema,
   leader: leaderSchema,
   about: {
