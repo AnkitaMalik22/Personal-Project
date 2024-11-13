@@ -421,7 +421,7 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.user;
   
-  let assessments = await Assessments.find({company : id })
+  let assessments = await Assessments.find({company : id , job : { $exists: false }})
     .sort({ createdAt: -1 })
     .populate("invitedStudents");
     console.log(assessments);
