@@ -133,7 +133,7 @@ router.get(
 );
 
 // invite students
-router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
+// router.post("/invite/students", isAuthenticatedCollege, inviteStudents);
 // approve students
 router.post("/student/approve", isAuthenticatedCollege, approveStudents);
 // reject student
