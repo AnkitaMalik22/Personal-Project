@@ -1095,94 +1095,6 @@ exports.getUploadedStudents = catchAsyncErrors(async (req, res) => {
 });
 
 // -------------------------- // INVITE STUDENTS------------------------------
-//not in use 2nd may
-exports.inviteStudents = catchAsyncErrors(async (req, res, next) => {
-  // const { studentId } = req.body;
-  // const college = await College.findById(req.user.id);
-
-  // if (!college) {
-  //   return next(new ErrorHandler("College not found", 404));
-  // }
-
-  // const student = await Student.findById(studentId);
-
-  // if (!student) {
-  //   return next(new ErrorHandler("Student not found", 404));
-  // }
-
-  // if (student.college) {
-  //   return next(new ErrorHandler("Student already registered", 400));
-  // }
-
-  // student.college = req.user.id;
-  // await student.save();
-
-  // college.students.push(studentId);
-  // await college.save();
-
-  // res.status(200).json({
-  //   success: true,
-  //   message: "Student added successfully",
-  // });
-
-  const { students } = req.body;
-  const CollegeId = req.user.id;
-
-  const college = await College.findById(CollegeId);
-
-  if (!college) {
-    return next(new ErrorHandler("College not found", 404));
-  }
-
-  for (let i = 0; i < students.length; i++) {
-    // from uploaded students
-    const student = await UploadedStudents.findOne({
-      college_id: CollegeId,
-      Email: students[i].Email,
-    });
-    if (student) {
-      // console.log(student)
-      console.log({ sender: CollegeId, recipientEmail: student.Email });
-    } else {
-      console.log("Student not found.");
-    }
-
-    const invite = await Invitation.create({
-      sender: CollegeId,
-      recipientEmail: student.Email,
-      invitationLink: crypto.randomBytes(20).toString("hex"),
-    });
-
-    // sendEmail({
-    //   email: student.Email,
-    //   subject: "Invitation to join College",
-    //   message: `Hello ${student.FirstName}!,You have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&${invite.invitationLink}&Email=${student.Email}&FirstName=${student.FirstName}&LastName=${student.LastName}`,
-    //   // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
-    // });
-    sendEmail({
-      email: Email,
-      subject: "Invitation to join Skill Access",
-      message: `Hello ${FirstName},
-    
-    You have been invited to join Skill Access. Please click the link below to register:
-    
-    Register here: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-    
-    We look forward to having you onboard!
-    
-    Best regards,
-    Skill Access Team`,
-    });
-
-    student.invited = true;
-    await student.save();
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "Students invited successfully",
-  });
-});
 
 // pending students
 
@@ -1357,65 +1269,77 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
+    const { batch, createdAt, skills , filterType } = req.query;
+    let approvedStudents, invitedStudents, pendingStudents;
 
-    // const college = await College.findById(id);
-    // const approvedStudents = await College.findById(id).populate({
-    //   path: "students",
-    // });
-    const uploadedStudents = await UploadedStudents.findOne({
-      college: id,
-    }).populate("students");
+    // Build the filter object
+    let filter = { college: id };
 
-    console.log(uploadedStudents?.students, "uploaded students", id);
-    // const invitedStudents = await Invitation.find({ sender: id });
+    if (batch) {
+      filter["students.batch"] = batch;
+    }
 
-    // const uploadedStudents = await Invitation.find({ sender: id });
-    const invitedStudents = await InvitedStudents.findOne({ college: id });
-    const approvedStudents = await ApprovedStudents.findOne({
-      college: id,
-    }).populate({
+    if (createdAt) {
+      filter["students.createdAt"] = { $gte: new Date(createdAt) };
+    }
+
+
+// completed profile
+    if ( filterType === 'all students' || filterType === 'pending students') {
+     pendingStudents = await UploadedStudents.findOne({
+      college: filter.college
+     })
+     .populate({
       path: "students",
-      populate: {
-        path: "studentResponses",
-        select: "assessmentId",
-        populate: {
-          path: "assessmentId",
-          select: "name",
-        },
+      match: {
+        $and: [
+          batch && batch !== "all" ? { batch: batch } : {},
+          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+        ]
       },
     });
-
-    // console.log(uploadedStudents , "uploaded students" , id)
-
-    const pending = [];
-    const approved = [];
-
-    // console.log(invitedStudents);
-    // if (invitedStudents) {
-    //   for (let i = 0; i < invitedStudents.students.length; i++) {
-    //     const student = await Student.findOne({
-    //       Email: invitedStudents.students[i].Email,
-    //     });
-    //     pending.push(student);
-    //   }
-    // }
-
-    // const pendingStudents = await Student.find({
-    //   college: id,
-    //   completedProfile: false,
-    // });
+      console.log("Pending Students:", pendingStudents?.students?.length);
+    }
+    if (filterType === 'all students' || filterType === 'invited students') {
+      invitedStudents = await InvitedStudents.findOne({
+        college: filter.college,
+        $and: [
+          batch && batch !== "all" ? { batch: batch } : {},
+          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+        ]
+      });
+    }
+    if (filterType === 'all students' || filterType === 'approved students') {
+       approvedStudents = await ApprovedStudents.findOne({
+        college: filter.college
+      }).populate({
+        path: "students",
+        match: {
+          $and: [
+            batch && batch !== "all" ? { batch: batch } : {},
+            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+          ]
+        },
+        populate: {
+          path: "studentResponses",
+          select: ["assessmentId", "batch", "createdAt", "Skills"],
+          populate: {
+            path: "assessmentId",
+            select: "name"
+          }
+        }
+      })
+    }
 
     res.status(200).json({
       success: true,
       approvedStudents: approvedStudents ? approvedStudents.students : [],
-      uploadedStudents: invitedStudents.students
-        ? invitedStudents.students
-        : [],
-      pendingStudents: uploadedStudents ? uploadedStudents.students : [],
-      // invitedStudents,
+      uploadedStudents: invitedStudents && invitedStudents.students ? invitedStudents.students : [],
+      pendingStudents: pendingStudents && pendingStudents.students ? pendingStudents.students : [],
     });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 });
 
@@ -1807,3 +1731,7 @@ exports.resultOverviewGraph = async (req, res, next) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
+
