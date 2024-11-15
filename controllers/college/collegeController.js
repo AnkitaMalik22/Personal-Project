@@ -1269,7 +1269,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
-    const { batch, createdAt, skills , filterType } = req.query;
+    const { batch, createdAt, skills, filterType, page , limit  } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
 
     // Build the filter object
@@ -1283,21 +1283,26 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       filter["students.createdAt"] = { $gte: new Date(createdAt) };
     }
 
+    const skip = (page - 1) * limit;
 
-// completed profile
-    if ( filterType === 'all students' || filterType === 'pending students') {
-     pendingStudents = await UploadedStudents.findOne({
-      college: filter.college
-     })
-     .populate({
-      path: "students",
-      match: {
-        $and: [
-          batch && batch !== "all" ? { batch: batch } : {},
-          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-        ]
-      },
-    });
+    // completed profile
+    if (filterType === 'all students' || filterType === 'pending students') {
+      pendingStudents = await UploadedStudents.findOne({
+        college: filter.college
+      })
+        .populate({
+          path: "students",
+          match: {
+            $and: [
+              batch && batch !== "all" ? { batch: batch } : {},
+              createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+            ]
+          },
+          options: {
+            skip: skip,
+            limit: parseInt(limit),
+          }
+        });
       console.log("Pending Students:", pendingStudents?.students?.length);
     }
     if (filterType === 'all students' || filterType === 'invited students') {
@@ -1307,10 +1312,17 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
         ]
-      });
+      })
+        .populate({
+          path: "students",
+          options: {
+            skip: skip,
+            limit: parseInt(limit),
+          }
+        });
     }
     if (filterType === 'all students' || filterType === 'approved students') {
-       approvedStudents = await ApprovedStudents.findOne({
+      approvedStudents = await ApprovedStudents.findOne({
         college: filter.college
       }).populate({
         path: "students",
@@ -1320,6 +1332,10 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
             createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
           ]
         },
+        options: {
+          skip: skip,
+          limit: parseInt(limit),
+        },
         populate: {
           path: "studentResponses",
           select: ["assessmentId", "batch", "createdAt", "Skills"],
@@ -1328,7 +1344,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
             select: "name"
           }
         }
-      })
+      });
     }
 
     res.status(200).json({
