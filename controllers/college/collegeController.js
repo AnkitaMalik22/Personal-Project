@@ -1434,8 +1434,8 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    jobs : college.jobs,
-    
+    jobs: college.jobs,
+
     message: "All jobs fetched successfully",
   });
 });
@@ -1509,27 +1509,32 @@ exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
     if (!college) {
       return next(new ErrorHandler("College not found", 404));
     }
+    const filteredJobs = await Job.find({
+      tier: college.tier
+    }).populate("company");
 
-    const companies = await College.findById(req.params.collegeId)
-      .populate("designatedCompanies", null, null, { strictPopulate: false })
-      .exec();
+    // Extract unique companies from the jobs
+    const uniqueCompanies = [
+      ...new Set(filteredJobs.map((job) => job.company)) // Using Set to ensure uniqueness
+    ];
 
-    if (!companies || !companies.designatedCompanies) {
+
+    if (!uniqueCompanies) {
       return next(new ErrorHandler("No designated companies found", 404));
     }
 
     // Map over the designatedCompanies array
-    let designatedCompanies = companies.designatedCompanies.map((company) => {
+    let designatedCompanies = uniqueCompanies.map((company) => {
       let hiring = false;
       console.log(company.jobs);
       if (company.jobs && company.jobs.length > 0) {
         // set it  based on isOpenForApplications later
-      hiring = true;
+        hiring = true;
       }
       return {
-      ...company._doc,
-      hiring,
-      tier: college.tier,
+        ...company._doc,
+        hiring,
+        tier: college.tier,
       };
     });
 
