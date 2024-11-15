@@ -13,11 +13,35 @@ const mongoose = require("mongoose");
 
 exports.getJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
+  const {college , collegeId} = req.query;
+  let job;
   // console.log(jobId);
 
-  const job = await Job.findById(jobId)
-    .populate("company")
-    .populate("assessments.test");
+if(!college && !collegeId){
+ job = await Job.findById(jobId)
+  .populate("company")
+  .populate({
+    path: "assessments.test",
+    populate: {
+      path: "invitedStudents",
+     
+      select: "FirstName LastName Email"
+    }
+  })
+}
+else{
+  console.log("college id", collegeId);
+ job = await Job.findById(jobId)
+  .populate("company")
+  .populate({
+    path: "assessments.test",
+    populate: {
+      path: "invitedStudents",
+      match: { CollegeId: collegeId },
+      select: "FirstName LastName Email CollegeId",
+    }
+  })
+}
 
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));
@@ -202,7 +226,11 @@ exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
 
   const jobs = await Job.find({
     company: companyId,
-  });
+  }).populate({
+    path: "company",
+    select: "avatar.url basic.companyName",
+  })
+
   // console.log(jobs);
 
   if (!jobs) {
