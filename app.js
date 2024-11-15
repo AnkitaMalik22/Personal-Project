@@ -51,6 +51,7 @@ app.use(
       "https://skillaccess-college.vercel.app",
       "https://skillaccess-student-ten.vercel.app/",
       "https://skillaccess-student-ten.vercel.app/",
+      'https://skillaccess-admin-alpha.vercel.app',
     ],
     credentials: true,
   })
@@ -134,6 +135,7 @@ const io = new socketIo.Server(server, {
       "https://skillaccess-college.vercel.app",
       "https://skillaccess-student-iota.vercel.app",
       "https://skillaccess-admin-alpha.vercel.app",
+      'https://skillaccess-admin-alpha.vercel.app',
     ],
   },
 });
