@@ -39,7 +39,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     await newTransaction.save();
 
-  
+
 
     const college = await College.findById(id);
     const company = await Company.findById(id);
@@ -51,8 +51,8 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
         )
       );
     }
-    if(college){
-      if ( credit && credit.credit > 0) {
+    if (college) {
+      if (credit && credit.credit > 0) {
         credit.credit -= 1;
       } else {
         console.log("you cont have credits");
@@ -292,11 +292,11 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       await recentQuestion.save();
     }
     if (college) {
-    await credit.save();
-    await college.save();
+      await credit.save();
+      await college.save();
     }
     if (company) {
- // find the jobId and push the assessment id in the job
+      // find the jobId and push the assessment id in the job
       // const job = await Job.findById(req.body.jobId);
       // if (!job) {
       //   return next(new ErrorHandler("Job not found", 404));
@@ -346,9 +346,9 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     const credit = await Credit.findOne({ college: CollegeId });
     const plan = await PaymentPlan.findById(college.selectedPlan);
 
-    const invitedStudentsByCollege = assessment.invitedStudents.filter((student)=>{
+    const invitedStudentsByCollege = assessment.invitedStudents.filter((student) => {
       // console.log(student.CollegeId,CollegeId,student.CollegeId===CollegeId )
-     return student.CollegeId.toString()===CollegeId
+      return student.CollegeId.toString() === CollegeId
     });
     // console.log(assessment.invitedStudents);
 
@@ -359,7 +359,9 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     if (!assessment) {
       return next(new ErrorHandler("Assessment not found", 404));
     }
-
+    if (students.length > 200) {
+      res.status(400).json({ success: false, message: "Rate Limit Exceeded" })
+    }
     if (students) {
       for (let i = 0; i < students.length; i++) {
         const { FirstName, LastName, Email, _id } = students[i];
@@ -368,25 +370,29 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
         if (assessment.invitedStudents.includes(_id)) {
           // console.log("Student already invited");
           // return next(new ErrorHandler("Student already invited", 404));
-        } else { 
+        } else {
           // console.log(assessment.invitedStudents.length + 1, credit.limit,"");
           console.log(invitedStudentsByCollege)
           if (
-            plan.charges!="Not Allowed" &&
+            plan.charges != "Not Allowed" &&
             invitedStudentsByCollege.length + 1 > credit.limit
           ) {
-            if (credit.credit === 0) {
-              return res
-                .status(200)
-                .json({ success: "true", message: i + " students invited" });
-            }
 
-            credit.credit -= 1;
-            await credit.save();
+            //UNCOMMENT THIS AFTER DEMO 
+            // if (credit.credit === 0) {
+            //   return res
+            //     .status(200)
+            //     .json({ success: "true", message: i + " students invited" });
+            // }
+
+            // credit.credit -= 1;
+            // await credit.save();
           } else if (invitedStudentsByCollege.length + 1 > credit.limit) {
-            return res
-              .status(429)
-              .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
+            //UNCOMMENT THIS AFTER DEMO 
+
+            // return res
+            //   .status(429)
+            //   .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
           }
           assessment.invitedStudents.push(_id);
           invitedStudentsByCollege.push(_id);
@@ -428,17 +434,17 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
 // Get All Assessments -- // By College or Company //
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
-  const { id,role } = req.user;
-  let assessments=[];
-  if(role==="company"){
-    assessments = await Assessments.find({company: id ,job : { $exists: req.query.withJob==="true"? true:false }})
-    .sort({ createdAt: -1 })
-    .populate("invitedStudents");
+  const { id, role } = req.user;
+  let assessments = [];
+  if (role === "company") {
+    assessments = await Assessments.find({ company: id, job: { $exists: req.query.withJob === "true" ? true : false } })
+      .sort({ createdAt: -1 })
+      .populate("invitedStudents");
     console.log(assessments)
-  }else{
-    assessments = await Assessments.find({createdBy : id })
-    .sort({ createdAt: -1 })
-    .populate("invitedStudents");
+  } else {
+    assessments = await Assessments.find({ createdBy: id })
+      .sort({ createdAt: -1 })
+      .populate("invitedStudents");
     console.log(assessments);
   }
 
@@ -453,36 +459,36 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 
 // Get Assessment by ID
 const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
-try {
-  const { id } = req.params;
-  const collegeId = req.user.id;
+  try {
+    const { id } = req.params;
+    const collegeId = req.user.id;
 
 
-  // const assessments = await College.findById(collegeId).populate("assessments");
-  // const assessment = assessments.assessments.find(
-  //   (assessment) => assessment._id == id
-  // );
+    // const assessments = await College.findById(collegeId).populate("assessments");
+    // const assessment = assessments.assessments.find(
+    //   (assessment) => assessment._id == id
+    // );
 
-  const assessment = await Assessments.findById(id).populate({
-    path: "studentResponses",
-    populate: {
-      path: "studentId",
-      select: "FirstName LastName Email avatar Placed",
-    },
-    // only send those res who completed the test
-    match: { completed: true },
-  });
+    const assessment = await Assessments.findById(id).populate({
+      path: "studentResponses",
+      populate: {
+        path: "studentId",
+        select: "FirstName LastName Email avatar Placed",
+      },
+      // only send those res who completed the test
+      match: { completed: true },
+    });
 
-  if (!assessment) {
-    return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+    if (!assessment) {
+      return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
+    }
+
+    res.status(200).json(assessment);
   }
-
-  res.status(200).json(assessment);
-}
-catch (error) {
-  console.log(error);
-  res.status(500).json({ success: "false", message: "something went wrong" });
-}
+  catch (error) {
+    console.log(error);
+    res.status(500).json({ success: "false", message: "something went wrong" });
+  }
 
 });
 
@@ -510,9 +516,12 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
   const endDate = new Date(assessment.endDate);
   //arra to store the resopnses day-wise
   // Calculate the difference in days
-  const dayDifference = Math.ceil(
+  let dayDifference = Math.ceil(
     (endDate - startDate) / (1000 * 60 * 60 * 24)
   );
+  if (dayDifference > 5) {
+    dayDifference = 5;
+  }
 
   let abs = assessment.invitedStudents.length;
   // Initialize the array with the desired object
@@ -540,7 +549,7 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
     };
   });
 
-  if (!assessment) {
+  if (!assessment || !arr || arr.length < 0) {
     return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
   }
 
@@ -738,38 +747,38 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
 
 
 const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
-      try {
-        const { id ,role } = req.user;
+  try {
+    const { id, role } = req.user;
 
-        if(role === "company"){
-        
-    
-      
+    if (role === "company") {
 
 
-        const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
-        res.status(200).json({
-          success: true,
-          assessment, 
-          students: assessment.invitedStudents,
-        });
-      }else{
-          const assessment = await Assessments.findById(req.params.id);
 
-        const approved = await ApprovedStudents.findOne({ college: id }).populate(
-          "students"
-        )
-        const filtered = approved.students.filter(
-          (student) => !assessment.invitedStudents.includes(student._id) 
-        ) .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        res.status(200).json({
-          success: true,
-          students: filtered,
 
-        });
-      }
- 
+      const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
+      res.status(200).json({
+        success: true,
+        assessment,
+        students: assessment.invitedStudents,
+      });
+    } else {
+      const assessment = await Assessments.findById(req.params.id);
+
+      const approved = await ApprovedStudents.findOne({ college: id }).populate(
+        "students"
+      )
+      const filtered = approved.students.filter(
+        (student) => !assessment.invitedStudents.includes(student._id)
+      ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      res.status(200).json({
+        success: true,
+        students: filtered,
+
+      });
+    }
+
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: "false", message: "something went wrong" });
@@ -988,7 +997,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
     ]);
 
     if (!assessment || assessment.length === 0) {
- 
+
       return next(new ErrorHandler(`Assessment not found with ID: ${id} || No responses found`, 404));
     }
 
@@ -998,9 +1007,9 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
 
       item.Topics.forEach(topic => {
         if (!topicMarksMap[topic.Heading]) {
-          topicMarksMap[topic.Heading] = { 
+          topicMarksMap[topic.Heading] = {
             Heading: topic.Heading,
-            TotalMarks: 0 
+            TotalMarks: 0
           };
         }
         topicMarksMap[topic.Heading].TotalMarks += topic.totalMarks; // Combine totalMarks
@@ -1031,7 +1040,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
 
     // Prepare headers
     const headers = [
-       'First Name', 'Last Name', 'Email',
+      'First Name', 'Last Name', 'Email',
       'Placed', 'Status', 'Percentage', 'Marks', 'Total Marks',
       'Time', 'Time Taken', 'Total Questions Attempted', 'Correct Answers'
     ];
@@ -1048,7 +1057,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
     // Prepare data rows
     const dataRows = combinedAssessment.map(item => {
       const row = [
-      
+
         item.FirstName,
         item.LastName,
         item.Email,
