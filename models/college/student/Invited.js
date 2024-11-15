@@ -15,6 +15,8 @@ const invitedStudentsSchema = new mongoose.Schema({
       ProfileLink : { type: String },
       student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
       link: { type: String },
+      batch: { type: String },
+    
     },
   ],
 });
