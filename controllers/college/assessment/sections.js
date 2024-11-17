@@ -524,9 +524,9 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     if(req.user.role==="company"){
       id = section.company.toString();
     }else {
-      section.college.toString();
+     id =  section.college.toString();
     }
-
+    // console.log("id: ", id, " userId : ",collegeId,id===collegeId, "role :", req.user.role,);
 
     if (id != collegeId) {
       return res.status(401).json({ error: "Unauthorized" });
