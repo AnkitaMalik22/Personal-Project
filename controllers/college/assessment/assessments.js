@@ -765,8 +765,8 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
     } else {
       const assessment = await Assessments.findById(req.params.id);
 
-      const approved = await ApprovedStudents.findOne({ college: id }).populate(
-        "students"
+      const approved = await ApprovedStudents.findOne({ college: id }).populate({path:
+        "students",select:"FirstName LastName Avatar _id"}
       )
       const filtered = approved.students.filter(
         (student) => !assessment.invitedStudents.includes(student._id)
@@ -775,7 +775,7 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       res.status(200).json({
         success: true,
         students: filtered,
-
+        assessment:assessment
       });
     }
 
