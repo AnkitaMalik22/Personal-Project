@@ -13,35 +13,35 @@ const mongoose = require("mongoose");
 
 exports.getJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
-  const {college , collegeId} = req.query;
+  const { college, collegeId } = req.query;
   let job;
   // console.log(jobId);
 
-if(!college && !collegeId){
- job = await Job.findById(jobId)
-  .populate("company")
-  .populate({
-    path: "assessments.test",
-    populate: {
-      path: "invitedStudents",
-     
-      select: "FirstName LastName Email"
-    }
-  })
-}
-else{
-  console.log("college id", collegeId);
- job = await Job.findById(jobId)
-  .populate("company")
-  .populate({
-    path: "assessments.test",
-    populate: {
-      path: "invitedStudents",
-      match: { CollegeId: collegeId },
-      select: "FirstName LastName Email CollegeId",
-    }
-  })
-}
+  if (!college && !collegeId) {
+    job = await Job.findById(jobId)
+      .populate("company")
+      .populate({
+        path: "assessments.test",
+        populate: {
+          path: "invitedStudents",
+
+          select: "FirstName LastName Email"
+        }
+      })
+  }
+  else {
+    console.log("college id", collegeId);
+    job = await Job.findById(jobId)
+      .populate("company")
+      .populate({
+        path: "assessments.test",
+        populate: {
+          path: "invitedStudents",
+          match: { CollegeId: collegeId },
+          select: "FirstName LastName Email CollegeId",
+        }
+      })
+  }
 
   if (!job) {
     return next(new ErrorHandler("Job not found", 404));
@@ -78,7 +78,7 @@ exports.createJob = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Invalid tier", 400));
   }
 
-const company = await Company.findById(companyId);
+  const company = await Company.findById(companyId);
 
   if (!company) {
     return next(new ErrorHandler("Company not found", 404));
@@ -125,7 +125,7 @@ const company = await Company.findById(companyId);
 
 // --------------------------------------------- UPDATE A JOB --------------------------------------------------------
 
-exports.updateJob = catchAsyncErrors(async (req, res,next) => {
+exports.updateJob = catchAsyncErrors(async (req, res, next) => {
   const { jobId } = req.params;
 
   const job = await Job.findById(jobId);
@@ -197,23 +197,31 @@ exports.getAllJobsStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getAllJobsCollege = catchAsyncErrors(async (req, res, next) => {
   const { collegeId } = req.params;
   const college = await College.findById(collegeId).populate("jobs");
- 
 
+  const { cursor, limit = 10 } = req.query;
   // if (!college) {
   //   return next(new ErrorHandler("College not found", 404));
   // }
 
-  const jobs = await Job.find({
+  // Prepare the query for jobs
+  let query = {
     company: { $in: college.designatedCompanies },
-    tier: { $in: college.tier }
-  }).populate('company');
+    tier: { $in: college.tier },
+  };
 
+  // Add cursor-based pagination
+  if (cursor) {
+    query._id = { $gt: cursor }; // Fetch jobs with _id greater than the cursor
+  }
 
- 
+  const jobs = await Job.find(query).populate('company').limit(parseInt(limit));
+
+  const nextCursor = jobs.length > 0 ? jobs[jobs.length - 1]._id : null;
+
   res.status(200).json({
     success: true,
-    jobs : jobs,
-    
+    jobs: jobs,
+    nextCursor: nextCursor,
     message: "All jobs fetched successfully",
   });
 });
@@ -224,13 +232,21 @@ exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
   const { companyId } = req.params;
   console.log(companyId, "company id");
 
-  const jobs = await Job.find({
-    company: companyId,
-  }).populate({
+  const { cursor, limit = 10 } = req.query;
+
+  let query = { company: companyId };
+
+  if (cursor) {
+    console.log(cursor,limit);
+    query._id = { $gt: cursor };
+  }
+  
+  const jobs = await Job.find(query).limit(parseInt(limit)).populate({
     path: "company",
     select: "avatar.url basic.companyName",
   })
 
+  const nextCursor = jobs.length > 0 ? jobs[jobs.length - 1]._id : null;
   // console.log(jobs);
 
   if (!jobs) {
@@ -240,6 +256,7 @@ exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     jobs,
+    nextCursor
   });
 });
 
@@ -447,7 +464,7 @@ exports.getFilteredJobs = async (req, res, next) => {
 
     const collegeId = student.CollegeId;
 
-   
+
 
     if (req.query.seniorityLevel) {
       query.SeniorityLevel = { $in: req.query.seniorityLevel };
