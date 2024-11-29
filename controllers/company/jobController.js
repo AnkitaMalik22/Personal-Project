@@ -232,7 +232,7 @@ exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
   const { companyId } = req.params;
   console.log(companyId, "company id");
 
-  const { cursor, limit = 10 } = req.query;
+  const { cursor ="", limit = 10 } = req.query;
 
   let query = { company: companyId };
 
@@ -455,8 +455,7 @@ exports.applyJob = catchAsyncErrors(async (req, res, next) => {
 
 exports.getFilteredJobs = async (req, res, next) => {
   try {
-    let query = {};
-
+   
     const studentId = req.user.id;
 
     const student = await Student.findById(studentId);
@@ -464,7 +463,12 @@ exports.getFilteredJobs = async (req, res, next) => {
 
     const collegeId = student.CollegeId;
 
+    const college = await College.findById(collegeId).populate("jobs");
 
+
+    let query = {
+      tier : {$in : college.tier}
+    };
 
     if (req.query.seniorityLevel) {
       query.SeniorityLevel = { $in: req.query.seniorityLevel };
@@ -483,21 +487,22 @@ exports.getFilteredJobs = async (req, res, next) => {
       query.SalaryTo = { $lte: req.query.maxSalary };
     }
 
-    const college = await College.findById(collegeId).populate("jobs");
-    const jobs = college.jobs.filter(job =>
-      Object.entries(query).every(([key, condition]) => {
-        if (typeof condition === 'object' && condition.$in) {
-          return condition.$in.includes(job[key]);
-        }
-        if (typeof condition === 'object' && condition.$gte) {
-          return job[key] >= condition.$gte;
-        }
-        if (typeof condition === 'object' && condition.$lte) {
-          return job[key] <= condition.$lte;
-        }
-        return job[key] === condition;
-      })
-    );
+    const jobs = await Job.find(query);
+
+    // const jobs = college.jobs.filter(job =>
+    //   Object.entries(query).every(([key, condition]) => {
+    //     if (typeof condition === 'object' && condition.$in) {
+    //       return condition.$in.includes(job[key]);
+    //     }
+    //     if (typeof condition === 'object' && condition.$gte) {
+    //       return job[key] >= condition.$gte;
+    //     }
+    //     if (typeof condition === 'object' && condition.$lte) {
+    //       return job[key] <= condition.$lte;
+    //     }
+    //     return job[key] === condition;
+    //   })
+    // );
 
     // console.log(query);
     // const jobs = await Job.find(query).populate("company");
