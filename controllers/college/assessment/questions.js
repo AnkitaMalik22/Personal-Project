@@ -29,7 +29,7 @@ exports.createQuestion = catchAsyncErrors(async (req, res, next) => {
 
   if (section.createdByCompany === true) {
     if (section.company !== userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized Company" });
     } else {
       const question = await Questions.create({
         section: sectionId,
@@ -46,7 +46,7 @@ exports.createQuestion = catchAsyncErrors(async (req, res, next) => {
     }
   } else {
     if (section.college !== userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized College" });
     } else {
       const question = await Questions.create({
         section: sectionId,

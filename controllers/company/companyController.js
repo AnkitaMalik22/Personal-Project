@@ -345,7 +345,65 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 // ================================================ UPDATE Company PROFILE ===========================================================
 // Update Company Profile
 exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
-  const newCompanyData = req.body;
+  // Define allowed fields and their default values for basic info
+  const basicDefaults = {
+    coverPhoto: '',
+    publicIdLogo: '',
+    publicIdCover: '',
+    logo: '',
+    companyName: '',
+    website: '',
+    totalEmployees: 0,
+    yearFounded: 0,
+    hqCity: '',
+    annualRevenue: 0,
+    sector: '',
+    industry: '',
+    companyType: '',
+    status: ''
+  };
+
+  // Define allowed top-level fields
+  const allowedFields = [
+    'status',
+    'statusChangedAt',
+    'Email',
+    'FirstName',
+    'LastName',
+    'avatar',
+    'Phone',
+    'location',
+    'leader',
+    'about',
+    'awards',
+    'dashboard',
+    'students',
+    'jobs',
+    'assessments',
+    'authType',
+    'emails',
+    'emailsSent'
+  ];
+
+  // Initialize new company data
+  const newCompanyData = {};
+
+  // Process allowed fields
+  allowedFields.forEach(field => {
+    if (req.body[field]) {
+      // Special handling for role to prevent setting as admin
+     
+      newCompanyData[field] = req.body[field];
+    }
+  });
+
+  // Process basic info if provided
+  if (req.body.basic) {
+    newCompanyData.basic = {};
+    Object.keys(basicDefaults).forEach(key => {
+      newCompanyData.basic[key] = req.body.basic[key] || basicDefaults[key];
+    });
+  }
 
   // Update Company profile
   const updatedCompany = await Company.findByIdAndUpdate(
@@ -366,32 +424,31 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
 
 
+
 // ================================================ Update Cover Picture ===========================================================
 
 exports.updateCoverPictureCompany = catchAsyncErrors(async (req, res) => {
   const myCloud = await cloudinary.v2.uploader.upload(req.body.cover, {
     folder: "covers",
-    width: 150,
-    crop: "scale",
   });
 
-  const company = await Company.findByIdAndUpdate(req.user.id, {
-    basic: {
-      coverPhoto: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      },
-
+  // Update only the cover field within the basic object
+  const updatedCompany = await Company.findByIdAndUpdate(
+    req.user.id,
+    {
+      "basic.coverPhoto": myCloud.secure_url,
+      "basic.publicIdCover":myCloud.public_id
     },
-  }, {
-    new: true,
-    runValidators: true,
-    useFindAndModify: false,
-  });
+    {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false,
+    }
+  );
 
   res.status(200).json({
     success: true,
-    company,
+    company: updatedCompany,
   });
 });
 
@@ -406,13 +463,14 @@ exports.updateLogoCompany = catchAsyncErrors(async (req, res, next) => {
     crop: "scale",
   });
 
-
   const company = await Company.findByIdAndUpdate(req.user.id,
     {
      avatar: {
         public_id: myCloud.public_id,
         url: myCloud.secure_url,
       },
+        "basic.logo": myCloud.secure_url,
+        "basic.publicIdLogo":myCloud.public_id
     },
     {
       new: true,
