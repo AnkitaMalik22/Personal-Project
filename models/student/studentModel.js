@@ -83,7 +83,6 @@ const studentSchema = new mongoose.Schema({
   },
   batch : {
     type: String,
-
   },
   approved: {
     type: Boolean,

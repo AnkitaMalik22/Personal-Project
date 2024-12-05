@@ -751,11 +751,6 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
     const { id, role } = req.user;
 
     if (role === "company") {
-
-
-
-
-
       const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
       res.status(200).json({
         success: true,
@@ -765,25 +760,59 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
     } else {
       const assessment = await Assessments.findById(req.params.id);
 
-      const approved = await ApprovedStudents.findOne({ college: id }).populate({path:
-        "students",select:"FirstName LastName Avatar _id"}
-      )
-      const filtered = approved.students.filter(
-        (student) => !assessment.invitedStudents.includes(student._id)
-      ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // Extract skip and limit from query parameters
+      const limit = parseInt(req.query.limit) || 10; // Default limit is 10
+      const skip = parseInt(req.query.skip) || 0;   // Default skip is 0
+      const batch = req.query.batch;
 
+
+      const query = { college: id };
+      const populateOptions = {
+        path: "students",
+        select: "FirstName LastName Avatar _id createdAt batch",
+        match:{ _id: { $nin: assessment.invitedStudents } },
+        options: {
+          sort: { _id: -1 },
+          skip: skip,  // Skip the first 'skip' documents
+          limit: limit + 1, // Fetch one extra document to check for the next page
+        },
+      };
+
+      
+      if (batch) {
+        populateOptions.match = {...populateOptions.match, batch: batch};
+      }
+
+      const approved = await ApprovedStudents.findOne(query).populate(populateOptions);
+      let students = approved ? approved.students : [];
+
+      // console.log(approved.students)
+      // Check if there's a next page
+      const hasNextPage = students.length > limit;
+
+      // Trim the extra document if exists
+      if (hasNextPage) {
+        students.pop();
+      }
+
+      // Response
       res.status(200).json({
         success: true,
-        students: filtered,
-        assessment:assessment
+        students,
+        skip,
+        limit,
+        hasNextPage,
+        totalCount: students.length, // Optional: total students fetched
+        assessment,
       });
     }
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: "false", message: "something went wrong" });
   }
 });
+
+
 
 const getResultGraph = catchAsyncErrors(async (req, res, next) => {
   const now = new Date();
