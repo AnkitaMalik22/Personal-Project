@@ -74,7 +74,7 @@ const collegeTeamRoutes = require("./routes/college/teamRoutes.js");
 const qbRoutes = require("./routes/college/qbRoutes.js");
 const paymentRoutes = require("./routes/college/paymentRoutes.js");
 const collegeStudentRoutes = require("./routes/college/studentRoutes.js");
-
+const universityRoutes = require("./routes/university/universityRoutes.js");
 const studentTestRoutes = require("./routes/student/studentTestRoutes.js");
 const studentInboxRoutes = require("./routes/student/studentInboxRoutes.js");
 const studentGraphRoutes = require("./routes/student/studentGraphRoutes.js");
@@ -84,6 +84,7 @@ const { isAuthenticatedCompany } = require("./middlewares/companyAuth.js");
 // ======================================================= ROUTES =======================================================
 
 // routes
+app.use('/api/university', universityRoutes);
 app.use("/api/college", collegeRoutes);
 app.use("/api/college/teams", collegeTeamRoutes);
 app.use("/api/college/student", collegeStudentRoutes);
