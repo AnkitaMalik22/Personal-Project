@@ -1,7 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const dotenv = require("dotenv");
-dotenv.config({ path: "./config/config.env" });
+require("dotenv").config({ path: "./.env.local" });
 const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
 const cors = require("cors");
@@ -51,9 +50,9 @@ app.use(
       "https://skillaccess-college.vercel.app",
       "https://skillaccess-student-ten.vercel.app/",
       "https://skillaccess-student-ten.vercel.app/",
-      'https://skillaccess-admin-alpha.vercel.app',
+      "https://skillaccess-admin-alpha.vercel.app",
       "https://app.skillaccess.in",
-      "https://student.skillaccess.in"
+      "https://student.skillaccess.in",
     ],
     credentials: true,
   })
@@ -82,19 +81,26 @@ const studentInboxRoutes = require("./routes/student/studentInboxRoutes.js");
 const studentGraphRoutes = require("./routes/student/studentGraphRoutes.js");
 const companyTestRoutes = require("./routes/company/companyTestRoutes.js");
 const { isAuthenticatedCompany } = require("./middlewares/companyAuth.js");
-const { generateReport, generateStudentReportPdf } = require("./controllers/college/assessment/assessments.js");
+const {
+  generateReport,
+  generateStudentReportPdf,
+} = require("./controllers/college/assessment/assessments.js");
 
 // ======================================================= ROUTES =======================================================
 
 // routes
-app.use('/api/university', universityRoutes);
+app.use("/api/university", universityRoutes);
 app.use("/api/college", collegeRoutes);
 app.use("/api/college/teams", collegeTeamRoutes);
 app.use("/api/college/student", collegeStudentRoutes);
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/studentDummy", studentDummyRoutes);
-app.use("/api/company/studentDummy", isAuthenticatedCompany, studentDummyRoutes);
+app.use(
+  "/api/company/studentDummy",
+  isAuthenticatedCompany,
+  studentDummyRoutes
+);
 app.use("/api/student/test", studentTestRoutes);
 app.use("/api/student/inbox", studentInboxRoutes);
 app.use("/api/student/graph", studentGraphRoutes);
@@ -110,8 +116,6 @@ app.get("/", (req, res) => {
 });
 app.get("/api/assessments/generateReport/:id", generateReport);
 app.get("/api/assessments/generateReport/pdf/:id", generateStudentReportPdf);
-
-
 
 app.get("/test", (req, res) => {
   res.send("Dockerize container running");
@@ -143,9 +147,9 @@ const io = new socketIo.Server(server, {
       "https://skillaccess-college.vercel.app",
       "https://skillaccess-student-iota.vercel.app",
       "https://skillaccess-admin-alpha.vercel.app",
-      'https://skillaccess-admin-alpha.vercel.app',
+      "https://skillaccess-admin-alpha.vercel.app",
       "https://app.skillaccess.in",
-      "https://student.skillaccess.in"
+      "https://student.skillaccess.in",
     ],
   },
 });
