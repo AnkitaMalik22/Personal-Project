@@ -194,7 +194,7 @@ exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
 // ----------------------------- CREATE TOPIC COLLGE-----------------------------
 
 exports.createTopicCollege = async (req, res) => {
-   try {
+  try {
     const { Heading, Description, TotalQuestions, Time } = req.body;
     const source = req.user.role;
     const userId = req.user.id;
@@ -206,20 +206,22 @@ exports.createTopicCollege = async (req, res) => {
     // Fetch the user (Company or College)
     const user = await UserModel.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: `${isCompany ? "Company" : "College"} not found` });
+      return res
+        .status(404)
+        .json({ error: `${isCompany ? "Company" : "College"} not found` });
     }
 
     // Validate input fields
-    if (!Heading || !Description ) {
+    if (!Heading || !Description) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     // Check for duplicate topics based on the user type
     const topics = await Section.find({
       company: isCompany ? userId : undefined,
-      college: !isCompany ? userId : undefined
+      college: !isCompany ? userId : undefined,
     });
-    const duplicateTopic = topics.some(topic => topic.Heading === Heading);
+    const duplicateTopic = topics.some((topic) => topic.Heading === Heading);
 
     if (duplicateTopic) {
       return res.status(400).json({ error: "Topic already exists" });
@@ -233,7 +235,7 @@ exports.createTopicCollege = async (req, res) => {
       college: !isCompany ? userId : undefined,
       createdByCompany: isCompany,
     });
-    if(!isCompany){
+    if (!isCompany) {
       user.topics.push(section);
 
       await user.save();
@@ -368,9 +370,9 @@ exports.createTopicCollege = async (req, res) => {
 
 exports.getTopics = async (req, res) => {
   try {
-    const {  level } = req.query; // Get source and level from req.query
+    const { level } = req.query; // Get source and level from req.query
     const userId = req.user.id;
-const source = req.user.role;
+    const source = req.user.role;
     // Determine if the request is from a college or company based on the `source` query parameter
     const isCompany = source && source.toLowerCase() === "company";
     const UserModel = isCompany ? Company : College;
@@ -378,16 +380,22 @@ const source = req.user.role;
     // Fetch the user (Company or College)
     const user = await UserModel.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: `${isCompany ? "Company" : "College"} not found` });
+      return res
+        .status(404)
+        .json({ error: `${isCompany ? "Company" : "College"} not found` });
     }
 
     let topics;
 
     // Check the level query parameter to filter topics
     if (level === "adaptive") {
-      topics = await Section.find({ [isCompany ? "company" : "college"]: userId }).populate("questions");
+      topics = await Section.find({
+        [isCompany ? "company" : "college"]: userId,
+      }).populate("questions");
     } else {
-      topics = await Section.find({ [isCompany ? "company" : "college"]: userId })
+      topics = await Section.find({
+        [isCompany ? "company" : "college"]: userId,
+      })
         .populate({
           path: "questions",
           match: { QuestionLevel: level },
@@ -425,22 +433,41 @@ const source = req.user.role;
 
 exports.getTopicsQB = async (req, res) => {
   try {
-    const collegeId = req.user.id;
     const query = req.query.level;
-    const college = await College.findById(collegeId);
-    if (!college) {
-      return res.status(404).json({ error: "College not found" });
-    }
-    console.log(query, "query");
-
     let topics;
+    if (req.user.role === "college") {
+      const collegeId = req.user.id;
+      const college = await College.findById(collegeId);
+      if (!college) {
+        return res.status(404).json({ error: "College not found" });
+      }
+      // console.log(query, "query");
 
-    topics = await Section.find({ college: collegeId })
-      .populate("questions")
-      .populate("findAnswers")
-      .populate("essay")
-      .populate("video")
-      .populate("compiler");
+    
+
+      topics = await Section.find({ college: collegeId })
+        .populate("questions")
+        .populate("findAnswers")
+        .populate("essay")
+        .populate("video")
+        .populate("compiler");
+    } else {
+      const companyId = req.user.id;
+      const company = await Company.findById(companyId);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      // console.log(query, "query");
+
+  
+
+      topics = await Section.find({ company: companyId })
+        .populate("questions")
+        .populate("findAnswers")
+        .populate("essay")
+        .populate("video")
+        .populate("compiler");
+    }
 
     // console.log(topics, "topics");
 
@@ -513,24 +540,23 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
 
     section = await Section.findById(topicId);
 
-
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
       });
     }
 
-    let id = "" ;
-    if(req.user.role==="company"){
+    let id = "";
+    if (req.user.role === "company") {
       id = section.company.toString();
-    }else {
-     id =  section.college.toString();
+    } else {
+      id = section.college.toString();
     }
     // console.log("id: ", id, " userId : ",collegeId,id===collegeId, "role :", req.user.role,);
 
-    if (id != collegeId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    // if (id != collegeId) {
+    //   return res.status(401).json({ error: "Unauthorized" });
+    // }
 
     // if (section.questions?.length >= section.TotalQuestions) {
     //   return res.status(400).json({
@@ -603,7 +629,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     return res.status(201).json({
       message: "Question added successfully",
       questions: [question],
-      topic:section
+      topic: section,
     });
   } catch (error) {
     console.log(error);
