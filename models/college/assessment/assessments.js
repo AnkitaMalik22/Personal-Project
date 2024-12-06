@@ -4,7 +4,10 @@ const { Schema } = mongoose;
 const assessmentsSchema = new Schema(
   {
     visible: { type: Boolean, default: true },
-
+    isReportGenerated:{
+      type:Boolean,
+      default:false
+    },
     name: {
       type: String,
       required: true,

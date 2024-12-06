@@ -16,6 +16,10 @@ const Job = require("../../../models/company/jobModel");
 const mongoose = require("mongoose");
 const XLSX = require('xlsx');
 const PaymentPlan = require("../../../models/college/account/planModel");
+const cloudinary = require("cloudinary");
+const fs = require('fs');
+
+const puppeteer = require('puppeteer');
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -770,7 +774,7 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       const populateOptions = {
         path: "students",
         select: "FirstName LastName Avatar _id createdAt batch",
-        match:{ _id: { $nin: assessment.invitedStudents } },
+        match: { _id: { $nin: assessment.invitedStudents } },
         options: {
           sort: { _id: -1 },
           skip: skip,  // Skip the first 'skip' documents
@@ -778,9 +782,9 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
         },
       };
 
-      
+
       if (batch) {
-        populateOptions.match = {...populateOptions.match, batch: batch};
+        populateOptions.match = { ...populateOptions.match, batch: batch };
       }
 
       const approved = await ApprovedStudents.findOne(query).populate(populateOptions);
@@ -1134,11 +1138,588 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
+const generatePerformanceComment = (studentScore, maximumMarks, sortedScores) => {
+  if (maximumMarks === 0) return "No marks allocated";
+
+  const studentPercentage = (studentScore / maximumMarks) * 100;
+  const percentile = calculatePercentile(studentScore, sortedScores);
+
+  if (studentPercentage >= 90) {
+    return `Exceptional performance! (${percentile}th Percentile)`;
+  } else if (studentPercentage >= 80) {
+    return `Outstanding performance! (${percentile}th Percentile)`;
+  } else if (studentPercentage >= 70) {
+    return `Very good performance. (${percentile}th Percentile)`;
+  } else if (studentPercentage >= 60) {
+    return `Good performance. (${percentile}th Percentile)`;
+  } else if (studentPercentage >= 50) {
+    return `Average performance. Needs some improvement. (${percentile}th Percentile)`;
+  } else if (studentPercentage >= 40) {
+    return `Below average. Requires significant improvement. (${percentile}th Percentile)`;
+  } else {
+    return `Poor performance. Urgent intervention needed. (${percentile}th Percentile)`;
+  }
+};
+
+// Helper function to calculate percentile
+const calculatePercentile = (score, sortedScores) => {
+  const scoresBelow = sortedScores.filter(s => s <= score).length;
+  return Math.round((scoresBelow / sortedScores.length) * 100);
+};
+
+
+
+// Helper function to calculate percentile
+
+// Adjust the path as needed
+
+// const generateStudentReportPdf = async (req, res) => {
+//   try {
+//     const studentResponseId = req.params.id;
+
+//     // Fetch the student response
+//     const studentResponseRes = await studentResponse.findById(studentResponseId)
+//       .populate({
+//         path: 'studentId',
+//         select: 'FirstName LastName email',
+//       });
+
+//     if (!studentResponseRes) {
+//       return res.status(404).json({ success: false, message: 'Student response not found' });
+//     }
+
+//     // Prepare data for report
+//     const studentName = `${studentResponseRes.studentId.FirstName} ${studentResponseRes.studentId.LastName}`;
+
+//     const topicsData = studentResponseRes.topics.map(topic => {
+//       const studentScore = topic.totalMarks || 0;
+//       const percentage = topic.topicMarks > 0 ? (studentScore / topic.topicMarks) * 100 : 0;
+
+//       return {
+//         topic: topic.Heading,
+//         score: studentScore,
+//         maxMarks: topic.topicMarks,
+//         percentage: `${percentage.toFixed(2)}%`,
+//         comment: topic.comment || 'No comment'
+//       };
+//     });
+
+//     // Create HTML report using json2html
+//     const reportHtml = `
+//       <!DOCTYPE html>
+//       <html lang="en">
+//       <head>
+//         <meta charset="UTF-8">
+//         <title>Student Performance Report</title>
+//         <style>
+//           body {
+//             font-family: Arial, sans-serif;
+//             line-height: 1.6;
+//             max-width: 800px;
+//             margin: 0 auto;
+//             padding: 20px;
+//           }
+//           .header {
+//             text-align: center;
+//             margin-bottom: 30px;
+//             border-bottom: 2px solid #333;
+//             padding-bottom: 10px;
+//           }
+//           table {
+//             width: 100%;
+//             border-collapse: collapse;
+//             margin-top: 20px;
+//           }
+//           th, td {
+//             border: 1px solid #ddd;
+//             padding: 10px;
+//             text-align: left;
+//           }
+//           th {
+//             background-color: #f2f2f2;
+//             font-weight: bold;
+//           }
+//           .performance-table tr:nth-child(even) {
+//             background-color: #f9f9f9;
+//           }
+//         </style>
+//       </head>
+//       <body>
+//         <div class="header">
+//           <h1>Performance Report</h1>
+//           <h2>${studentName}</h2>
+//         </div>
+//         ${json2html.render(topicsData, {
+//           'tag': 'table',
+//           'class': 'performance-table',
+//           'children': [
+//             {
+//               'tag': 'thead',
+//               'children': [
+//                 {
+//                   'tag': 'tr',
+//                   'children': [
+//                     {'tag': 'th', 'html': 'Topic'},
+//                     {'tag': 'th', 'html': 'Score'},
+//                     {'tag': 'th', 'html': 'Maximum Marks'},
+//                     {'tag': 'html', 'html': 'Percentage'},
+//                     {'tag': 'th', 'html': 'Comment'}
+//                   ]
+//                 }
+//               ]
+//             },
+//             {
+//               'tag': 'tbody',
+//               'repeat': topicsData,
+//               'children': [
+//                 {
+//                   'tag': 'tr',
+//                   'children': [
+//                     {'tag': 'td', 'html': '${topic}'},
+//                     {'tag': 'td', 'html': '${score}'},
+//                     {'tag': 'td', 'html': '${maxMarks}'},
+//                     {'tag': 'td', 'html': '${percentage}'},
+//                     {'tag': 'td', 'html': '${comment}'}
+//                   ]
+//                 }
+//               ]
+//             }
+//           ]
+//         })}
+//       </body>
+//       </html>
+//     `;
+
+//     // Upload HTML report to Cloudinary
+//     const uploadResponse = await new Promise((resolve, reject) => {
+//       const cloudinaryStream = cloudinary.uploader.upload_stream(
+//         { 
+//           folder: 'reports', 
+//           resource_type: 'raw', 
+//           public_id: `report_${studentResponseId}`,
+//           format: 'html'
+//         },
+//         (error, result) => {
+//           if (error) return reject(error);
+//           resolve(result);
+//         }
+//       );
+
+//       // Convert string to buffer
+//       const htmlBuffer = Buffer.from(reportHtml, 'utf-8');
+//       cloudinaryStream.end(htmlBuffer);
+//     });
+
+//     // Return the Cloudinary link for the HTML report
+//     res.status(200).json({
+//       success: true,
+//       message: 'Report generated successfully',
+//       reportUrl: uploadResponse.secure_url,
+//     });
+
+//   } catch (error) {
+//     console.error('Error generating report:', error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error generating student report',
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
+const generateStudentReportPdf = async (req, res) => {
+  let browser = null;
+  try {
+    const studentResponseId = req.params.id;
+
+    // Fetch the student response
+    const studentResponseRes = await studentResponse.findById(studentResponseId)
+      .populate({
+        path: 'studentId',
+        select: 'FirstName LastName email',
+      });
+
+    if (!studentResponseRes) {
+      return res.status(404).json({ success: false, message: 'Student response not found' });
+    }
+
+    const studentName = `${studentResponseRes.studentId.FirstName} ${studentResponseRes.studentId.LastName}`;
+    const topicsHtml = studentResponseRes.topics.map(topic => {
+      const studentScore = topic.totalMarks || 0;
+      const percentage = topic.topicMarks > 0 ? (studentScore / topic.topicMarks) * 100 : 0;
+      const performanceComment = topic.comment || 'No comment';
+      const comparisonArrow = percentage > topic.averagePercengate ? '↑' : percentage < topic.averagePercengate ? '↓' : '-';
+    
+      return `
+        <tr>
+          <td>${topic.Heading}</td>
+          <td>${studentScore} <span class="${comparisonArrow === '↑' ? 'up' : comparisonArrow === '↓' ? 'down' : ''}">${comparisonArrow}</span></td>
+          <td>${topic.topicMarks}</td>
+          <td>${percentage?.toFixed(1)|| 0}% <span class="${comparisonArrow === '↑' ? 'up' : comparisonArrow === '↓' ? 'down' : ''}">${comparisonArrow}</span></td>
+          <td>${performanceComment}</td>
+          <td>${topic.averagePercengate?.toFixed(1) || 0}%</td>
+          <td>${topic.averageMarks}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    const overallAveragePercentage = studentResponseRes.topics.reduce((sum, topic) => sum + (topic.topicMarks > 0 ? (topic.totalMarks / topic.topicMarks) * 100 : 0), 0) / studentResponseRes.topics.length;
+    
+    const reportHtml = `<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Performance Report</title>
+        <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+            .generic-content {
+              padding : 10px;
+            }
+            .report-container {
+                background-color: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+            }
+            .header {
+                background-color: #3498db;
+                color: #ffffff;
+                padding: 20px;
+                text-align: center;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 28px;
+            }
+            .header h2 {
+                margin: 10px 0 0;
+                font-size: 20px;
+                font-weight: normal;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            th, td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            thead {
+                background-color: #f2f2f2;
+            }
+            th {
+                font-weight: bold;
+                text-transform: uppercase;
+                font-size: 14px;
+                color: #555;
+            }
+            tr:nth-child(even) {
+                background-color: #f8f8f8;
+            }
+            tr:hover {
+                background-color: #e8f4fd;
+            }
+            .up {
+                color: green;
+            }
+            .down {
+                color: red;
+            }
+            .footer {
+                margin-top: 20px;
+                padding: 10px;
+                text-align: center;
+                background-color: #f2f2f2;
+                border-top: 1px solid #e0e0e0;
+            }
+            .footer p {
+                margin: 5px 0;
+            }
+            .explanation {
+                margin-top: 20px;
+                padding: 20px;
+                background-color: #eaf3fc;
+                border-left: 5px solid #3498db;
+            }
+            .status {
+                margin-top: 20px;
+                padding: 15px;
+                text-align: center;
+                font-size: 18px;
+                font-weight: bold;
+                background-color: ${studentResponseRes.status === 'Pass' ? '#d4edda' : '#f8d7da'};
+                color: ${studentResponseRes.status === 'Pass' ? '#155724' : '#721c24'};
+                border: 1px solid ${studentResponseRes.status === 'Pass' ? '#c3e6cb' : '#f5c6cb'};
+            }
+        </style>
+    </head>
+    <body>
+        <div class="report-container">
+            <div class="header">
+                <h1>Performance Report</h1>
+                <h2>${studentName}</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Topic</th>
+                        <th>Score</th>
+                        <th>Maximum Marks</th>
+                        <th>Your Test %</th>
+                        <th>Remark</th>
+                        <th>Avg Test%</th>
+                        <th>Average Marks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${topicsHtml}
+                </tbody>
+            </table>
+            <div class="status">
+                Status: ${studentResponseRes.status}
+            </div>
+            <div class="footer">
+                <p><strong>Overall Average Percentage:</strong> ${overallAveragePercentage.toFixed(2)}%</p>
+                <p><strong>Rank:</strong> ${studentResponseRes.rank}</p>
+                <p>${studentResponseRes.comment}</p>
+                <p><em>Evaluation performed by SkillAccess.</em></p>
+            </div>
+            <div class="explanation">
+                <h3>Report Explanation</h3>
+                <ul>
+                    <li><strong>Topic:</strong> The subject or area of the test.</li>
+                    <li><strong>Score:</strong> The marks obtained by the student in this topic.</li>
+                    <li><strong>Maximum Marks:</strong> The highest possible marks for this topic.</li>
+                    <li><strong>Your Test %:</strong> The percentage score achieved in the topic.</li>
+                    <li><strong>Remark:</strong> A brief comment on performance in the topic.</li>
+                    <li><strong>Avg Test%:</strong> The average test percentage for all students.</li>
+                    <li><strong>Average Marks:</strong> The average marks obtained by all students in this topic.</li>
+                </ul>
+            </div>
+            <div class="generic-content">
+                <h3>About This Report Card</h3>
+                <p>This report card reflects the performance of ${studentName} in the conducted tests. It highlights strengths and areas for improvement, providing a comparative analysis with peers.</p>
+                <p>Keep working hard and striving for excellence. Remember, every effort counts!</p>
+            </div>
+        </div>
+    </body>
+    </html>`;
+    
+    
+
+    // Launch Puppeteer
+    browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    // Set content and wait for full page load
+    await page.setContent(reportHtml, { waitUntil: 'domcontentloaded' });
+
+    // Ensure the PDF is generated with backgrounds
+    const pdfBuffer = await page.pdf({
+      format: 'A2',
+      printBackground: true,
+      margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+    });
+
+    // Check the file created
+
+    // Close the browser
+    await browser.close();
+
+    // Upload PDF to Cloudinary as a PDF
+    const uploadResponse = await new Promise((resolve, reject) => {
+      const cloudinaryStream = cloudinary.v2.uploader.upload_stream(
+        {
+          folder: 'image',
+          access_control: [{ access_type: 'anonymous', }],
+          resource_type: 'raw', // Correct resource type for PDF files
+          public_id: `report_${studentResponseId}`,
+          format: "pdf" // Optional: Unique public ID for the report
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      cloudinaryStream.end(pdfBuffer);
+    });
+
+    // Return the Cloudinary link for the PDF
+    res.status(200).json({
+      success: true,
+      message: 'Report generated successfully',
+      pdfUrl: uploadResponse,
+    });
+
+  } catch (error) {
+    console.error('Error generating report:', error);
+
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (browserCloseError) {
+        console.error('Error closing browser:', browserCloseError);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error generating student report PDF',
+      error: error.message,
+    });
+  }
+};
+
+const generateReport = catchAsyncErrors(async (req, res, next) => {
+  const test = await Assessments.findById(req.params.id).populate({
+    path: 'studentResponses',
+    select: 'topics status studentId timeTaken percentage',
+    populate: {
+      path: 'studentId',
+      select: 'FirstName LastName email',
+    },
+  });
+
+  let topicPercentages = [];
+
+  test.topics.forEach((topic, index) => {
+    let totalMarks = 0;
+    let maximumMarks = 0;
+    let studentScores = [];
+    let responseCount = test.studentResponses.length;
+
+    // Collect individual student scores for percentile calculation
+    test.studentResponses.forEach((response) => {
+      maximumMarks = response.topics[index].topicMarks && response.topics[index].topicMarks;
+      const score = response.topics[index].totalMarks || 0;
+      totalMarks += score;
+      studentScores.push(score);
+    });
+
+    const avgTopicMarks = responseCount > 0 ? totalMarks / responseCount : 0;
+    const averageTopicPercentage = maximumMarks > 0
+      ? (avgTopicMarks / maximumMarks) * 100
+      : 0;
+
+    // Calculate percentiles
+    const sortedScores = [...studentScores].sort((a, b) => a - b);
+
+    topicPercentages.push({
+      avgTopicMarks,
+      maximumMarks,
+      averageTopicPercentage,
+      studentScores
+    });
+  });
+
+  // Update student responses
+  // await Promise.all(
+  //   test.studentResponses.map(async (response) => {
+  //     // Initialize topicUpdates to accumulate updates
+  //     let topicUpdates = { $set: {} };
+
+  //     topicPercentages.forEach((topic, topicIndex) => {
+  //       const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+  //       const comment = generatePerformanceComment(
+  //         studentScore,
+  //         topic.maximumMarks,
+  //         [...topic.studentScores].sort((a, b) => a - b)
+  //       );
+
+  //       const percentage =
+  //         topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
+
+  //       // Accumulate updates for the current topic
+  //       topicUpdates.$set[`topics.${topicIndex}.avgerageMarks`] = parseInt(topic.avgTopicMarks);
+  //       topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
+  //       topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
+  //       topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
+  //     });
+
+  //     // Update the student response with all accumulated updates
+  //     await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+  //   })
+  // );
+  // Calculate overall percentages and add them to the responses
+  const responsesWithPercentages = await Promise.all(
+    test.studentResponses.map(async (response) => {
+      let totalStudentMarks = 0;
+      let totalMaximumMarks = 0;
+
+      topicPercentages.forEach((topic, topicIndex) => {
+        const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+        totalStudentMarks += studentScore;
+        totalMaximumMarks += topic.maximumMarks;
+      });
+
+      const overallPercentage =
+        totalMaximumMarks > 0 ? (totalStudentMarks / totalMaximumMarks) * 100 : 0;
+
+      return {
+        _id: response._id,
+        name: response.studentId.FirstName + " " + response.studentId.LastName,
+        overallPercentage,
+        totalStudentMarks,
+        totalMaximumMarks,
+      };
+    })
+  );
+
+  // Sort students by overall percentage to calculate rank
+  responsesWithPercentages.sort((a, b) => b.overallPercentage - a.overallPercentage);
+
+  // Update ranks and other data in the database
+  await Promise.all(
+    responsesWithPercentages.map(async (response, index) => {
+      let topicUpdates = { $set: {} };
+
+      // Assign rank based on position in the sorted array
+      const rank = index + 1;
+
+      // Generate overall performance comment
+      const overallComment = generatePerformanceComment(
+        response.totalStudentMarks,
+        response.totalMaximumMarks,
+        topicPercentages.map((t) => t.avgTopicMarks).sort((a, b) => a - b)
+      );
+
+      // Prepare updates
+      topicUpdates.$set.percentage = response.overallPercentage;
+      topicUpdates.$set.comment = overallComment;
+      topicUpdates.$set.rank = rank;
+
+      // Update the student response
+      await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+    })
+  );
+
+
+
+  test.isReportGenerated = true;
+  await test.save();
+  return res.status(200).json({ success: true, topStudents: responsesWithPercentages.splice(0, 3) });
+
+});
 
 const now = new Date();
 const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
 module.exports = {
+  generateStudentReportPdf,
+  generateReport,
   getResultGraph,
   getResultInExcel,
   getStudentsForTest,

@@ -918,8 +918,13 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const CollegeId = req.user.id;
 
   const college = await College.findById(CollegeId);
-  console.log(college._id);
-  let invited = await InvitedStudents.findOneAndUpdate(
+  // console.log(college._id);
+
+  let invited ;
+  if(req.user.role === "university"){
+      
+  }
+    invited = await InvitedStudents.findOneAndUpdate(
     {
       college: college._id,
     },
@@ -931,8 +936,6 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       new: true,
     }
   );
-
-
 
   if (!college) {
     return next(new ErrorHandler("College not found", 404));

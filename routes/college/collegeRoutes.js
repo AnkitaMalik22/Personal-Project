@@ -69,6 +69,7 @@ const {
   markAsSeen,
 } = require("../../controllers/college/inbox/inboxController");
 const { qrWare } = require("../../middlewares/qrWare");
+const { authenticateMultiDatabase } = require("../../middlewares/authMultiUser");
 
 // const videoUpload = require("../../utils/upload.js");
 //inbox
@@ -152,7 +153,7 @@ router.get("/assessments/all", isAuthenticatedCollege, getAllAssessments);
 
 // college create topics
 
-router.post("/topics/create", isAuthenticatedCollege, createTopicCollege);
+router.post("/topics/create",authenticateMultiDatabase, createTopicCollege);
 
 // college get all topics
 router.get("/topics/all", isAuthenticatedCollege, getTopics);
@@ -163,7 +164,7 @@ router.post("/add-topics/:id", isAuthenticatedCollege, addTopicstoAssessment);
 //college add question to topic // currently doing using frontend
 router.post(
   "/add-questions/:topicId/:type",
-  isAuthenticatedCollege,
+authenticateMultiDatabase,
   addQuestionsToTopicCollege
 );
 
