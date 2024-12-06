@@ -1521,7 +1521,10 @@ const generateStudentReportPdf = async (req, res) => {
     
 
     // Launch Puppeteer
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox'],
+    });
     const page = await browser.newPage();
 
     // Set content and wait for full page load
