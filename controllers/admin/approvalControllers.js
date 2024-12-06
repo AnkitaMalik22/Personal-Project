@@ -117,13 +117,15 @@ exports.getColleges = catchAsyncErrors(async (req, res, next) => {
         // }
       
         if (tier !== 'tier1' && tier !== 'tier2' && tier !== 'tier3') {
-            const colleges = await College.find({status: 'approved'});
+            const colleges = await College.find({status: 'approved'}).sort({createdAt:-1});
             return res.status(200).json({
                 success: true,
                 colleges
             })
         }
-        const collegesByTier = await College.find({ tier });
+        const collegesByTier = await College.find({ tier }).sort({createdAt: -1});
+
+        
        return  res.status(200).json({
             success: true,
             colleges :collegesByTier
@@ -132,13 +134,39 @@ exports.getColleges = catchAsyncErrors(async (req, res, next) => {
         next(new ErrorHandler(error.message, 500));
     }
 }
-
 );
+
+
+exports.getRequestedColleges = catchAsyncErrors(async (req, res, next) => {
+    try {
+        const colleges = await College.find({
+            $or: [
+                { status: 'pending' },
+                { status: { $exists: false } } 
+            ]
+
+            // We'll have to change this to -1 after deleting all the current clgs .
+        }).sort({createdAt: 1});
+
+        res.status(200).json({
+            success: true,
+            colleges
+        })
+   
+    } catch (error) {
+        next(new ErrorHandler(error.message, 500));
+    }     
+});
+
+
 
 exports.getCompanies = catchAsyncErrors(async (req, res, next) => {
     const { status } = req.query;
     try {
-        const companies = await Company.find({status: status || 'pending'});
+        const companies = await Company.find({status: status || 'pending'
+
+            
+        }).sort({createdAt: 1});
         res.status(200).json({
             success: true,
             companies

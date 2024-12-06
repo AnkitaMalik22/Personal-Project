@@ -290,26 +290,38 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       if (!college) {
         return next(new ErrorHandler("College not found", 404));
       }
+      const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
+      // const invite = await Invitation.findOne({ invitationLink: inviteLink });
 
-      const invite = await Invitation.findOne({ invitationLink: inviteLink });
-
-      if (!invite) {
+      // if (!invite) {
+      //   return next(new ErrorHandler("Invalid invitation link", 400));
+      // }
+      let email;
+      let batch="";
+      valid = collegeInv.students.some((student) => {
+        if (student.link === inviteLink) {
+          email = student.Email;
+          batch = student.batch;
+        }
+        return student.link === inviteLink;
+      });
+      if (!valid) {
         return next(new ErrorHandler("Invalid invitation link", 400));
       }
+      // if (invite.recipientEmail !== Email) {
+      //   return next(new ErrorHandler("Invalid email", 400));
+      // }
 
-      if (invite.recipientEmail !== Email) {
-        return next(new ErrorHandler("Invalid email", 400));
-      }
+      // invite.status = "accepted";
 
-      invite.status = "accepted";
-
-      await invite.save();
+      // await invite.save();
 
       const student = await Student.create({
         FirstName,
         LastName,
         Email,
         avatar,
+        batch,
         CollegeId: CollegeId,
         registrationLink: inviteLink,
         CollegeName: college.CollegeName,
@@ -388,9 +400,11 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       //   return next(new ErrorHandler("Invalid invitation link", 400));
       // }
       let email;
+      let batch="";
       valid = collegeInv.students.some((student) => {
         if (student.link === inviteLink) {
           email = student.Email;
+          batch = student.batch;
         }
         return student.link === inviteLink;
       });
@@ -420,6 +434,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       //   PhoneNumber,
       // });
       // const procPass = await bcrypt.hash(req.body.Password, 10);
+      console.log(collegeInv.batch,collegeInv)
 
       const student = await Student.create({
         ...req.body,
@@ -429,7 +444,8 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
         Email: email,
         registrationLink: inviteLink,
         CollegeName: college.CollegeName,
-        PhoneNumber,
+        PhoneNumber,  
+        batch:batch
       });
 
       // uploadedStudents.students.push(student._id);

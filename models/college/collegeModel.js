@@ -238,7 +238,11 @@ const collegeSchema = new mongoose.Schema({
       ref: 'Job',
     }
   ],
-});
+},
+{
+  timestamps: true,
+}
+);
 
 collegeSchema.pre("save", async function (next) {
   if (!this.isModified("Password")) {
