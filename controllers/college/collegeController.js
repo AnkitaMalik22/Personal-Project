@@ -878,6 +878,35 @@ exports.updateProfilePictureCollege = catchAsyncErrors(
 //for adding students from students module
 //takes an array of students and sends and ivitation mail to them
 
+function generateInvitationEmail({ Email, FirstName, LastName, CollegeId, link }) {
+  return {
+    email: Email,
+    subject: "Invitation to join Skill Access",
+    message: `Dear ${FirstName},
+
+Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
+
+Step 1: Register and Complete Your Profile
+Click the link below to register:
+https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+
+During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
+
+Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
+
+Additional Guidelines:
+Double-Check Details: Ensure all provided information is accurate to avoid delays.
+Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
+
+Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
+
+Best regards,  
+The Skill Access Team`,
+  };
+}
+
+
+
 exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
   // console.log(students)
@@ -889,8 +918,13 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const CollegeId = req.user.id;
 
   const college = await College.findById(CollegeId);
-  console.log(college._id);
-  let invited = await InvitedStudents.findOneAndUpdate(
+  // console.log(college._id);
+
+  let invited ;
+  if(req.user.role === "university"){
+      
+  }
+    invited = await InvitedStudents.findOneAndUpdate(
     {
       college: college._id,
     },
@@ -903,8 +937,6 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     }
   );
 
-
-
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
@@ -912,7 +944,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const allDuplicateEmails = [];
 
   for (let i = 0; i < students.length; i++) {
-    const { FirstName, LastName, Email } = students[i];
+    const { FirstName, LastName, Email ,Batch  } = students[i];
     // const student = await UploadedStudents.create({
     //   college_id: CollegeId,
     //   FirstName,
@@ -952,7 +984,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         link: link,
         FirstName: FirstName,
         LastName: LastName,
-
+        batch:Batch
         // student: stu._id,
       });
 
@@ -979,30 +1011,13 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       //   `,
       // });
 
-      const mail = await sendEmail({
-        email: Email,
-        subject: "Invitation to join Skill Access",
-        message: `Dear ${FirstName},
-
-Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
-
-Step 1: Register and Complete Your Profile
-Click the link below to register:
-https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-
-During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
-
-Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
-
-Additional Guidelines:
-Double-Check Details: Ensure all provided information is accurate to avoid delays.
-Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
-
-Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
-
-Best regards,
-The Skill Access Team`,
-      });
+      const mail = await sendEmail(generateInvitationEmail({
+        Email: Email,
+        link: link,
+        FirstName: FirstName,
+        LastName: LastName,
+        CollegeId
+      }));
       Invitations.push(mail);
       await invited.save();
     } else {
@@ -1020,38 +1035,19 @@ The Skill Access Team`,
       //   subject: "Invitation to join College",
       //   message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
       // });
-      const mail = await sendEmail({
-        email: Email,
-        subject: "Invitation to join Skill Access",
-        message: `Dear ${FirstName},
-
-Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
-
-Step 1: Register and Complete Your Profile
-Click the link below to register:
-https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
-
-During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
-
-Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
-
-Additional Guidelines:
-Double-Check Details: Ensure all provided information is accurate to avoid delays.
-Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
-
-Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
-
-Best regards,
-The Skill Access Team`,
-      });
+      const mail = await sendEmail(generateInvitationEmail({
+        Email: Email,
+        link: link,
+        FirstName: FirstName,
+        LastName: LastName,
+         CollegeId
+      }));
       Invitations.push(mail);
       await invited.save();
     }
-    // student.invited = true;
-    // await student.save();
+
   }
 
-  // console.log(allDuplicateEmails);
 
   if (allDuplicateEmails.length == students.length) {
     console.log("all duplicate emails");
@@ -1269,7 +1265,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
-    const { batch, createdAt, skills, filterType, page , limit  } = req.query;
+    const { batch, createdAt, skills, filterType, page, limit=100 } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
 
     // Build the filter object

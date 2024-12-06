@@ -67,6 +67,10 @@ const {
 
 
 // Assessments Routes
+
+router.get("/publish-report/:id",assessmentsController.generateReport);
+router.get("/report/pdf/:id",assessmentsController.generateStudentReportPdf);
+
 router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph)
 
 router.route("/students/:id").get(isAuthenticatedCollege, getStudentsForTest);

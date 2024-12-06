@@ -52,6 +52,8 @@ app.use(
       "https://skillaccess-student-ten.vercel.app/",
       "https://skillaccess-student-ten.vercel.app/",
       'https://skillaccess-admin-alpha.vercel.app',
+      "https://app.skillaccess.in",
+      "https://student.skillaccess.in"
     ],
     credentials: true,
   })
@@ -74,16 +76,18 @@ const collegeTeamRoutes = require("./routes/college/teamRoutes.js");
 const qbRoutes = require("./routes/college/qbRoutes.js");
 const paymentRoutes = require("./routes/college/paymentRoutes.js");
 const collegeStudentRoutes = require("./routes/college/studentRoutes.js");
-
+const universityRoutes = require("./routes/university/universityRoutes.js");
 const studentTestRoutes = require("./routes/student/studentTestRoutes.js");
 const studentInboxRoutes = require("./routes/student/studentInboxRoutes.js");
 const studentGraphRoutes = require("./routes/student/studentGraphRoutes.js");
 const companyTestRoutes = require("./routes/company/companyTestRoutes.js");
 const { isAuthenticatedCompany } = require("./middlewares/companyAuth.js");
+const { generateReport, generateStudentReportPdf } = require("./controllers/college/assessment/assessments.js");
 
 // ======================================================= ROUTES =======================================================
 
 // routes
+app.use('/api/university', universityRoutes);
 app.use("/api/college", collegeRoutes);
 app.use("/api/college/teams", collegeTeamRoutes);
 app.use("/api/college/student", collegeStudentRoutes);
@@ -104,6 +108,10 @@ app.use("/api/compiler", require("./routes/compiler/compilerRoutes"));
 app.get("/", (req, res) => {
   res.send("API is running");
 });
+app.get("/api/assessments/generateReport/:id", generateReport);
+app.get("/api/assessments/generateReport/pdf/:id", generateStudentReportPdf);
+
+
 
 app.get("/test", (req, res) => {
   res.send("Dockerize container running");
@@ -136,6 +144,8 @@ const io = new socketIo.Server(server, {
       "https://skillaccess-student-iota.vercel.app",
       "https://skillaccess-admin-alpha.vercel.app",
       'https://skillaccess-admin-alpha.vercel.app',
+      "https://app.skillaccess.in",
+      "https://student.skillaccess.in"
     ],
   },
 });
