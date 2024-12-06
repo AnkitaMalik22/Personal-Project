@@ -36,7 +36,10 @@ const studentResponseSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
-
+        percentage:Number,
+        comment:String,
+        averagePercengate:Number,
+        averageMarks:Number,
         questions: [
           {
             // questionId: {
@@ -410,7 +413,9 @@ const studentResponseSchema = new mongoose.Schema(
     examScreenShots : {
       type : mongoose.Schema.Types.ObjectId,
       ref : 'StudentScreenshots'
-    }
+    },
+    comment:String,
+    rank:Number
   },
   {
     timestamps: true,

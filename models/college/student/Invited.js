@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 // Define schema for Invitation model
 const invitedStudentsSchema = new mongoose.Schema({
   college: { type: mongoose.Schema.Types.ObjectId, ref: "College" },
+  university:{type:mongoose.Schema.Types.ObjectId,ref:"University"},
   students: [
     {
       Email: {
@@ -16,7 +17,6 @@ const invitedStudentsSchema = new mongoose.Schema({
       student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
       link: { type: String },
       batch: { type: String },
-    
     },
   ],
 });

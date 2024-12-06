@@ -82,6 +82,7 @@ const studentInboxRoutes = require("./routes/student/studentInboxRoutes.js");
 const studentGraphRoutes = require("./routes/student/studentGraphRoutes.js");
 const companyTestRoutes = require("./routes/company/companyTestRoutes.js");
 const { isAuthenticatedCompany } = require("./middlewares/companyAuth.js");
+const { generateReport, generateStudentReportPdf } = require("./controllers/college/assessment/assessments.js");
 
 // ======================================================= ROUTES =======================================================
 
@@ -107,6 +108,10 @@ app.use("/api/compiler", require("./routes/compiler/compilerRoutes"));
 app.get("/", (req, res) => {
   res.send("API is running");
 });
+app.get("/api/assessments/generateReport/:id", generateReport);
+app.get("/api/assessments/generateReport/pdf/:id", generateStudentReportPdf);
+
+
 
 app.get("/test", (req, res) => {
   res.send("Dockerize container running");
