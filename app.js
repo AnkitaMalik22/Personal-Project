@@ -108,8 +108,7 @@ app.use("/api/compiler", require("./routes/compiler/compilerRoutes"));
 app.get("/", (req, res) => {
   res.send("API is running");
 });
-app.get("/api/assessments/generateReport/:id", generateReport);
-app.get("/api/assessments/generateReport/pdf/:id", generateStudentReportPdf);
+
 
 
 

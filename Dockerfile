@@ -45,3 +45,10 @@ CMD [ "node", "app.js" ]
 
 # Document that the service listens on port 8080
 EXPOSE 3000
+
+
+
+$2a$10$Tb2sKHLy1kkGMcjnPSxH3.MsawuTudxWMSh3Md1IuDAYzbR0BNxea
+
+
+$2a$10$ZQ4WEf4EnPrJ7LtqMI/8WuOOFQe0GTLizH80IbEjb3Z3AYwmvDuvi
