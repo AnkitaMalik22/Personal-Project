@@ -768,12 +768,12 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       const limit = parseInt(req.query.limit) || 10; // Default limit is 10
       const skip = parseInt(req.query.skip) || 0;   // Default skip is 0
       const batch = req.query.batch;
-
+      const search = req.query.search;
 
       const query = { college: id };
       const populateOptions = {
         path: "students",
-        select: "FirstName LastName Avatar _id createdAt batch",
+        select: "FirstName LastName Avatar _id createdAt batch" ,
         match: { _id: { $nin: assessment.invitedStudents } },
         options: {
           sort: { _id: -1 },
@@ -785,6 +785,17 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
 
       if (batch) {
         populateOptions.match = { ...populateOptions.match, batch: batch };
+      }
+      if(search){
+    
+        populateOptions.match = { 
+          ...populateOptions.match, 
+          $or: [
+            { FirstName: { $regex: search, $options: "i" } }, 
+            { LastName: { $regex: search, $options: "i" } },
+           {Email:{$regex: search,$options:"i"}}
+          ] 
+        };        
       }
 
       const approved = await ApprovedStudents.findOne(query).populate(populateOptions);
@@ -1606,7 +1617,7 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
 
     // Collect individual student scores for percentile calculation
     test.studentResponses.forEach((response) => {
-      maximumMarks = response.topics[index].topicMarks && response.topics[index].topicMarks;
+      maximumMarks = test.topics[index].topicMarks;
       const score = response.topics[index].totalMarks || 0;
       totalMarks += score;
       studentScores.push(score);
@@ -1661,17 +1672,21 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
     test.studentResponses.map(async (response) => {
       let totalStudentMarks = 0;
       let totalMaximumMarks = 0;
-
+    let  topics = [];
       topicPercentages.forEach((topic, topicIndex) => {
         const studentScore = response.topics[topicIndex]?.totalMarks || 0;
         totalStudentMarks += studentScore;
         totalMaximumMarks += topic.maximumMarks;
+        topics.push(topic);
       });
+
+      
 
       const overallPercentage =
         totalMaximumMarks > 0 ? (totalStudentMarks / totalMaximumMarks) * 100 : 0;
 
       return {
+       topics,
         _id: response._id,
         name: response.studentId.FirstName + " " + response.studentId.LastName,
         overallPercentage,
@@ -1681,6 +1696,8 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
     })
   );
 
+  console.log(topicPercentages)
+
   // Sort students by overall percentage to calculate rank
   responsesWithPercentages.sort((a, b) => b.overallPercentage - a.overallPercentage);
 
@@ -1688,6 +1705,28 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
   await Promise.all(
     responsesWithPercentages.map(async (response, index) => {
       let topicUpdates = { $set: {} };
+
+
+      topicPercentages.forEach((topic, topicIndex) => {
+              const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+              const comment = generatePerformanceComment(
+                studentScore,
+                topic.maximumMarks,
+                [...topic.studentScores].sort((a, b) => a - b)
+              );
+      
+              const percentage =
+                topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
+      
+              // Accumulate updates for the current topic averageMarks
+              topicUpdates.$set[`topics.${topicIndex}.averageMarks`] = parseInt(topic.avgTopicMarks);
+              topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
+              topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
+              topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
+            });
+      
+           
+
 
       // Assign rank based on position in the sorted array
       const rank = index + 1;
@@ -1703,9 +1742,10 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
       topicUpdates.$set.percentage = response.overallPercentage;
       topicUpdates.$set.comment = overallComment;
       topicUpdates.$set.rank = rank;
-
+// console.log(topicUpdates);
       // Update the student response
-      await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+     let student =  await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+     console.log(student.topics[0].averageMarks);
     })
   );
 
