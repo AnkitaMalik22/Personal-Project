@@ -1363,7 +1363,13 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
   //   path: "jobs",
   // });
   const id = req.user.id;
-  const college = await College.findById(id).populate("jobs");
+  const college = await College.findById(id).populate({
+    path: "jobs",
+    populate: {
+      path: "company", // The field within "jobs" to populate
+    },
+  });
+  
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
