@@ -12,6 +12,7 @@ const Compiler = require("../../../models/college/assessment/Compiler");
 const cloudinary = require("cloudinary").v2;
 const path = require("path");
 const Company = require("../../../models/company/companyModel");
+const University = require("../../../models/university/universityModel");
 
 // ===================================================| Create Section |===================================================================
 
@@ -201,7 +202,7 @@ exports.createTopicCollege = async (req, res) => {
 
     // Determine if the user is a company or college based on the `source` query parameter
     const isCompany = !source || source.toLowerCase() === "company";
-    const UserModel = isCompany ? Company : College;
+    const UserModel = isCompany ? Company : source === "university" ? University : College;
 
     // Fetch the user (Company or College)
     const user = await UserModel.findById(userId);
@@ -215,12 +216,20 @@ exports.createTopicCollege = async (req, res) => {
     if (!Heading || !Description) {
       return res.status(400).json({ error: "All fields are required" });
     }
+    let topics;
 
+    if (source === "university") {
+      topics = await Section.find({
+        university: userId,
+      });
+    } else {
+      topics = await Section.find({
+        company: isCompany ? userId : undefined,
+        college: !isCompany ? userId : undefined,
+      });
+    }
     // Check for duplicate topics based on the user type
-    const topics = await Section.find({
-      company: isCompany ? userId : undefined,
-      college: !isCompany ? userId : undefined,
-    });
+
     const duplicateTopic = topics.some((topic) => topic.Heading === Heading);
 
     if (duplicateTopic) {
@@ -232,10 +241,12 @@ exports.createTopicCollege = async (req, res) => {
       ...req.body,
       Type: "",
       company: isCompany ? userId : undefined,
-      college: !isCompany ? userId : undefined,
+      ...(source === "university" ? { university: userId, createdByUniversity: true } : {}),
+      college: !isCompany && source !== "university" ? userId : undefined,
       createdByCompany: isCompany,
+
     });
-    if (!isCompany) {
+    if (!isCompany && source !== "university") {
       user.topics.push(section);
 
       await user.save();
@@ -375,14 +386,14 @@ exports.getTopics = async (req, res) => {
     const source = req.user.role;
     // Determine if the request is from a college or company based on the `source` query parameter
     const isCompany = source && source.toLowerCase() === "company";
-    const UserModel = isCompany ? Company : College;
+    const UserModel = isCompany ? Company : source === "university" ? University : College;
 
     // Fetch the user (Company or College)
     const user = await UserModel.findById(userId);
     if (!user) {
       return res
         .status(404)
-        .json({ error: `${isCompany ? "Company" : "College"} not found` });
+        .json({ error: `${isCompany ? "Company" : "User"} not found` });
     }
 
     let topics;
@@ -390,11 +401,11 @@ exports.getTopics = async (req, res) => {
     // Check the level query parameter to filter topics
     if (level === "adaptive") {
       topics = await Section.find({
-        [isCompany ? "company" : "college"]: userId,
+        [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
       }).populate("questions");
     } else {
       topics = await Section.find({
-        [isCompany ? "company" : "college"]: userId,
+        [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
       })
         .populate({
           path: "questions",
@@ -443,7 +454,7 @@ exports.getTopicsQB = async (req, res) => {
       }
       // console.log(query, "query");
 
-    
+
 
       topics = await Section.find({ college: collegeId })
         .populate("questions")
@@ -459,7 +470,7 @@ exports.getTopicsQB = async (req, res) => {
       }
       // console.log(query, "query");
 
-  
+
 
       topics = await Section.find({ company: companyId })
         .populate("questions")
@@ -549,7 +560,9 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     let id = "";
     if (req.user.role === "company") {
       id = section.company.toString();
-    } else {
+    } else if(req.user.role === "university"){
+      id = section.university.toString();
+    }else{
       id = section.college.toString();
     }
     // console.log("id: ", id, " userId : ",collegeId,id===collegeId, "role :", req.user.role,);

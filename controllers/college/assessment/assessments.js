@@ -20,6 +20,7 @@ const cloudinary = require("cloudinary");
 const fs = require('fs');
 
 const puppeteer = require('puppeteer');
+const University = require("../../../models/university/universityModel");
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -47,10 +48,12 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     const college = await College.findById(id);
     const company = await Company.findById(id);
-    if (!college && !company) {
+    const university = await University.findById(id);
+
+    if (!college && !company && !university) {
       return next(
         new ErrorHandler(
-          "You are not authorized to create assessment. Please login as college or company",
+          "You are not authorized to create assessments.",
           400
         )
       );
@@ -98,8 +101,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     // }
 
     const createdByCompany = role === "company";
+    const createdByUniversity = role ==="university";
 
-    if (role !== "college" && role !== "company") {
+    if (role !== "college" && role !== "company" && role!=="university") {
       return next(new ErrorHandler("Invalid user role", 400));
     }
 
@@ -278,6 +282,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       totalTime: req.body.totalDuration,
       totalMarks,
       createdByCompany,
+      createdByUniversity
     });
 
     const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
@@ -440,16 +445,21 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id, role } = req.user;
   let assessments = [];
+  console.log(role)
   if (role === "company") {
     assessments = await Assessments.find({ company: id, job: { $exists: req.query.withJob === "true" ? true : false } })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
     console.log(assessments)
-  } else {
+  } else if(role==="college"){
     assessments = await Assessments.find({ createdBy: id })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
     console.log(assessments);
+  }else{
+    assessments = await Assessments.find({ createdBy: id })
+    .sort({ createdAt: -1 })
+    .populate("invitedStudents");
   }
 
 

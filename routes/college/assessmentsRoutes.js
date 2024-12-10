@@ -6,7 +6,6 @@ const sectionsController = require("../../controllers/college/assessment/section
 const answersController = require("../../controllers/college/assessment/answers");
 const {
   isAuthenticatedStudent,
-  isAuthenticatedCollege,
   // isAuthenticatedCompany,
   authorizeRoles,
 } = require("../../middlewares/auth");
@@ -62,6 +61,7 @@ const {
   getAllBookmarks,
   removeBookmark,
 } = require("../../controllers/college/assessment/bookmark");
+const { authenticateMultiDatabase } = require("../../middlewares/authMultiUser");
 // ======================================================= ROUTES =======================================================
 
 
@@ -71,49 +71,49 @@ const {
 router.get("/publish-report/:id",assessmentsController.generateReport);
 router.get("/report/pdf/:id",assessmentsController.generateStudentReportPdf);
 
-router.route("/result/graph").get(isAuthenticatedCollege, getResultGraph)
+router.route("/result/graph").get(authenticateMultiDatabase, getResultGraph)
 
-router.route("/students/:id").get(isAuthenticatedCollege, getStudentsForTest);
-router.route("/recent").get(isAuthenticatedCollege, getRecentAssessments);
+router.route("/students/:id").get(authenticateMultiDatabase, getStudentsForTest);
+router.route("/recent").get(authenticateMultiDatabase, getRecentAssessments);
 router
   .route("/recent/:id")
-  .delete(isAuthenticatedCollege, removeRecentAssessment);
+  .delete(authenticateMultiDatabase, removeRecentAssessment);
 router.get(
   "/",
-  isAuthenticatedCollege || isAuthenticatedCompany,
+ authenticateMultiDatabase,
   getAllAssessments
 );
 
 router.get(
   "/download/:id",
-  isAuthenticatedCollege, getResultInExcel
+  authenticateMultiDatabase, getResultInExcel
 );
 router.get(
   "/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  authenticateMultiDatabase,
   getAssessmentById
 );
 router.get(
   "/overview/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  authenticateMultiDatabase,
   getAssessmentOverview
 );
 router.post(
   "/create",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   createAssessment
 );
 router.put(
   "/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   updateAssessmentById
 );
 router.delete(
   "/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   deleteAssessmentById
 );
 
@@ -121,68 +121,68 @@ router.delete(
 router.post(
   "/start/:assessmentId/:studentId",
   isAuthenticatedStudent,
-  authorizeRoles("student"),
+  // authorizeRoles("student"),
   startAssessment
 );
 router.post(
   "/end/:assessmentId/:studentId",
   isAuthenticatedStudent,
-  authorizeRoles("student"),
+  // authorizeRoles("student"),
   endAssessment
 );
 
 // Sections Routes
 router.post(
   "/sections/create",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   createSection
 );
 router.get(
   "/sections/assessmentId",
-  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  authenticateMultiDatabase,
   getSectionsByAssessmentId
 );
 router.get(
   "/section/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  authenticateMultiDatabase,
   getSectionById
 );
 router.put(
   "/section/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   updateSection
 );
 router.post(
   "/sections",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   deleteSections
 );
 
 // Questions Routes
 router.post(
   "/questions/create/:sectionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   createQuestion
 );
 router.get(
   "/questions/:sectionId",
-  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  authenticateMultiDatabase,
   getAllQuestions
 );
 router.get(
   "/question/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany || isAuthenticatedStudent,
+  authenticateMultiDatabase,
   getQuestionById
 );
 router.put("/question/:id", updateQuestionById);
 router.delete(
   "/questions/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   deleteQuestionById
 );
 
@@ -192,27 +192,27 @@ router.delete(
 // FOR MCQ
 router.post(
   "/answers/mcq/set/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   setAnswerIndex
 );
 router.get(
   "/answers/mcq/get/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   getAnswerUsingIndex
 );
 // FOR LONG ANS
 router.get(
   "/answers/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   getAnswerByQuestionId
 );
 router.post(
   "/answers/set/:id",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   setAnswer
 );
 
@@ -246,46 +246,46 @@ router.get(
 
 router.get(
   "/marks/long/add/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   addMarksLongAnswerStudent
 );
 router.get(
   "/marks/long/update/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   updateMarksLongAnswerStudent
 );
 
 router.get(
   "/marks/mcq/add/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   addMarksMCQ
 );
 router.put(
   "/marks/mcq/marks/update/:questionId",
-  isAuthenticatedCollege || isAuthenticatedCompany,
-  authorizeRoles("college", "company"),
+  authenticateMultiDatabase ,
+  // authorizeRoles("college", "company"),
   updateMarksMCQ
 );
 
 //  BOOKMARKS ROUTES
 
-router.post("/bookmarks/add", isAuthenticatedCollege, addBookmark);
-router.get("/bookmarks/:id", isAuthenticatedCollege, getBookmarkById);
-router.delete("/bookmarks/:id", isAuthenticatedCollege, removeBookmark);
+router.post("/bookmarks/add", authenticateMultiDatabase, addBookmark);
+router.get("/bookmarks/:id", authenticateMultiDatabase, getBookmarkById);
+router.delete("/bookmarks/:id", authenticateMultiDatabase, removeBookmark);
 
-router.get("/get/bookmarks", isAuthenticatedCollege, getAllBookmarks);
+router.get("/get/bookmarks", authenticateMultiDatabase, getAllBookmarks);
 
 // RECENT USED QUESTIONS
 
-router.get("/recent/questions", isAuthenticatedCollege, getAllRecentQuestions);
+router.get("/recent/questions", authenticateMultiDatabase, getAllRecentQuestions);
 
 // INVITE STUDENTS TO ASSESSMENT
 router.post(
   "/invite/students/:id",
-  isAuthenticatedCollege,
+  authenticateMultiDatabase,
   inviteStudentsToTest
 );
 
