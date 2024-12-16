@@ -879,57 +879,144 @@ exports.updateProfilePictureCollege = catchAsyncErrors(
 //takes an array of students and sends and ivitation mail to them
 
 function generateInvitationEmail({ Email, FirstName, LastName, CollegeId, link }) {
+
+  const URL = process.env.STUDENT_DEPLOYED_URL || "https://student.skillaccess.in/"
+  const registerLink = `${URL}student?inviteLink=${link}&CollegeId=${CollegeId}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`
   return {
     email: Email,
     subject: "Invitation to join Skill Access",
-    message: `Dear ${FirstName},
+    message: `<!DOCTYPE html>
+  <html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #F1F4F8;
+        
+      }
+      .container {
+        max-width: 60%;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+      }
+      .header {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        margin-top: 50px;
+      }
+      .button {
+        display: inline-block;
+        /* margin: 20px 0; */
+        padding: 10px 20px;
+        color: white;
+        background-color: #6eb9be;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .button:hover {
+        background-color: #0D9AAC;
+      }
+      .copy-link {
+        cursor: pointer;
+        color: #007BFF;
+        text-decoration: underline;
+      }
+      .copy-link:hover {
+        text-decoration: none;
+      }
+      .footer {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #555;
+      }
+      .skillAccess_Logo{
+        width: 70%;
+        height: 50px;
+        position: relative;
+        left: 50%;
+        transform: translate(-50%);
+      }
+      /* .skillAccess_banner{
+        height: 190px;
+        position: absolute;
+        right: 340px;
+        top: 280px;
+      } */
+    </style>
+  </head>
+  <body>
+    <div>
+        <img  class="skillAccess_Logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="skillAccess_Logo">
+    </div>
+    <div class="container">
+        <!-- <div>
+            <img class="skillAccess_banner" src="https://www.skillaccess.in/images/banner-art.svg" alt="skillAccess_banner">
+        </div> -->
+      <div class="header">Dear ${FirstName},</div>
+  
+      <p>Welcome to <strong>Skill Access</strong>! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:</p>
+        
+      <h3>Step 1: Register and Complete Your Profile</h3>
 
-Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
+      <p>Click the button below to register:</p>
 
-Step 1: Register and Complete Your Profile
-Click the link below to register:
-https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+      <a href="${registerLink}" class="button">Complete Your Profile</a>
 
-During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
+        <p> ${registerLink}</p>
+  
+      <p><strong>During registration</strong>, you'll need to provide essential details like your name, email, and academic information. Completing your profile is <strong>mandatory</strong> for accessing the test.</p>
+  
+      <p>Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.</p>
+  
+      <h3>Additional Guidelines:</h3>
+      <ul>
+        <li><strong>Double-Check Details:</strong> Ensure all provided information is accurate to avoid delays.</li>
+        <li><strong>Test Notifications:</strong> Once your profile is complete, you'll receive a notification when the test is available.</li>
+      </ul>
+  
+      <p>Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.</p>
+  
+      <div class="footer">Best regards,<br>The Skill Access Team</div>
+      <div>
+      </div>
+    </div>
+  </body>
+  </html>`
 
-Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
 
-Additional Guidelines:
-Double-Check Details: Ensure all provided information is accurate to avoid delays.
-Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
-
-Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
-
-Best regards,  
-The Skill Access Team`,
   };
 }
 
 
-
 exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
-  // console.log(students)
 
-  // console.log ("upload students called" , students , "students")
   const Invitations = [];
 
+  const userId = req.user.id;
+  const entity = req.user.role;
 
-  const CollegeId = req.user.id;
+  const college = await College.findById(userId);
 
-  const college = await College.findById(CollegeId);
-  // console.log(college._id);
 
-  let invited ;
-  if(req.user.role === "university"){
-      
+  let invited;
+  if (req.user.role === "university") {
+
   }
-    invited = await InvitedStudents.findOneAndUpdate(
+  //create invitation bucket if not exists
+  invited = await InvitedStudents.findOneAndUpdate(
     {
-      college: college._id,
+      [entity]: userId,
     },
     {
-      $set: { college: college._id },
+      $set: { [entity]: userId },
     },
     {
       upsert: true,
@@ -937,16 +1024,16 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     }
   );
 
-  if (!college) {
+  if (!college && entity === "college") {
     return next(new ErrorHandler("College not found", 404));
   }
 
   const allDuplicateEmails = [];
 
   for (let i = 0; i < students.length; i++) {
-    const { FirstName, LastName, Email ,Batch  } = students[i];
+    const { FirstName, LastName, Email, Batch } = students[i];
     // const student = await UploadedStudents.create({
-    //   college_id: CollegeId,
+    //   college_id: userId,
     //   FirstName,
     //   LastName,
     //   Email,
@@ -961,113 +1048,70 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       student = invited.students.some((student) => student.Email === Email);
     }
 
+    const isRegisteredEmail = await Student.findOne(
+      { Email: Email },
+    );
+
     const link = crypto.randomBytes(20).toString("hex");
     // const curr = await Student.findOne({ Email: Email });
-    if (!student) {
-      // const invite = await Invitation.create({
-      //   FirstName,
-      //   LastName,
-      //   Email,
-      //   sender: CollegeId,
-      //   recipientEmail: Email,
-      //   invitationLink: crypto.randomBytes(20).toString("hex"),
-      // });
+    if (!isRegisteredEmail) {
+      if (!student) {
+        invited.students.push({
+          Email: Email,
+          link: link,
+          FirstName: FirstName,
+          LastName: LastName,
+          batch: Batch
+          // student: stu._id,
+        });
 
-      // console.log(invite);
-      // const stu = await Student.create({
-      //   Email: Email,
-      //   Password: "strong@12HHH",
-      //   registrationLink: link,
-      // });
-      invited.students.push({
-        Email: Email,
-        link: link,
-        FirstName: FirstName,
-        LastName: LastName,
-        batch:Batch
-        // student: stu._id,
-      });
+        const mail = await sendEmail(generateInvitationEmail({
+          Email: Email,
+          link: link,
+          FirstName: FirstName,
+          LastName: LastName,
+          CollegeId: userId
+        }));
+        Invitations.push(mail);
+        await invited.save();
+      } else {
+        invited.students.forEach((student, i) => {
+          if (student.Email === Email) {
+            invited.students[i].link = link;
+          }
+        });
 
-      // sendEmail({
-      //   email: Email,
-      //   subject: "Invitation to join College",
-      //   message: `Hello ${FirstName},\n You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
-      // });
 
-      //     sendEmail({
-      //   email: Email,
-      //   subject: "Invitation to join Skill Access",
-      //   message: `
-      //     Hello ${FirstName},
-      //     You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:
-
-      //       <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}"
-      //       style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
-      //       Register Here
-      //       </a>
-
-      //     <p>We look forward to having you onboard!</p>
-      //     <p>Best regards,<br>Skill Access Team</p>
-      //   `,
-      // });
-
-      const mail = await sendEmail(generateInvitationEmail({
-        Email: Email,
-        link: link,
-        FirstName: FirstName,
-        LastName: LastName,
-        CollegeId
-      }));
-      Invitations.push(mail);
-      await invited.save();
+        const mail = await sendEmail(generateInvitationEmail({
+          Email: Email,
+          link: link,
+          FirstName: FirstName,
+          LastName: LastName,
+          CollegeId: userId
+        }));
+        Invitations.push(mail);
+        await invited.save();
+      }
     } else {
-      invited.students.forEach((student, i) => {
-        if (student.Email === Email) {
-          invited.students[i].link = link;
-        }
-      });
-      const stu = await Student.findOneAndUpdate(
-        { Email: Email },
-        { registrationLink: link }
-      );
-      // sendEmail({
-      //   email: Email,
-      //   subject: "Invitation to join College",
-      //   message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
-      // });
-      const mail = await sendEmail(generateInvitationEmail({
-        Email: Email,
-        link: link,
-        FirstName: FirstName,
-        LastName: LastName,
-         CollegeId
-      }));
-      Invitations.push(mail);
-      await invited.save();
+      allDuplicateEmails.push(Email);
     }
-
   }
 
 
-  if (allDuplicateEmails.length == students.length) {
-    console.log("all duplicate emails");
-    return res.status(400).json({
-      success: false,
-      message: "Student already invited",
-    });
-  } else {
-    const uploadedStudents = await InvitedStudents.findOne({
-      college: CollegeId,
-    });
-    console.log(uploadedStudents, "uploaded students");
 
-    res.status(200).json({
-      success: true,
-      uploadedStudents: uploadedStudents?.students,
-      message: "Students uploaded & Invited successfully",
-      Invitations
-    });
-  }
+  const uploadedStudents = await InvitedStudents.findOne({
+    college: userId,
+  });
+  console.log(uploadedStudents, "uploaded students");
+
+  res.status(200).json({
+    success: true,
+    allDuplicateEmails,
+    uploadedStudents: uploadedStudents?.students,
+    message: "Students uploaded & Invited successfully",
+    Invitations
+  });
+
 
   // college.uploadedStudents = students;
   // await college.save();
@@ -1265,7 +1309,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
-    const { batch, createdAt, skills, filterType, page, limit=100 } = req.query;
+    const { batch, createdAt, skills, filterType, page, limit = 100 } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
 
     // Build the filter object
@@ -1369,7 +1413,7 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
       path: "company", // The field within "jobs" to populate
     },
   });
-  
+
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
