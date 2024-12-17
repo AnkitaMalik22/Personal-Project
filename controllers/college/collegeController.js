@@ -28,6 +28,7 @@ const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
 const studentResponse = require("../../models/student/studentResponse");
 const Assessments = require("../../models/college/assessment/assessments");
+const University = require("../../models/university/universityModel");
 
 // Import the Student model
 
@@ -1166,14 +1167,19 @@ exports.getPendingStudents = catchAsyncErrors(async (req, res, next) => {
 //in use
 exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
   try {
-    console.log(req.body, "approve students");
+    // console.log(req.body, "approve students");
     const { studentId } = req.body;
-    const CollegeId = req.user.id;
+    const userId = req.user.id;
+    let entity;
 
-    const college = await College.findById(CollegeId);
+    if(req.user.role==="college"){
+      entity = await College.findById(userId);
+    }else{
+      entity = await University.findById(userId);
+    }
 
-    if (!college) {
-      return next(new ErrorHandler("College not found", 404));
+    if (!entity) {
+      return next(new ErrorHandler(`${entity} not found`, 404));
     }
 
     const student = await Student.findById(studentId.studentId);
@@ -1182,7 +1188,7 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     //   const student = await Student.findById(college.pendingStudents[i]);
 
     //   if (students.includes(student.id)) {
-    //     student.college = CollegeId;
+    //     student.college = userId;
     //     await student.save();
     //   }
     // }
@@ -1197,39 +1203,39 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     let sId = studentId.studentId;
 
     const approvedStudents = await ApprovedStudents.findOne({
-      college: CollegeId,
+      [entity.role]: userId,
     });
     if (approvedStudents) {
       if (!approvedStudents.students.includes(sId)) {
         await ApprovedStudents.findOneAndUpdate(
-          { college: CollegeId },
+          { [entity.role]: userId },
           {
             $push: { students: sId },
-            $set: { collegeId: CollegeId },
+            $set: { userId: userId },
           },
           { new: true, upsert: true }
         );
       }
     } else {
-      await ApprovedStudents.create({ college: CollegeId, students: [sId] });
+      await ApprovedStudents.create({ [entity.role]: userId, students: [sId] });
     }
 
     // const approvedStudents = await ApprovedStudents.findOneAndUpdate(
-    //   { college: CollegeId, "students.studentId": { $ne: studentId } }, // Check for duplicates before pushing
+    //   { [entity]: userId, "students.studentId": { $ne: studentId } }, // Check for duplicates before pushing
     //   {
     //     $addToSet: { students: { studentId } }, // Use $addToSet to avoid duplicates
-    //     $set: { collegeId: CollegeId },
+    //     $set: { userId: userId },
     //   },
     //   { new: true, upsert: true }
     // );
     await InvitedStudents.findOneAndUpdate(
-      { college: CollegeId },
+      { [entity.role]: userId },
       {
         $pull: { students: { student: sId } },
       }
     );
     await UploadedStudents.findOneAndUpdate(
-      { college: CollegeId },
+      { [entity.role]: userId },
       {
         $pull: { students: sId },
       }
@@ -1265,14 +1271,25 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 
     await Student.findByIdAndDelete(req.params.studentId);
 
-    const college = await College.findById(req.user.id);
+
+    let entity;
+
+    if(req.user.role==="college"){
+      entity = await College.findById(userId);
+    }else{
+      entity = await University.findById(userId);
+    }
+
+    if (!entity) {
+      return next(new ErrorHandler(`${entity} not found`, 404));
+    }
 
     // remove from college approve students
 
     // college.approveStudents = college.approvedStudents.filter(std => std._id.toString() !== student._id.toString());
 
     const approvedStudents = await ApprovedStudents.findOne({
-      college: req.user.id,
+      [entity]: req.user.id,
     });
     if (approvedStudents) {
       if (approvedStudents.students.includes(student._id)) {
@@ -1281,7 +1298,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
         );
       }
     }
-    await college.save();
+    await entity.save();
     await approvedStudents.save();
 
     const message = `
@@ -1291,7 +1308,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
     `;
     await sendEmail({
       email: student.Email,
-      subject: `${college.CollegeName} Registration Rejection`,
+      subject: `${entity} Registration Rejection`,
       message,
     });
 
@@ -1311,9 +1328,9 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     const id = req.user.id;
     const { batch, createdAt, skills, filterType, page, limit = 100 } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
-
+    let entity = req.user.role;
     // Build the filter object
-    let filter = { college: id };
+    let filter = { [entity]: id };
 
     if (batch) {
       filter["students.batch"] = batch;
@@ -1328,7 +1345,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     // completed profile
     if (filterType === 'all students' || filterType === 'pending students') {
       pendingStudents = await UploadedStudents.findOne({
-        college: filter.college
+        [entity]: filter[entity]
       })
         .populate({
           path: "students",
@@ -1347,7 +1364,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     }
     if (filterType === 'all students' || filterType === 'invited students') {
       invitedStudents = await InvitedStudents.findOne({
-        college: filter.college,
+        [entity]: filter[entity],
         $and: [
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
@@ -1363,7 +1380,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     }
     if (filterType === 'all students' || filterType === 'approved students') {
       approvedStudents = await ApprovedStudents.findOne({
-        college: filter.college
+        [entity]: filter[entity]
       }).populate({
         path: "students",
         match: {
@@ -1387,6 +1404,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       });
     }
 
+    console.log(approvedStudents,entity);
     res.status(200).json({
       success: true,
       approvedStudents: approvedStudents ? approvedStudents.students : [],

@@ -35,7 +35,7 @@ exports.registerUniversity = async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 
-    res.status(201).json({ success: true,token , status: 'pending', message: 'University created successfully' });
+    res.status(201).json({ success: true,token , status: 'pending', message: 'University created successfully' ,user:university});
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });
@@ -65,7 +65,7 @@ exports.loginUniversity = async (req, res) => {
     const payload = { id: university._id, role: 'university' };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ success: true, token , status: university.verificationStatus, message: 'University logged in successfully' });
+    res.status(200).json({ success: true, token , status: university.verificationStatus, message: 'University logged in successfully' ,user:university});
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });
