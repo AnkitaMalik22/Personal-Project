@@ -3,17 +3,19 @@ const catchAsyncErrors = require("./catchAsyncErrors");
 const jwt = require("jsonwebtoken");
 const Company = require("../models/company/companyModel");
 const College = require("../models/college/collegeModel");
+const University = require("../models/university/universityModel");
 
 exports.authenticateMultiDatabase = catchAsyncErrors(async (req, res, next) => {
     const token = req.header("auth-token");
     const companyToken = req.header("company-token");
-  
+    const uniToken = req.header("uni-token");
     // if (!token|| !companyToken) {
     //     return next(new ErrorHander("Please Login to access this resource", 401));
     // }
     // console.log(token, companyToken)
 
     try {
+      
        if(token){
         const decodedData = jwt.verify(token, process.env.JWT_SECRET);
         
@@ -36,7 +38,19 @@ exports.authenticateMultiDatabase = catchAsyncErrors(async (req, res, next) => {
             req.userType = 'company';
             return next();
         }
-       }else{
+       } else if(uniToken){
+      
+        const decodedDataUni = jwt.verify(uniToken, process.env.JWT_SECRET);
+        // If not found in College, try Company database
+        const uniUser = await University.findById(decodedDataUni.id);
+        // console.log("user found--fghnjm")
+        // console.log(uniUser);
+        if (uniUser) {
+            req.user = uniUser;
+            req.userType = 'university';
+            return next();
+        }
+       } else{
         return next(new ErrorHander("User not found. Please login again", 401));
 
        }

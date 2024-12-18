@@ -13,6 +13,7 @@ const collegeAssessInvSchema = new mongoose.Schema({
       completedAt: { type: Date },
       startedAt: { type: Date },
       sender: { type: mongoose.Schema.Types.ObjectId, ref: "College" },
+      university:{type : mongoose.Schema.Types.ObjectId , ref: "University"},
       assessment: { type: mongoose.Schema.Types.ObjectId, ref: "Assessments" },
       response: {
         type: mongoose.Schema.Types.ObjectId,

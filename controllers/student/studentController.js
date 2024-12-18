@@ -18,6 +18,7 @@ const sendEmail = require("../../utils/sendEmail");
 const QrStudent = require("../../models/college/qr/qrStudent");
 const qrcode = require("qrcode");
 const speakeasy = require("speakeasy");
+const University = require("../../models/university/universityModel");
 
 // =======
 // const { Student } = require('../../models/student/studentModel');
@@ -182,6 +183,7 @@ exports.getAllStudents = catchAsyncErrors(async (req, res, next) => {
 exports.checkInvitation = async (req, res, next) => {
   try {
     const { inviteLink, CollegeId } = req.query;
+    let entity;
 
     // Validate input
     if (!inviteLink || !CollegeId) {
@@ -190,12 +192,22 @@ exports.checkInvitation = async (req, res, next) => {
 
     // Check if the college exists
     const college = await College.findById(CollegeId);
-    if (!college) {
+    const university = await University.findById(CollegeId);
+
+
+    if (!college && !university) {
       return next(new ErrorHandler("College not found", 404));
     }
 
+    if (college) {
+      entity = "college"
+    } else {
+      entity = "university"
+    }
+
+
     // Check if the invitation exists
-    const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
+    const collegeInv = await InvitedStudents.findOne({ [entity]: CollegeId });
     if (!collegeInv) {
       return next(new ErrorHandler("Invalid invitation link", 400));
     }
@@ -215,7 +227,7 @@ exports.checkInvitation = async (req, res, next) => {
     }
 
     // Check if the student is already registered
-    const existingStudent = await Student.findOne({ Email: email, CollegeId: CollegeId });
+    const existingStudent = await Student.findOne({ Email: email });
     if (existingStudent) {
       return next(new ErrorHandler("User already registered", 400));
     }
@@ -240,233 +252,163 @@ exports.checkInvitation = async (req, res, next) => {
 exports.createStudent = catchAsyncErrors(async (req, res, next) => {
   // STUDENT WILL REGISTER USING THE REGISTRATION LINK SENT TO THEIR EMAIL
 
+  const { CollegeId, inviteLink } = req.query;
+
+  let entity;
+  let student;
+  let role = "college";
+
+  const device = req.headers["user-agent"];
+
+  entity = await College.findById(CollegeId);
+
+  if (!entity) {
+    entity = await University.findById(CollegeId);
+    role = "university"
+  }
+
+
+  if (!entity) {
+    return next(new ErrorHandler(`${role} not found`, 404));
+  }
+
   if (req.body.googleAccessToken) {
-    console.log("googleAccessToken");
-    try {
-      const { googleAccessToken, ip } = req.body;
 
-      const response = await axios.get(
-        "https://www.googleapis.com/oauth2/v3/userinfo",
-        {
-          headers: {
-            Authorization: `Bearer ${googleAccessToken}`,
-          },
-        }
-      );
+    const { googleAccessToken, ip } = req.body;
 
-      const {
-        given_name: FirstName,
-        family_name: LastName,
-        email: Email,
-        picture: profilePicture,
-      } = response.data;
-      const device = req.headers["user-agent"];
-      const { CollegeId, inviteLink } = req.query;
-
-      const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
-        folder: "avatars",
-        width: 150,
-        crop: "scale",
-      });
-
-      const avatar = {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      };
-
-      const existingUser = await Student.findOne({ Email });
-      const mailUsed = await College.findOne({ Email });
-
-      if (existingUser || mailUsed) {
-        return res.status(400).json({ message: "User already exists" });
+    const response = await axios.get(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`,
+        },
       }
+    );
 
-      const college = await College.findById(CollegeId);
+    const {
+      given_name: FirstName,
+      family_name: LastName,
+      email: Email,
+      picture: profilePicture,
+    } = response.data;
 
-      // const inviteLink = req.params.inviteLink;
 
-      console.log(inviteLink, CollegeId);
+    const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
+      folder: "avatars",
+      width: 150,
+      crop: "scale",
+    });
 
-      if (!college) {
-        return next(new ErrorHandler("College not found", 404));
-      }
-      const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
-      // const invite = await Invitation.findOne({ invitationLink: inviteLink });
+    const avatar = {
+      public_id: myCloud.public_id,
+      url: myCloud.secure_url,
+    };
 
-      // if (!invite) {
-      //   return next(new ErrorHandler("Invalid invitation link", 400));
-      // }
-      let email;
-      let batch="";
-      valid = collegeInv.students.some((student) => {
-        if (student.link === inviteLink) {
-          email = student.Email;
-          batch = student.batch;
-        }
-        return student.link === inviteLink;
-      });
-      if (!valid) {
-        return next(new ErrorHandler("Invalid invitation link", 400));
-      }
-      // if (invite.recipientEmail !== Email) {
-      //   return next(new ErrorHandler("Invalid email", 400));
-      // }
+    const existingUser = await Student.findOne({ Email });
+    const mailUsed = await College.findOne({ Email });
+    const existingCompany = await Company.findOne({ Email });
+    const existingUniversity = await University.findOne({ Email })
 
-      // invite.status = "accepted";
-
-      // await invite.save();
-
-      const student = await Student.create({
-        FirstName,
-        LastName,
-        Email,
-        avatar,
-        batch,
-        CollegeId: CollegeId,
-        registrationLink: inviteLink,
-        CollegeName: college.CollegeName,
-      });
-
-      // student not approved yet
-      // college.pendingStudents.push(student._id);
-
-      await college.save();
-
-      console.log("Student Created Successfully");
-
-      sendToken(student, 201, res, ip, device);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal Server Error" });
+    if (existingUser || mailUsed || existingCompany || existingUniversity) {
+      return res.status(400).json({ message: "User already exists" });
     }
-  } else {
-    try {
-      const {
-        Email,
-        Password,
-        FirstName,
-        LastName,
-        ip,
-        Major,
-        From,
-        To,
-        PhoneNumber,
-      } = req.body;
-      const device = req.headers["user-agent"];
-      // const CollegeId = req.params.CollegeId;
-      const { CollegeId, inviteLink } = req.query;
 
-      const college = await College.findById(CollegeId);
+    const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
 
-      // const inviteLink = req.params.inviteLink;
 
-      console.log(inviteLink, CollegeId);
-
-      if (!college) {
-        return next(new ErrorHandler("College not found", 404));
+    let batch = "";
+    valid = collegeInv.students.some((student) => {
+      if (student.link === inviteLink) {
+        email = student.Email;
+        batch = student.batch;
       }
+      return student.link === inviteLink;
+    });
+    if (!valid) {
+      return next(new ErrorHandler("Invalid invitation link", 400));
+    }
 
-      if (
-        (!inviteLink || !Password || !FirstName || !LastName,
+    student = await Student.create({
+      FirstName,
+      LastName,
+      Email,
+      avatar,
+      batch,
+      ...(role === "university" ? { universityId: CollegeId, CollegeName: "Unassigned" } : { CollegeName: entity.collegeName, CollegeId: CollegeId  }),
+      registrationLink: inviteLink,
+
+    });
+
+  } else {
+
+    const {
+      Email,
+      Password,
+      FirstName,
+      LastName,
+      ip,
+      Major,
+      From,
+      To,
+      PhoneNumber,
+    } = req.body;
+
+    if (
+      (!inviteLink || !Password || !FirstName || !LastName,
         !Major,
         !From,
         !To)
-      ) {
-        return next(new ErrorHandler("Please Enter All Fields", 400));
-      }
-
-      const passwordRegex = new RegExp(
-        "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
-      );
-      if (!passwordRegex.test(Password)) {
-        return next(
-          new ErrorHandler(
-            "Password should contain atleast one uppercase, one lowercase, one number and one special character",
-            400
-          )
-        );
-      }
-
-      const avatar = {
-        public_id: "avatars/wy3fbtukb75frndzgnxx",
-        url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png",
-      };
-
-      // const invite = await Invitation.findOne({ invitationLink: inviteLink });
-      let valid = true;
-      const collegeInv = await InvitedStudents.findOne({ college: CollegeId });
-
-      // if (!invite) {
-      //   return next(new ErrorHandler("Invalid invitation link", 400));
-      // }
-      let email;
-      let batch="";
-      valid = collegeInv.students.some((student) => {
-        if (student.link === inviteLink) {
-          email = student.Email;
-          batch = student.batch;
-        }
-        return student.link === inviteLink;
-      });
-      if (!valid) {
-        return next(new ErrorHandler("Invalid invitation link", 400));
-      }
-
-      // if (invite.status !== 'pending') {
-      //   return next(new ErrorHandler('Invitation link has been expired', 400));
-      // }
-
-      // if (invite.recipientEmail !== Email) {
-      //   return next(new ErrorHandler('Invalid email', 400));
-      // }
-
-      // invite.status = "accepted";
-
-      // await invite.save();
-
-      // const student = await Student.create({
-      //   ...req.body,
-      //   CollegeId: CollegeId,
-      //   avatar,
-      //   Email: email,
-      //   registrationLink: inviteLink,
-      //   CollegeName: college.CollegeName,
-      //   PhoneNumber,
-      // });
-      // const procPass = await bcrypt.hash(req.body.Password, 10);
-      console.log(collegeInv.batch,collegeInv)
-
-      const student = await Student.create({
-        ...req.body,
-        Password: req.body.Password,
-        CollegeId: CollegeId,
-        avatar,
-        Email: email,
-        registrationLink: inviteLink,
-        CollegeName: college.CollegeName,
-        PhoneNumber,  
-        batch:batch
-      });
-
-      // uploadedStudents.students.push(student._id);
-      // await uploadedStudents.save();
-
-      // student not approved yet
-      // college.pendingStudents.push(student._id);
-      // await ApprovedStudents.findOneAndUpdate(
-      //   { college: CollegeId },
-      //   { $push: { students: { Email: email, link: inviteLink } } ,{college:CollegeId} }
-      // );
-
-      await college.save();
-
-      console.log("Student Created Successfully");
-
-      sendToken(student, 201, res, ip, device);
-    } catch (error) {
-      console.log(error);
+    ) {
+      return next(new ErrorHandler("Please Enter All Fields", 400));
     }
+
+    const passwordRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
+    );
+    if (!passwordRegex.test(Password)) {
+      return next(
+        new ErrorHandler(
+          "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+          400
+        )
+      );
+    }
+
+    const avatar = {
+      public_id: "avatars/wy3fbtukb75frndzgnxx",
+      url: "https://res.cloudinary.com/dkqgktzny/image/upload/v1708338934/avatars/wy3fbtukb75frndzgnxx.png",
+    };
+
+    // const invite = await Invitation.findOne({ invitationLink: inviteLink });
+    let valid = true;
+    const collegeInv = await InvitedStudents.findOne({ [role]: CollegeId });
+
+    let email;
+    let batch = "";
+    valid = collegeInv.students.some((student) => {
+      if (student.link === inviteLink) {
+        email = student.Email;
+        batch = student.batch;
+      }
+      return student.link === inviteLink;
+    });
+    if (!valid) {
+      return next(new ErrorHandler("Invalid invitation link", 400));
+    }
+
+    student = await Student.create({
+      ...req.body,
+      Password: req.body.Password,
+      ...(role === "university" ? { universityId: CollegeId, CollegeName: "Unassigned" ,CollegeId:undefined} : { CollegeName: entity.collegeName, CollegeId: CollegeId }),
+      avatar,
+      Email: email,
+      registrationLink: inviteLink,
+      PhoneNumber,
+      batch: batch
+    });
+
   }
+  sendToken(student, 201, res, device);
 });
 // --------------------------------------------- LOGIN A STUDENT --------------------------------------------------------
 
@@ -795,7 +737,13 @@ exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
 //   --------------------------------------------- get students by college id --------------------------------------------
 
 exports.getStudentsByCollegeId = catchAsyncErrors(async (req, res, next) => {
-  const students = await Student.find({ CollegeId: req.user.id });
+
+  let students;
+  if(req.user.role === "college"){
+    students = await Student.find({ CollegeId: req.user.id });
+  }else{
+    students = await Student.find({universityId : req.user.id});
+  }
 
   console.log(students);
 

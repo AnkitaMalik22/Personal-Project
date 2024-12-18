@@ -39,6 +39,14 @@ const university = new mongoose.Schema(
       type: String,
       default: "university",
     },
+    avatar: {
+      public_id: {
+        type: String,
+      },
+      url: {
+        type: String,
+      },
+    },
     
     // Tests and Colleges
     tests: [
@@ -61,9 +69,28 @@ const university = new mongoose.Schema(
     },
     verificationStatus: {
       type: String,
-      enum: ["pending", "verified"],
+      enum: ["pending", "approved" ,"rejected"],
       default: "pending",
     },
+    statusChangedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    commentsByAdmin: [
+      {
+        comment: {
+          type: String,
+        },
+        commentedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Admin",
+        },
+        commentedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     adminNotes: {
       type: String,
     },

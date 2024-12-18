@@ -81,7 +81,7 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  batch : {
+  batch: {
     type: String,
   },
   approved: {
@@ -171,6 +171,18 @@ const studentSchema = new mongoose.Schema({
   CollegeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "College",
+  },
+  universityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "University",
+  },
+  eligibleColleges: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "College",
+  }],
+  clearedEntrance:{
+    type:Boolean,
+    default:false
   },
   // ----
   // registrationLink: { type: String, unique: true, default: "" },

@@ -167,7 +167,15 @@ compiler:[
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Job',
     },
+    university:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'University',
+    },
     createdByCompany: {
+      type: Boolean,
+      default: false,
+    },
+    createdByUniversity: {
       type: Boolean,
       default: false,
     },
