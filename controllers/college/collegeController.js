@@ -599,7 +599,7 @@ exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
     });
     return res.status(200).json({
       success: true,
-      [entity]:entity,
+      [role]:entity,
       credit,
       balance,
     });
