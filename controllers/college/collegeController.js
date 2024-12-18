@@ -881,116 +881,138 @@ exports.updateProfilePictureCollege = catchAsyncErrors(
 
 function generateInvitationEmail({ Email, FirstName, LastName, CollegeId, link }) {
 
-  const URL = process.env.STUDENT_DEPLOYED_URL || "https://student.skillaccess.in/"
-  const registerLink = `${URL}student?inviteLink=${link}&CollegeId=${CollegeId}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`
+  const URL = process.env.STUDENT_URL || "https://student.skillaccess.in"
+  const registerLink = `${URL}/student?inviteLink=${link}&CollegeId=${CollegeId}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`
   return {
     email: Email,
     subject: "Invitation to join Skill Access",
-    message: `<!DOCTYPE html>
-  <html>
-  <head>
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Skill Access</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        background-color: #F1F4F8;
-        
-      }
-      .container {
-        max-width: 60%;
-        margin: 0 auto;
-        padding: 20px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        background-color: #f9f9f9;
-      }
-      .header {
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 10px;
-        margin-top: 50px;
-      }
-      .button {
-        display: inline-block;
-        /* margin: 20px 0; */
-        padding: 10px 20px;
-        color: white;
-        background-color: #6eb9be;
-        text-decoration: none;
-        border-radius: 5px;
-        font-size: 16px;
-      }
-      .button:hover {
-        background-color: #0D9AAC;
-      }
-      .copy-link {
-        cursor: pointer;
-        color: #007BFF;
-        text-decoration: underline;
-      }
-      .copy-link:hover {
-        text-decoration: none;
-      }
-      .footer {
-        margin-top: 20px;
-        font-size: 14px;
-        color: #555;
-      }
-      .skillAccess_Logo{
-        width: 70%;
-        height: 50px;
-        position: relative;
-        left: 50%;
-        transform: translate(-50%);
-      }
-      /* .skillAccess_banner{
-        height: 190px;
-        position: absolute;
-        right: 340px;
-        top: 280px;
-      } */
+        :root {
+            --primary-color: #6eb9be;
+            --primary-dark: #0D9AAC;
+            --text-color: #333;
+            --background-color: #F1F4F8;
+            --container-bg: #ffffff;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--container-bg);
+        }
+
+        .logo {
+            display: block;
+            width: 120px;
+            margin: 0 auto 30px;
+        }
+
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--primary-dark);
+        }
+
+        h3 {
+            color: var(--primary-dark);
+            margin-top: 30px;
+        }
+
+        .button {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 12px 24px;
+            color: white;
+            background-color: var(--primary-color);
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+            color: #555;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+            
+            .logo {
+                width: 100px;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <div>
-        <img  class="skillAccess_Logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="skillAccess_Logo">
-    </div>
+</head>
+<body>
     <div class="container">
-        <!-- <div>
-            <img class="skillAccess_banner" src="https://www.skillaccess.in/images/banner-art.svg" alt="skillAccess_banner">
-        </div> -->
-      <div class="header">Dear ${FirstName},</div>
-  
-      <p>Welcome to <strong>Skill Access</strong>! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:</p>
+        <img class="logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="Skill Access Logo">
         
-      <h3>Step 1: Register and Complete Your Profile</h3>
+        <div class="header">Hello ${FirstName},</div>
+  
+        <p>Thank you for joining Skill Access. To get started, please complete your profile:</p>
+        
+        <h3>Complete Your Profile</h3>
 
-      <p>Click the button below to register:</p>
+        <p>Use the link below to register and fill out your profile:</p>
 
-      <a href="${registerLink}" class="button">Complete Your Profile</a>
+        <a href="${registerLink}" class="button">Complete Profile</a>
+        
+        <p>If the button doesn't work, copy and paste this link into your browser: ${registerLink}</p>
 
-        <p> ${registerLink}</p>
+        <p>Your profile must be complete to access tests. You'll know it's done when you no longer see the "Complete Your Profile" message on your dashboard.</p>
   
-      <p><strong>During registration</strong>, you'll need to provide essential details like your name, email, and academic information. Completing your profile is <strong>mandatory</strong> for accessing the test.</p>
+        <h3>Important Notes:</h3>
+        <ul>
+            <li>Provide accurate information to avoid delays.</li>
+            <li>You'll be notified when tests are available after your profile is complete.</li>
+        </ul>
   
-      <p>Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.</p>
+        <p>If you need any help, our support team is here for you.</p>
   
-      <h3>Additional Guidelines:</h3>
-      <ul>
-        <li><strong>Double-Check Details:</strong> Ensure all provided information is accurate to avoid delays.</li>
-        <li><strong>Test Notifications:</strong> Once your profile is complete, you'll receive a notification when the test is available.</li>
-      </ul>
-  
-      <p>Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.</p>
-  
-      <div class="footer">Best regards,<br>The Skill Access Team</div>
-      <div>
-      </div>
+        <div class="footer">
+            Best regards,<br>
+            Skill Access Team
+        </div>
     </div>
-  </body>
-  </html>`
+</body>
+</html>
 
+`
 
   };
 }
@@ -1073,6 +1095,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
           LastName: LastName,
           CollegeId: userId
         }));
+        console.log(mail,"mail")
         Invitations.push(mail);
         await invited.save();
       } else {
@@ -1648,7 +1671,7 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
         (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
     }
   }
-
+// console.log(assessment.selectedStudents)
   await assessment.save();
   await response.save();
 

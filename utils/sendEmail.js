@@ -16,12 +16,19 @@ const sendEmail = async (options) => {
       from: process.env.SMTP_MAIL,
       to: options.email,
       subject: options.subject,
-      html: options.message,
+    
     };
+
+    if(options.html){
+      mailOptions.html = options.html;
+    }else{
+      mailOptions.message = options.message;
+    }
   
     const mail = await transporter.sendMail(mailOptions);
     return {success:true,message:"mail sent successfully",mail}
   } catch (error) {
+    console.log(error)
     return {success: false,message:"email not sent"}
   }
 };

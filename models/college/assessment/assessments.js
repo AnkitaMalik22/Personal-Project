@@ -183,7 +183,7 @@ const assessmentsSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "College",
       // ref : 'Company',
-      required: true,
+      // required: true,
     },
     // -----------------------------------------
   },
