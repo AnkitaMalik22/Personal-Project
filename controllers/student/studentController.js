@@ -737,7 +737,13 @@ exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
 //   --------------------------------------------- get students by college id --------------------------------------------
 
 exports.getStudentsByCollegeId = catchAsyncErrors(async (req, res, next) => {
-  const students = await Student.find({ CollegeId: req.user.id });
+
+  let students;
+  if(req.user.role === "college"){
+    students = await Student.find({ CollegeId: req.user.id });
+  }else{
+    students = await Student.find({universityId : req.user.id});
+  }
 
   console.log(students);
 

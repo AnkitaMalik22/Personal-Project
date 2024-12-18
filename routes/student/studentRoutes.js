@@ -41,6 +41,7 @@ const {
   uploadMedia,
 } = require("../../controllers/student/profileController");
 const { qrWare } = require("../../middlewares/qrWare");
+const { authenticateMultiDatabase } = require("../../middlewares/authMultiUser");
 
 router
   .route("/qr")
@@ -98,8 +99,7 @@ router.put(
 
 router.post(
   "/college/get/all",
-  isAuthenticatedCollege,
-  authorizeRoles("college"),
+  authenticateMultiDatabase,
   getStudentsByCollegeId
 );
 router.get("assessments/:id", getStudentsByAssessmentId);
