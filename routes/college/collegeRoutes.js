@@ -5,7 +5,7 @@ const router = express.Router();
 const {
   registerCollege,
   loginCollege,
-  getCollegeDetails,
+  getUserDetails,
   forgotPassword,
   updatePassword,
   resetPassword,
@@ -79,7 +79,7 @@ router.route("/2fa/getSecretQr/:id").get(authenticateMultiDatabase, generateQr);
 router.route("/2fa/verifyQr").post(authenticateMultiDatabase, verifyQr);
 router.route("/register").post(registerCollege);
 router.route("/login").post(loginCollege);
-router.route("/me").get(authenticateMultiDatabase, qrWare, getCollegeDetails);
+router.route("/me").get(authenticateMultiDatabase, qrWare, getUserDetails);
 router.route("/password/reset/:token").put(resetPassword);
 router.route("/password/forgot").post(forgotPassword);
 router.route("/password/update").put(authenticateMultiDatabase, updatePassword);

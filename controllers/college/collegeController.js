@@ -578,23 +578,33 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 
 // ==================================================== GET COLLEGE PROFILE ===========================================================
 // Get College Details
-exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
+exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
   try {
-    const college = await College.findById(req.user.id);
+
+    const {role,id} = req.user
+    let entity ;
+
+    if(role==="college"){
+      entity = await College.findById(id);
+    }else{
+      entity = await University.findById(id);
+    }
+
     let credit = await PaymentPlan.find(
-      { members: { $in: [college._id] } },
+      { members: { $in: [entity._id] } },
       { members: 0 }
     );
     const balance = await Credit.findOne({
-      college: college,
+      [role]: id,
     });
     return res.status(200).json({
       success: true,
-      college,
+      [entity]:entity,
       credit,
       balance,
     });
   } catch (error) {
+    console.log(error,"me errx")
     next(error);
   }
 });
