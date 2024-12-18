@@ -404,13 +404,13 @@ exports.getTopics = async (req, res) => {
         [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
       }).populate("questions");
     } else {
-      topics = await Section.find({
+     topics = await Section.find({
         [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
       })
         .populate({
           path: "questions",
           match: { QuestionLevel: level },
-        })
+        }) 
         .populate({
           path: "findAnswers",
           match: { QuestionLevel: level },
@@ -444,41 +444,38 @@ exports.getTopics = async (req, res) => {
 
 exports.getTopicsQB = async (req, res) => {
   try {
-    const query = req.query.level;
-    let topics;
-    if (req.user.role === "college") {
-      const collegeId = req.user.id;
-      const college = await College.findById(collegeId);
-      if (!college) {
-        return res.status(404).json({ error: "College not found" });
-      }
-      // console.log(query, "query");
+    const source = req.user.role;
+    const userId = req.user.id;
 
+    const isCompany = source && source.toLowerCase() === "company";
 
-
-      topics = await Section.find({ college: collegeId })
-        .populate("questions")
-        .populate("findAnswers")
-        .populate("essay")
-        .populate("video")
-        .populate("compiler");
-    } else {
-      const companyId = req.user.id;
-      const company = await Company.findById(companyId);
-      if (!company) {
-        return res.status(404).json({ error: "Company not found" });
-      }
-      // console.log(query, "query");
-
-
-
-      topics = await Section.find({ company: companyId })
-        .populate("questions")
-        .populate("findAnswers")
-        .populate("essay")
-        .populate("video")
-        .populate("compiler");
-    }
+    
+    let  topics = await Section.find({
+      [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
+    })
+      .populate({
+        path: "questions",
+       
+      }) 
+      .populate({
+        path: "findAnswers",
+      
+      })
+      .populate({
+        path: "essay",
+      })
+      .populate({
+        path: "video",
+      
+      })
+      .populate({
+        path: "compiler",
+       
+      })
+      .lean(); // Add the lean() method to populate the fields as plain JavaScript objects
+  
+      
+   
 
     // console.log(topics, "topics");
 
