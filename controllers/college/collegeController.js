@@ -589,6 +589,7 @@ exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
     }else{
       entity = await University.findById(id);
     }
+    
 
     let credit = await PaymentPlan.find(
       { members: { $in: [entity._id] } },
@@ -597,14 +598,17 @@ exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
     const balance = await Credit.findOne({
       [role]: id,
     });
+
+    // console.log(entity, "entity");
     return res.status(200).json({
       success: true,
       [role]:entity,
+      user:entity,
       credit,
       balance,
     });
   } catch (error) {
-    console.log(error,"me errx")
+    // console.log(error, "error");
     next(error);
   }
 });
@@ -772,19 +776,28 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 // ================================================ UPDATE COLLEGE PROFILE ===========================================================
 // Update College Profile
 
-exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
-  const newCollegeData = req.body;
-  const data = {
-    CollegeName: newCollegeData.CollegeName,
-    Phone: newCollegeData.Phone,
-    Website: newCollegeData.Website,
-    Address: newCollegeData.Address,
-    Description: newCollegeData.Description,
-    avatar: newCollegeData.avatar,
-  };
-  // Update college profile
-  const updatedCollege = await College.findByIdAndUpdate(
-    newCollegeData._id,
+exports.updateProfile = catchAsyncErrors(async (req, res) => {
+  const { role, id } = req.user;
+  const model = role === "college" ? College : University;
+  const newUserData = req.body;
+  const data = role  === "college" ? {
+    CollegeName: newUserData.CollegeName,
+    Phone: newUserData.Phone,
+    Website: newUserData.Website,
+    Address: newUserData.Address,
+    Description: newUserData.Description,
+    avatar: newUserData.avatar,
+  } : {
+    name : newUserData.name,
+    phone: newUserData.phone,
+    address: newUserData.address,
+    website: newUserData.website,
+    description: newUserData.description,
+    
+  }
+  // Update user profile
+  const updatedUser = await model.findByIdAndUpdate(
+    id,
     { ...data },
     {
       new: true,
@@ -794,8 +807,10 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
   );
   res.status(200).json({
     success: true,
-    college: updatedCollege,
+    user: updatedUser,
+    college: updatedUser,
   });
+  console.log("Response sent successfully");
 });
 
 // -------------------
@@ -845,42 +860,37 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
 // ================================================ Update Profile Picture ===========================================================
 
-exports.updateProfilePictureCollege = catchAsyncErrors(
-  async (req, res, next) => {
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-      folder: "avatars",
-      width: 150,
-      crop: "scale",
-    });
+exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res) => {
+  const role = req.user.role;
+  const model = role === "college" ? College : University;
 
-    // const newCollegeData = req.body;
+  const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+    folder: "avatars",
+    width: 150,
+    crop: "scale",
+  });
 
-    // console.log(avatar);
-
-    // const college = await College.findByIdAndUpdate(  req.body.id,
-    const college = await College.findByIdAndUpdate(
-      req.user.id,
-
-      {
-        avatar: {
-          public_id: myCloud.public_id,
-          url: myCloud.secure_url,
-        },
+  const updatedUser = await model.findByIdAndUpdate(
+    req.user.id,
+    {
+      avatar: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
       },
-      {
-        new: true,
-        runValidators: true,
-        useFindAndModify: false,
-      }
-    );
-    console.log(college);
+    },
+    {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false,
+    }
+  );
 
-    res.status(200).json({
-      success: true,
-      college,
-    });
-  }
-);
+  res.status(200).json({
+    success: true,
+    user: updatedUser,
+    avatar: updatedUser.avatar,
+  });
+});
 
 // ===============================================================================================================
 

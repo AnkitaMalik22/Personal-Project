@@ -39,6 +39,14 @@ const university = new mongoose.Schema(
       type: String,
       default: "university",
     },
+    avatar: {
+      public_id: {
+        type: String,
+      },
+      url: {
+        type: String,
+      },
+    },
     
     // Tests and Colleges
     tests: [
