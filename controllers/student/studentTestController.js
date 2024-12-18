@@ -418,7 +418,7 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         // );
         firstQuestion = assessment.assessment.topics[0].compiler[0];
       }
-      console.log(isLast, "is last llllllllllllllllllllllllllllll");
+      // console.log(isLast, "is last llllllllllllllllllllllllllllll");
       res.json({
         isLast: isLast,
         success: true,

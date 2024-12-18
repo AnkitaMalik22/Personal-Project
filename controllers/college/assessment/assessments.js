@@ -20,6 +20,7 @@ const cloudinary = require("cloudinary");
 const fs = require('fs');
 
 const puppeteer = require('puppeteer');
+const University = require("../../../models/university/universityModel");
 // =========================================================================================================================================
 
 // ===================================================| Create Assessment |===================================================================
@@ -47,10 +48,12 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     const college = await College.findById(id);
     const company = await Company.findById(id);
-    if (!college && !company) {
+    const university = await University.findById(id);
+
+    if (!college && !company && !university) {
       return next(
         new ErrorHandler(
-          "You are not authorized to create assessment. Please login as college or company",
+          "You are not authorized to create assessments.",
           400
         )
       );
@@ -98,8 +101,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     // }
 
     const createdByCompany = role === "company";
+    const createdByUniversity = role ==="university";
 
-    if (role !== "college" && role !== "company") {
+    if (role !== "college" && role !== "company" && role!=="university") {
       return next(new ErrorHandler("Invalid user role", 400));
     }
 
@@ -269,7 +273,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     let assessment = await Assessments.create({
       ...req.body,
       topics: newTopics,
-      createdBy: id,
+     
       // college: id,
       // company: id,
       startDate: req.body.startDate,
@@ -278,6 +282,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       totalTime: req.body.totalDuration,
       totalMarks,
       createdByCompany,
+      createdByUniversity
     });
 
     const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
@@ -296,6 +301,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       await recentQuestion.save();
     }
     if (college) {
+      assessment.createdBy= id,
       await credit.save();
       await college.save();
     }
@@ -315,6 +321,10 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
       assessment.company = id;
 
+    }
+
+    if(university){
+      assessment.university=id;
     }
     await assessment.save();
 
@@ -340,25 +350,34 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     // console.log(students, "students");
 
     // console.log ("upload students called" , students , "students")
-
-    const CollegeId = req.user.id;
+    const role = req.user.role;
+    const userId = req.user.id;
 
     const assessmentId = req.params.id;
+    let entity;
 
-    const college = await College.findById(CollegeId);
+    if(req.user.role === "college"){
+      entity = await College.findById(userId);
+    }else{
+      entity = await University.findById(userId)
+    }
+
+  
     const assessment = await Assessments.findById(assessmentId).populate("invitedStudents");
-    const credit = await Credit.findOne({ college: CollegeId });
-    const plan = await PaymentPlan.findById(college.selectedPlan);
+    // const credit = await Credit.findOne({ college: CollegeId });
+    // const plan = await PaymentPlan.findById(college.selectedPlan);
+
 
     const invitedStudentsByCollege = assessment.invitedStudents.filter((student) => {
       // console.log(student.CollegeId,CollegeId,student.CollegeId===CollegeId )
-      return student.CollegeId.toString() === CollegeId
+      console.log(student);
+      return student[role==="college" ? "CollegeId" : "universityId"].toString() === userId
     });
     // console.log(assessment.invitedStudents);
 
-    if (!college || !plan) {
-      return next(new ErrorHandler("College not found or plan has expired", 404));
-    }
+    // if (!college || !plan) {
+    //   return next(new ErrorHandler("College not found or plan has expired", 404));
+    // }
 
     if (!assessment) {
       return next(new ErrorHandler("Assessment not found", 404));
@@ -368,19 +387,21 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     }
     if (students) {
       for (let i = 0; i < students.length; i++) {
+
         const { FirstName, LastName, Email, _id } = students[i];
 
+        console.log(students[i])
         // send Email to attend the test
         if (assessment.invitedStudents.includes(_id)) {
           // console.log("Student already invited");
           // return next(new ErrorHandler("Student already invited", 404));
         } else {
           // console.log(assessment.invitedStudents.length + 1, credit.limit,"");
-          console.log(invitedStudentsByCollege)
-          if (
-            plan.charges != "Not Allowed" &&
-            invitedStudentsByCollege.length + 1 > credit.limit
-          ) {
+          // console.log(invitedStudentsByCollege)
+          // if (
+          //   plan.charges != "Not Allowed" &&
+          //   invitedStudentsByCollege.length + 1 > credit.limit
+          // ) {
 
             //UNCOMMENT THIS AFTER DEMO 
             // if (credit.credit === 0) {
@@ -391,23 +412,23 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 
             // credit.credit -= 1;
             // await credit.save();
-          } else if (invitedStudentsByCollege.length + 1 > credit.limit) {
+          // } else if (invitedStudentsByCollege.length + 1 > credit.limit) {
             //UNCOMMENT THIS AFTER DEMO 
 
             // return res
             //   .status(429)
             //   .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
-          }
+          // }
           assessment.invitedStudents.push(_id);
           invitedStudentsByCollege.push(_id);
 
           await assessment.save();
-          await CollegeAssessInv.findOneAndUpdate(
+          const cai = await CollegeAssessInv.findOneAndUpdate(
             { student: _id },
             {
               $set: { student: _id },
               $push: {
-                assessments: { sender: CollegeId, assessment: assessmentId },
+                assessments: { [role === "university" ? "university": "sender" ]: userId, assessment: assessmentId },
               },
             },
             {
@@ -415,21 +436,143 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
             }
           );
 
+          // console.log(Email)
+
           let isAdaptive = assessment.level === "adaptive";
-          sendEmail({
+          let mail=  await sendEmail({
             email: Email,
             subject: "Invitation to join Test",
-            message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${college.FirstName} ${college.LastName}. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/test/${assessmentId}?isAdaptive=${isAdaptive}. If you are not registered yet, please register first.`,
+            html:`<!DOCTYPE html>
+                  <html lang="en">
+                  <head>
+                      <meta charset="UTF-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>Test Invitation</title>
+                      <style>
+                          :root {
+                              --primary-color: #6eb9be;
+                              --primary-dark: #0D9AAC;
+                              --text-color: #333;
+                              --background-color: #F1F4F8;
+                              --container-bg: #ffffff;
+                              --border-color: #e0e0e0;
+                          }
+                            
+                          body {
+                              font-family: 'Arial', sans-serif;
+                              line-height: 1.6;
+                              color: var(--text-color);
+                              background-color: var(--background-color);
+                              margin: 0;
+                              padding: 0;
+                              background-image: url('https://www.skillaccess.in/images/banner-art.svg');
+                              background-size: cover;
+                          }
+                            
+                          .container {
+                              max-width: 70%;
+                              margin: 40px auto;
+                              padding: 40px;
+                              border: 1px solid var(--border-color);
+                              border-radius: 12px;
+                              background-color: var(--container-bg);
+                              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                          }
+                            
+                          .logo {
+                              display: block;
+                              width: 20%;
+                              margin: 0 auto 30px;
+                          }
+                            
+                          .header {
+                              font-size: 24px;
+                              font-weight: bold;
+                              margin-bottom: 20px;
+                              color: var(--primary-dark);
+                          }
+                            
+                          .button {
+                              display: inline-block;
+                              margin: 20px 0;
+                              padding: 12px 24px;
+                              color: white;
+                              background-color: var(--primary-color);
+                              text-decoration: none;
+                              border-radius: 5px;
+                              font-size: 16px;
+                              font-weight: bold;
+                              transition: background-color 0.3s ease;
+                          }
+                            
+                          .button:hover {
+                              background-color: var(--primary-dark);
+                          }
+                            
+                          .footer {
+                              margin-top: 40px;
+                              padding-top: 20px;
+                              border-top: 1px solid var(--border-color);
+                              font-size: 14px;
+                              color: #555;
+                          }
+                            
+                          @media (max-width: 768px) {
+                              .container {
+                                  max-width: 80%;
+                                  padding: 20px;
+                                  margin: 20px;
+                              }
+                                  .logo {
+                              display: block;
+                              width: 40%;
+                              margin: 0 auto 30px;
+                          }
+                          }
+                      </style>
+                  </head>
+                  <body>
+                      <div class="container">
+                          <img class="logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="Skill Access Logo">
+                            
+                          <div class="header">Hello ${FirstName}!</div>
+                            
+                          <p>You have been invited to take the following test:</p>
+                            
+                          <p><strong>${assessment.name}</strong></p>
+                            
+                          <p>This invitation comes from ${role === "college" ? entity.FirstName : entity.name}.</p>
+                            
+                          <p>To attend the test, please click the button below:</p>
+                            
+                          <a href="${process.env.STUDENT_URL || "https://student.skillaccess.in"}/student/test/${assessmentId}?isAdaptive=${isAdaptive}" class="button">Start Test</a>
+                          "${process.env.STUDENT_URL || "https://student.skillaccess.in"}/student/test/${assessmentId}?isAdaptive=${isAdaptive}"
+                          <p><strong>Note:</strong> If you are not registered yet, please register first before accessing the test.</p>
+                            
+                          <div class="footer">
+                              Best regards,<br>
+                              The Skill Access Team
+                          </div>
+                      </div>
+                  </body>
+                  </html>
+
+`
+            // message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${role==="college" ? entity.FirstName : entity.name}. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/test/${assessmentId}?isAdaptive=${isAdaptive}. If you are not registered yet, please register first.`,
           });
+
+          console.log(mail)
         }
       }
     }
+
 
     res.status(200).json({
       success: true,
       message: "Students Invited successfully for the test",
     });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ success: "false", message: "something went wrong" });
   }
 });
@@ -440,16 +583,21 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id, role } = req.user;
   let assessments = [];
+  console.log(role)
   if (role === "company") {
     assessments = await Assessments.find({ company: id, job: { $exists: req.query.withJob === "true" ? true : false } })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
     console.log(assessments)
-  } else {
+  } else if(role==="college"){
     assessments = await Assessments.find({ createdBy: id })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
     console.log(assessments);
+  }else{
+    assessments = await Assessments.find({ university: id })
+    .sort({ createdAt: -1 })
+    .populate("invitedStudents");
   }
 
 
@@ -770,10 +918,10 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       const batch = req.query.batch;
       const search = req.query.search;
 
-      const query = { college: id };
+      const query = { [role]: id };
       const populateOptions = {
         path: "students",
-        select: "FirstName LastName Avatar _id createdAt batch" ,
+        select: "FirstName LastName Avatar _id createdAt batch Email" ,
         match: { _id: { $nin: assessment.invitedStudents } },
         options: {
           sort: { _id: -1 },
@@ -837,9 +985,10 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
     now.getDate()
   );
 
+  
   let assessments;
 
-  console.log(req.query.duration);
+  console.log(req.user.role);
 
   switch (req.query.duration) {
     case "month":
@@ -850,7 +999,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            createdBy: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -873,7 +1022,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            createdBy: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -895,7 +1044,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            createdBy: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -919,7 +1068,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            createdBy: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -943,7 +1092,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            createdBy: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -958,7 +1107,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
       ]);
       break;
   }
-
+console.log(assessments)
   // Populate the nested studentResponses field
   await studentResponse.populate(assessments, {
     path: "records.studentResponses",
@@ -1532,7 +1681,10 @@ const generateStudentReportPdf = async (req, res) => {
     
 
     // Launch Puppeteer
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox'],
+    });
     const page = await browser.newPage();
 
     // Set content and wait for full page load

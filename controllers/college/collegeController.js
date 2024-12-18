@@ -28,6 +28,7 @@ const InvitedStudents = require("../../models/college/student/Invited");
 const ApprovedStudents = require("../../models/college/student/Approved");
 const studentResponse = require("../../models/student/studentResponse");
 const Assessments = require("../../models/college/assessment/assessments");
+const University = require("../../models/university/universityModel");
 
 // Import the Student model
 
@@ -577,23 +578,37 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 
 // ==================================================== GET COLLEGE PROFILE ===========================================================
 // Get College Details
-exports.getCollegeDetails = catchAsyncErrors(async (req, res, next) => {
+exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
   try {
-    const college = await College.findById(req.user.id);
+
+    const {role,id} = req.user
+    let entity ;
+
+    if(role==="college"){
+      entity = await College.findById(id);
+    }else{
+      entity = await University.findById(id);
+    }
+    
+
     let credit = await PaymentPlan.find(
-      { members: { $in: [college._id] } },
+      { members: { $in: [entity._id] } },
       { members: 0 }
     );
     const balance = await Credit.findOne({
-      college: college,
+      [role]: id,
     });
+
+    // console.log(entity, "entity");
     return res.status(200).json({
       success: true,
-      college,
+      [role]:entity,
+      user:entity,
       credit,
       balance,
     });
   } catch (error) {
+    // console.log(error, "error");
     next(error);
   }
 });
@@ -761,19 +776,31 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
 // ================================================ UPDATE COLLEGE PROFILE ===========================================================
 // Update College Profile
 
-exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
-  const newCollegeData = req.body;
-  const data = {
-    CollegeName: newCollegeData.CollegeName,
-    Phone: newCollegeData.Phone,
-    Website: newCollegeData.Website,
-    Address: newCollegeData.Address,
-    Description: newCollegeData.Description,
-    avatar: newCollegeData.avatar,
-  };
-  // Update college profile
-  const updatedCollege = await College.findByIdAndUpdate(
-    newCollegeData._id,
+exports.updateProfile = catchAsyncErrors(async (req, res) => {
+  const { role, id } = req.user;
+  const model = role === "college" ? College : University;
+  const newUserData = req.body;
+
+  const data = role  === "college" ? {
+    CollegeName: newUserData.CollegeName,
+    Phone: newUserData.Phone,
+    Website: newUserData.Website,
+    Address: newUserData.Address,
+    Description: newUserData.Description,
+    avatar: newUserData.avatar,
+  } : {
+    name : newUserData.name,
+    phone: newUserData.phone,
+    address: newUserData.address,
+    website: newUserData.website,
+    description: newUserData.Description,
+    email:newUserData.email
+  }
+
+
+  // Update user profile
+  const updatedUser = await model.findByIdAndUpdate(
+    id,
     { ...data },
     {
       new: true,
@@ -783,8 +810,10 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
   );
   res.status(200).json({
     success: true,
-    college: updatedCollege,
+    user: updatedUser,
+    college: updatedUser,
   });
+  // console.log("Response sent successfully");
 });
 
 // -------------------
@@ -834,42 +863,37 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
 // ================================================ Update Profile Picture ===========================================================
 
-exports.updateProfilePictureCollege = catchAsyncErrors(
-  async (req, res, next) => {
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-      folder: "avatars",
-      width: 150,
-      crop: "scale",
-    });
+exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res) => {
+  const role = req.user.role;
+  const model = role === "college" ? College : University;
 
-    // const newCollegeData = req.body;
+  const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+    folder: "avatars",
+    width: 150,
+    crop: "scale",
+  });
 
-    // console.log(avatar);
-
-    // const college = await College.findByIdAndUpdate(  req.body.id,
-    const college = await College.findByIdAndUpdate(
-      req.user.id,
-
-      {
-        avatar: {
-          public_id: myCloud.public_id,
-          url: myCloud.secure_url,
-        },
+  const updatedUser = await model.findByIdAndUpdate(
+    req.user.id,
+    {
+      avatar: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
       },
-      {
-        new: true,
-        runValidators: true,
-        useFindAndModify: false,
-      }
-    );
-    console.log(college);
+    },
+    {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false,
+    }
+  );
 
-    res.status(200).json({
-      success: true,
-      college,
-    });
-  }
-);
+  res.status(200).json({
+    success: true,
+    user: updatedUser,
+    avatar: updatedUser.avatar,
+  });
+});
 
 // ===============================================================================================================
 
@@ -879,57 +903,166 @@ exports.updateProfilePictureCollege = catchAsyncErrors(
 //takes an array of students and sends and ivitation mail to them
 
 function generateInvitationEmail({ Email, FirstName, LastName, CollegeId, link }) {
+
+  const URL = process.env.STUDENT_URL || "https://student.skillaccess.in"
+  const registerLink = `${URL}/student?inviteLink=${link}&CollegeId=${CollegeId}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`
   return {
     email: Email,
     subject: "Invitation to join Skill Access",
-    message: `Dear ${FirstName},
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Skill Access</title>
+    <style>
+        :root {
+            --primary-color: #6eb9be;
+            --primary-dark: #0D9AAC;
+            --text-color: #333;
+            --background-color: #F1F4F8;
+            --container-bg: #ffffff;
+            --border-color: #e0e0e0;
+        }
 
-Welcome to Skill Access! We're excited to have you on board. To ensure a smooth experience, please complete your profile before accessing any tests. Here's how to get started:
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+        }
 
-Step 1: Register and Complete Your Profile
-Click the link below to register:
-https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--container-bg);
+        }
 
-During registration, you'll need to provide essential details like your name, email, and academic information. Completing your profile is mandatory for accessing the test.
+        .logo {
+            display: block;
+            width: 120px;
+            margin: 0 auto 30px;
+        }
 
-Once your profile is 100% complete, you will be able to take the test. Incomplete profiles will not have access. You can verify completion when the "Complete Your Profile" popup disappears from your dashboard.
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--primary-dark);
+        }
 
-Additional Guidelines:
-Double-Check Details: Ensure all provided information is accurate to avoid delays.
-Test Notifications: Once your profile is complete, you'll receive a notification when the test is available.
+        h3 {
+            color: var(--primary-dark);
+            margin-top: 30px;
+        }
 
-Complete your profile as soon as possible to avoid delays. If you need assistance, feel free to contact our support team.
+        .button {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 12px 24px;
+            color: white;
+            background-color: var(--primary-color);
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-Best regards,  
-The Skill Access Team`,
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+            color: #555;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+            
+            .logo {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img class="logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="Skill Access Logo">
+        
+        <div class="header">Hello ${FirstName},</div>
+  
+        <p>Thank you for joining Skill Access. To get started, please complete your profile:</p>
+        
+        <h3>Complete Your Profile</h3>
+
+        <p>Use the link below to register and fill out your profile:</p>
+
+        <a href="${registerLink}" class="button">Complete Profile</a>
+        
+        <p>If the button doesn't work, copy and paste this link into your browser: ${registerLink}</p>
+
+        <p>Your profile must be complete to access tests. You'll know it's done when you no longer see the "Complete Your Profile" message on your dashboard.</p>
+  
+        <h3>Important Notes:</h3>
+        <ul>
+            <li>Provide accurate information to avoid delays.</li>
+            <li>You'll be notified when tests are available after your profile is complete.</li>
+        </ul>
+  
+        <p>If you need any help, our support team is here for you.</p>
+  
+        <div class="footer">
+            Best regards,<br>
+            Skill Access Team
+        </div>
+    </div>
+</body>
+</html>
+
+`
+
   };
 }
 
 
-
 exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
-  // console.log(students)
 
-  // console.log ("upload students called" , students , "students")
   const Invitations = [];
 
+  const userId = req.user.id;
+  const entity = req.user.role;
 
-  const CollegeId = req.user.id;
+  const college = await College.findById(userId);
 
-  const college = await College.findById(CollegeId);
-  // console.log(college._id);
 
-  let invited ;
-  if(req.user.role === "university"){
-      
+  let invited;
+  if (req.user.role === "university") {
+
   }
-    invited = await InvitedStudents.findOneAndUpdate(
+  //create invitation bucket if not exists
+  invited = await InvitedStudents.findOneAndUpdate(
     {
-      college: college._id,
+      [entity]: userId,
     },
     {
-      $set: { college: college._id },
+      $set: { [entity]: userId },
     },
     {
       upsert: true,
@@ -937,16 +1070,16 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     }
   );
 
-  if (!college) {
+  if (!college && entity === "college") {
     return next(new ErrorHandler("College not found", 404));
   }
 
   const allDuplicateEmails = [];
 
   for (let i = 0; i < students.length; i++) {
-    const { FirstName, LastName, Email ,Batch  } = students[i];
+    const { FirstName, LastName, Email, Batch } = students[i];
     // const student = await UploadedStudents.create({
-    //   college_id: CollegeId,
+    //   college_id: userId,
     //   FirstName,
     //   LastName,
     //   Email,
@@ -961,113 +1094,71 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       student = invited.students.some((student) => student.Email === Email);
     }
 
+    const isRegisteredEmail = await Student.findOne(
+      { Email: Email },
+    );
+
     const link = crypto.randomBytes(20).toString("hex");
     // const curr = await Student.findOne({ Email: Email });
-    if (!student) {
-      // const invite = await Invitation.create({
-      //   FirstName,
-      //   LastName,
-      //   Email,
-      //   sender: CollegeId,
-      //   recipientEmail: Email,
-      //   invitationLink: crypto.randomBytes(20).toString("hex"),
-      // });
+    if (!isRegisteredEmail) {
+      if (!student) {
+        invited.students.push({
+          Email: Email,
+          link: link,
+          FirstName: FirstName,
+          LastName: LastName,
+          batch: Batch
+          // student: stu._id,
+        });
 
-      // console.log(invite);
-      // const stu = await Student.create({
-      //   Email: Email,
-      //   Password: "strong@12HHH",
-      //   registrationLink: link,
-      // });
-      invited.students.push({
-        Email: Email,
-        link: link,
-        FirstName: FirstName,
-        LastName: LastName,
-        batch:Batch
-        // student: stu._id,
-      });
+        const mail = await sendEmail(generateInvitationEmail({
+          Email: Email,
+          link: link,
+          FirstName: FirstName,
+          LastName: LastName,
+          CollegeId: userId
+        }));
+        console.log(mail,"mail")
+        Invitations.push(mail);
+        await invited.save();
+      } else {
+        invited.students.forEach((student, i) => {
+          if (student.Email === Email) {
+            invited.students[i].link = link;
+          }
+        });
 
-      // sendEmail({
-      //   email: Email,
-      //   subject: "Invitation to join College",
-      //   message: `Hello ${FirstName},\n You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`,
-      // });
 
-      //     sendEmail({
-      //   email: Email,
-      //   subject: "Invitation to join Skill Access",
-      //   message: `
-      //     Hello ${FirstName},
-      //     You have been invited to join <strong>${college.CollegeName}</strong>. Please click the button below to register:
-
-      //       <a href="https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}"
-      //       style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
-      //       Register Here
-      //       </a>
-
-      //     <p>We look forward to having you onboard!</p>
-      //     <p>Best regards,<br>Skill Access Team</p>
-      //   `,
-      // });
-
-      const mail = await sendEmail(generateInvitationEmail({
-        Email: Email,
-        link: link,
-        FirstName: FirstName,
-        LastName: LastName,
-        CollegeId
-      }));
-      Invitations.push(mail);
-      await invited.save();
+        const mail = await sendEmail(generateInvitationEmail({
+          Email: Email,
+          link: link,
+          FirstName: FirstName,
+          LastName: LastName,
+          CollegeId: userId
+        }));
+        Invitations.push(mail);
+        await invited.save();
+      }
     } else {
-      invited.students.forEach((student, i) => {
-        if (student.Email === Email) {
-          invited.students[i].link = link;
-        }
-      });
-      const stu = await Student.findOneAndUpdate(
-        { Email: Email },
-        { registrationLink: link }
-      );
-      // sendEmail({
-      //   email: Email,
-      //   subject: "Invitation to join College",
-      //   message: `Hello ${FirstName},\n  You\t have been invited to join ${college.CollegeName} college. Please click on the link to register: https://skillaccess-student-iota.vercel.app/student?CollegeId=${CollegeId}&inviteLink=${link}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`, // message: `Hello ${student.FirstName}!,You have been invited to join ${college.FirstName} ${college.LastName} college. Please click on the link to register: ${process.env.FRONTEND_URL}/student/register/${invite.invitationLink}`,
-      // });
-      const mail = await sendEmail(generateInvitationEmail({
-        Email: Email,
-        link: link,
-        FirstName: FirstName,
-        LastName: LastName,
-         CollegeId
-      }));
-      Invitations.push(mail);
-      await invited.save();
+      allDuplicateEmails.push(Email);
     }
-
   }
 
 
-  if (allDuplicateEmails.length == students.length) {
-    console.log("all duplicate emails");
-    return res.status(400).json({
-      success: false,
-      message: "Student already invited",
-    });
-  } else {
-    const uploadedStudents = await InvitedStudents.findOne({
-      college: CollegeId,
-    });
-    console.log(uploadedStudents, "uploaded students");
 
-    res.status(200).json({
-      success: true,
-      uploadedStudents: uploadedStudents?.students,
-      message: "Students uploaded & Invited successfully",
-      Invitations
-    });
-  }
+  const uploadedStudents = await InvitedStudents.findOne({
+    college: userId,
+  });
+  console.log(uploadedStudents, "uploaded students");
+
+  res.status(200).json({
+    success: true,
+    allDuplicateEmails,
+    uploadedStudents: uploadedStudents?.students,
+    message: "Students uploaded & Invited successfully",
+    Invitations
+  });
+
 
   // college.uploadedStudents = students;
   // await college.save();
@@ -1122,14 +1213,19 @@ exports.getPendingStudents = catchAsyncErrors(async (req, res, next) => {
 //in use
 exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
   try {
-    console.log(req.body, "approve students");
+    // console.log(req.body, "approve students");
     const { studentId } = req.body;
-    const CollegeId = req.user.id;
+    const userId = req.user.id;
+    let entity;
 
-    const college = await College.findById(CollegeId);
+    if(req.user.role==="college"){
+      entity = await College.findById(userId);
+    }else{
+      entity = await University.findById(userId);
+    }
 
-    if (!college) {
-      return next(new ErrorHandler("College not found", 404));
+    if (!entity) {
+      return next(new ErrorHandler(`${entity} not found`, 404));
     }
 
     const student = await Student.findById(studentId.studentId);
@@ -1138,7 +1234,7 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     //   const student = await Student.findById(college.pendingStudents[i]);
 
     //   if (students.includes(student.id)) {
-    //     student.college = CollegeId;
+    //     student.college = userId;
     //     await student.save();
     //   }
     // }
@@ -1153,39 +1249,39 @@ exports.approveStudents = catchAsyncErrors(async (req, res, next) => {
     let sId = studentId.studentId;
 
     const approvedStudents = await ApprovedStudents.findOne({
-      college: CollegeId,
+      [entity.role]: userId,
     });
     if (approvedStudents) {
       if (!approvedStudents.students.includes(sId)) {
         await ApprovedStudents.findOneAndUpdate(
-          { college: CollegeId },
+          { [entity.role]: userId },
           {
             $push: { students: sId },
-            $set: { collegeId: CollegeId },
+            $set: { userId: userId },
           },
           { new: true, upsert: true }
         );
       }
     } else {
-      await ApprovedStudents.create({ college: CollegeId, students: [sId] });
+      await ApprovedStudents.create({ [entity.role]: userId, students: [sId] });
     }
 
     // const approvedStudents = await ApprovedStudents.findOneAndUpdate(
-    //   { college: CollegeId, "students.studentId": { $ne: studentId } }, // Check for duplicates before pushing
+    //   { [entity]: userId, "students.studentId": { $ne: studentId } }, // Check for duplicates before pushing
     //   {
     //     $addToSet: { students: { studentId } }, // Use $addToSet to avoid duplicates
-    //     $set: { collegeId: CollegeId },
+    //     $set: { userId: userId },
     //   },
     //   { new: true, upsert: true }
     // );
     await InvitedStudents.findOneAndUpdate(
-      { college: CollegeId },
+      { [entity.role]: userId },
       {
         $pull: { students: { student: sId } },
       }
     );
     await UploadedStudents.findOneAndUpdate(
-      { college: CollegeId },
+      { [entity.role]: userId },
       {
         $pull: { students: sId },
       }
@@ -1221,14 +1317,25 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 
     await Student.findByIdAndDelete(req.params.studentId);
 
-    const college = await College.findById(req.user.id);
+
+    let entity;
+
+    if(req.user.role==="college"){
+      entity = await College.findById(userId);
+    }else{
+      entity = await University.findById(userId);
+    }
+
+    if (!entity) {
+      return next(new ErrorHandler(`${entity} not found`, 404));
+    }
 
     // remove from college approve students
 
     // college.approveStudents = college.approvedStudents.filter(std => std._id.toString() !== student._id.toString());
 
     const approvedStudents = await ApprovedStudents.findOne({
-      college: req.user.id,
+      [entity]: req.user.id,
     });
     if (approvedStudents) {
       if (approvedStudents.students.includes(student._id)) {
@@ -1237,7 +1344,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
         );
       }
     }
-    await college.save();
+    await entity.save();
     await approvedStudents.save();
 
     const message = `
@@ -1247,7 +1354,7 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
     `;
     await sendEmail({
       email: student.Email,
-      subject: `${college.CollegeName} Registration Rejection`,
+      subject: `${entity} Registration Rejection`,
       message,
     });
 
@@ -1265,11 +1372,11 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
-    const { batch, createdAt, skills, filterType, page, limit=100 } = req.query;
+    const { batch, createdAt, skills, filterType, page, limit = 100 } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
-
+    let entity = req.user.role;
     // Build the filter object
-    let filter = { college: id };
+    let filter = { [entity]: id };
 
     if (batch) {
       filter["students.batch"] = batch;
@@ -1284,7 +1391,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     // completed profile
     if (filterType === 'all students' || filterType === 'pending students') {
       pendingStudents = await UploadedStudents.findOne({
-        college: filter.college
+        [entity]: filter[entity]
       })
         .populate({
           path: "students",
@@ -1303,7 +1410,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     }
     if (filterType === 'all students' || filterType === 'invited students') {
       invitedStudents = await InvitedStudents.findOne({
-        college: filter.college,
+        [entity]: filter[entity],
         $and: [
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
@@ -1319,7 +1426,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     }
     if (filterType === 'all students' || filterType === 'approved students') {
       approvedStudents = await ApprovedStudents.findOne({
-        college: filter.college
+        [entity]: filter[entity]
       }).populate({
         path: "students",
         match: {
@@ -1343,6 +1450,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       });
     }
 
+    console.log(approvedStudents,entity);
     res.status(200).json({
       success: true,
       approvedStudents: approvedStudents ? approvedStudents.students : [],
@@ -1369,7 +1477,7 @@ exports.getTotalJobs = catchAsyncErrors(async (req, res, next) => {
       path: "company", // The field within "jobs" to populate
     },
   });
-  
+
   if (!college) {
     return next(new ErrorHandler("College not found", 404));
   }
@@ -1586,7 +1694,7 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
         (assessment.rejectedStudents.length / assessment.totalStudents) * 100;
     }
   }
-
+// console.log(assessment.selectedStudents)
   await assessment.save();
   await response.save();
 

@@ -101,6 +101,10 @@ const assessmentsSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
+    university:{
+      type : mongoose.Schema.Types.ObjectId,
+      ref:"University"
+    },
     job: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Job",
@@ -108,6 +112,10 @@ const assessmentsSchema = new Schema(
     createdByCompany: {
       type: Boolean,
       default: false,
+    },
+    createdByUniversity:{
+      type:Boolean,
+      default:false
     },
     sections: [
       {
@@ -175,7 +183,7 @@ const assessmentsSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "College",
       // ref : 'Company',
-      required: true,
+      // required: true,
     },
     // -----------------------------------------
   },

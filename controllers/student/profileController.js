@@ -11,6 +11,7 @@ const axios = require("axios");
 const cloudinary = require("cloudinary");
 const UploadedStudents = require("../../models/student/uploadedStudents");
 const InvitedStudents = require("../../models/college/student/Invited");
+const University = require("../../models/university/universityModel");
 
 exports.uploadCV = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -346,10 +347,16 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
     if (!student) {
       return next(new ErrorHandler("Student not found", 404));
     }
+    
+    let entity="college";
+    if(student.universityId){
+      entity = await University.findById(student.universityId);
+    }else{
+      entity  = await College.findById(student.CollegeId);
+    }
+console.log(entity);
 
-    const college = await College.findById(student.CollegeId);
-    const CollegeId = student.CollegeId;
-    if (!college) {
+    if (!entity) {
       return next(new ErrorHandler("College not found", 404));
     }
     // const { Links } = data;
@@ -360,27 +367,27 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
     if (!student.completedProfile) {
       console.log("upl");
 
-      const uploadedStudents = await UploadedStudents.findOne(
-        { college: CollegeId }
+      let uploadedStudents = await UploadedStudents.findOne(
+        { [entity.role]: [entity._id] }
         // `new: true` returns the modified document
       );
       if (!uploadedStudents) {
         console.log("create");
-        await UploadedStudents.create({
-          college: CollegeId,
+       uploadedStudents=  await UploadedStudents.create({
+          [entity.role]: [entity._id],
         });
       }
-      await UploadedStudents.findOneAndUpdate(
-        { college: CollegeId },
+      uploadedStudents=  await UploadedStudents.findOneAndUpdate(
+        { [entity.role]: [entity._id] },
         {
-          $push: { students: student._id },
+          $addToSet: { students: student._id },
         }
       );
 
       console.log("Document updated or created:", uploadedStudents);
       console.log("uplpadedStiudents");
       let invitedStudents = await InvitedStudents.findOne({
-        college: student.CollegeId,
+        [entity.role]: student[entity._id],
       });
       invitedStudents.students.forEach((stu, i) => {
         if (stu.Email === student.Email) {
@@ -394,7 +401,7 @@ exports.updateLinks = catchAsyncErrors(async (req, res, next) => {
 
     // college.pendingStudents.push(student._id);
 
-    await college.save();
+    await entity.save();
     await student.save();
 
     // console.log(data);
