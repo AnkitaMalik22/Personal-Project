@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const university = new mongoose.Schema(
   {
@@ -111,6 +114,44 @@ const university = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+university.pre("save", async function (next) {
+  if (!this.isModified("Password")) {
+    next();
+  }
+
+  this.Password = await bcrypt.hash(this.Password, 10);
+});
+
+// JWT TOKEN
+university.methods.getJWTToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE,
+  });
+};
+
+// Compare Password
+
+university.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.Password);
+};
+
+// Generating Password Reset Token
+university.methods.getResetPasswordToken = function () {
+  // Generating Token
+  const resetToken = crypto.randomBytes(20).toString("hex");
+
+  // Hashing and adding resetPasswordToken to university
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+  return resetToken;
+};
+
 
 const University = mongoose.model("University", university);
 
