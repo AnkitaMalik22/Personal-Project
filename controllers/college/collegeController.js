@@ -780,6 +780,7 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
   const { role, id } = req.user;
   const model = role === "college" ? College : University;
   const newUserData = req.body;
+
   const data = role  === "college" ? {
     CollegeName: newUserData.CollegeName,
     Phone: newUserData.Phone,
@@ -792,9 +793,11 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
     phone: newUserData.phone,
     address: newUserData.address,
     website: newUserData.website,
-    description: newUserData.description,
-    
+    description: newUserData.Description,
+    email:newUserData.email
   }
+
+
   // Update user profile
   const updatedUser = await model.findByIdAndUpdate(
     id,
@@ -810,7 +813,7 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
     user: updatedUser,
     college: updatedUser,
   });
-  console.log("Response sent successfully");
+  // console.log("Response sent successfully");
 });
 
 // -------------------
