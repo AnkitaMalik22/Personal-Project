@@ -14,9 +14,9 @@ const { isAuthenticatedCompany } = require("../../middlewares/companyAuth");
 
 
 
-router.route("/recent/questions").get(isAuthenticatedCollege, getAllRecentQuestions);
-router.route("/recent/question/:id").get(isAuthenticatedCollege, getRecentQuestionById);
-router.route("/recent/question/:id").delete(isAuthenticatedCollege, deleteRecentQuestionById);
+router.route("/recent/questions").get(authenticateMultiDatabase, getAllRecentQuestions);
+router.route("/recent/question/:id").get(authenticateMultiDatabase, getRecentQuestionById);
+router.route("/recent/question/:id").delete(authenticateMultiDatabase, deleteRecentQuestionById);
 
 router.route("/topics/all").get(authenticateMultiDatabase, getTopicsQB );
 

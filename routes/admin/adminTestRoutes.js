@@ -32,7 +32,7 @@ router.post("/add-questions/:topicId/:type", addQuestionsToTopic);
 router.get("/topic/:topicId", authenticateMultiDatabase, getTopicById);
 
 router.get("/get-all-topics", viewAllTopics);
-
+ 
 // router.get ('/get-all-topics/f',viewAllTopicByAdmin);
 
 router.get("/get-all-questions/:topicId", viewAllQuestionsInTopic);
