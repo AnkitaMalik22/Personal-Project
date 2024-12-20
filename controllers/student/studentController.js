@@ -19,6 +19,7 @@ const QrStudent = require("../../models/college/qr/qrStudent");
 const qrcode = require("qrcode");
 const speakeasy = require("speakeasy");
 const University = require("../../models/university/universityModel");
+const mongoose = require("mongoose");
 
 // =======
 // const { Student } = require('../../models/student/studentModel');
@@ -148,23 +149,104 @@ exports.getStudent = catchAsyncErrors(async (req, res, next) => {
 // --------------------------------------------- GET A STUDENT --ID -------------------------------------------------------
 
 exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
-  const student = await Student.findById(req.params.id).populate({
-    path: "studentResponses",
-    populate: {
-      path: "assessmentId",
-      select: "name",
-    },
-  });
+  const { id } = req.params;
+  const { page = 1, limit = 10 } = req.query;
 
-  if (!student) {
+  const studentData = await Student.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: "studentresponses",
+        localField: "studentResponses",
+        foreignField: "_id",
+        as: "allStudentResponses"
+      }
+    },
+    {
+      $lookup: {
+        from: "assessments",
+        localField: "allStudentResponses.assessmentId",
+        foreignField: "_id",
+        as: "assessments"
+      }
+    },
+    {
+      $addFields: {
+        allStudentResponses: {
+          $map: {
+            input: "$allStudentResponses",
+            as: "response",
+            in: {
+              $mergeObjects: [
+                "$$response",
+                {
+                  assessmentId: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: "$assessments",
+                          as: "assessment",
+                          cond: { 
+                            $eq: ["$$assessment._id", "$$response.assessmentId"]
+                          }
+                        }
+                      },
+                      0
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        FirstName: 1,
+        LastName: 1,
+        Email: 1,
+        completedProfile:1,
+        batch:1,
+        approved:1,
+        avatar:1,
+        FirstName:1,
+        LastName:1,
+        CollegeName:1,
+        CollegeId:1,
+        Education:1,
+        Skills:1,
+        Links:1,
+        Portfolio:1,
+        Cv:1,
+        Certificate:1,
+        CompanyPlaced:1,
+        JobPlace:1,
+        // Include all other student fields you need
+        studentResponses: {
+          $slice: ["$allStudentResponses", (page - 1) * limit, parseInt(limit)]
+        },
+        totalResponses: { $size: "$allStudentResponses" }
+      }
+    }
+  ]);
+
+  if (!studentData.length) {
     return next(new ErrorHandler("Student not found", 404));
   }
 
   res.status(200).json({
     success: true,
-    student,
+    student: studentData[0],
+    pagination: {
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      totalResponses: studentData[0].totalResponses,
+      totalPages: Math.ceil(studentData[0].totalResponses / limit)
+    }
   });
 });
+
 
 // --------------------------------------------- GET ALL STUDENTS -------------------------------------------------------
 
@@ -483,14 +565,14 @@ exports.forgotPasswordStudent = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Student not found", 404));
   }
 
-  // Get Reset Password Token
+  // Get Reset Password Token 
   const resetToken = student.getResetPasswordToken();
 
   console.log(resetToken);
 
   await student.save({ validateBeforeSave: false });
 
-  const resetPasswordUrl = `https://skillaccess-student-iota.vercel.app/password/reset/${resetToken}`;
+  const resetPasswordUrl = `${process.env.STUDENT_URL || "https://student.skillaccess.in"}/password/reset/${resetToken}`;
 
   const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
 

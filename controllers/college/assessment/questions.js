@@ -7,6 +7,7 @@ const Assessments = require("../../../models/college/assessment/assessments");
 const findAnswer = require("../../../models/college/assessment/findAnswer");
 const Questions = require("../../../models/college/assessment/questions");
 const Section = require("../../../models/college/assessment/sections");
+const { uploadPicture } = require("../../../utils/uploadPicture");
 
 // =========================================================================================================================================
 
@@ -246,5 +247,18 @@ topics
 });
 });
 
+
+exports.uploadQuestionImage = catchAsyncErrors(async (req, res, next) => {
+try {
+  console.log(req)
+  const image = await uploadPicture(req.files.image, "question_images");
+  console.log(image)
+  return res.status(200).json({ success: true, data: image });
+} catch (error) {
+  console.log(error)
+}
+   
+
+})
 
 // delete recent Topic by ID
