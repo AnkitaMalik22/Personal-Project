@@ -12,7 +12,7 @@ const sendEmail = async (options) => {
       },
     });
   
-    const mailOptions = {
+   let mailOptions = {
       from: process.env.SMTP_MAIL,
       to: options.email,
       subject: options.subject,
@@ -22,7 +22,7 @@ const sendEmail = async (options) => {
     if(options.html){
       mailOptions.html = options.html;
     }else{
-      mailOptions.message = options.message;
+      mailOptions.text = options.message;
     }
   
     const mail = await transporter.sendMail(mailOptions);
