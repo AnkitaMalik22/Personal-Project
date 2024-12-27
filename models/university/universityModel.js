@@ -37,6 +37,7 @@ const university = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
     role: {
       type: String,
@@ -115,25 +116,36 @@ const university = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Fix the pre-save middleware in University model
 university.pre("save", async function (next) {
-  if (!this.isModified("Password")) {
-    next();
+  if (!this.isModified("password")) {
+    return next();
   }
 
-  this.Password = await bcrypt.hash(this.Password, 10);
+  try {
+    // Hash password with bcrypt (no need for explicit salt)
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-// JWT TOKEN
+// Update the compare password method to match the working College model
+university.methods.comparePassword = async function (password) {
+  try {
+    // console.log('Password:', password===this.password);
+    return await bcrypt.compare(password, this.password);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
+};
+
 university.methods.getJWTToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
-};
-
-// Compare Password
-
-university.methods.comparePassword = async function (password) {
-  return await bcrypt.compare(password, this.Password);
 };
 
 // Generating Password Reset Token
