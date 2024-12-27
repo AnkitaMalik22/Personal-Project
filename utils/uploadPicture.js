@@ -10,7 +10,7 @@ exports.uploadPicture = async (file,folder) => {
         filename_override: file.name,
         resource_type: "image",
       });
-      console.log(result);
+      // console.log(result);
       return result;
     //   url: file.url,
     //       name: file.original_filename,

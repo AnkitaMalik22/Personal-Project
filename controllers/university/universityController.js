@@ -3,6 +3,7 @@
 const University = require('../../models/university/universityModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const ErrorHandler = require('../../utils/errorhandler');
 // const sendToken = require('../utils/jwtTokenCompany');
 
 // Register Controller
@@ -16,15 +17,12 @@ exports.registerUniversity = async (req, res) => {
       return res.status(400).json({ success: false, message: 'University already exists' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    
     // Create new university
     university = new University({
       name,
       email,
-      password: hashedPassword,
+      password,
         phone,
         address,
         website
@@ -32,7 +30,9 @@ exports.registerUniversity = async (req, res) => {
 
     await university.save();
     const payload = { id: university._id, role: 'university' };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = university.getJWTToken();
+
 
 
     res.status(201).json({ success: true,token , status: 'pending', message: 'University created successfully' ,user:university});
@@ -43,27 +43,30 @@ exports.registerUniversity = async (req, res) => {
 };
 
 // Login Controller
-exports.loginUniversity = async (req, res) => {
+exports.loginUniversity = async (req, res,next) => {
   try {
     const { Email:email, Password:password } = req.body;
 
     // Check if university exists
-    const university = await University.findOne({ email });
+    const university = await University.findOne({ email }).select("+password");
 
     // console.log(university,email,password);
     if (!university) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, university.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
-    }
 
+    // Check password
+    const isMatch = await university.comparePassword(password);
+
+ 
+    if (!isMatch) {
+      return next(new ErrorHandler("Invalid email or password", 401));
+    }
     // Generate JWT
     const payload = { id: university._id, role: 'university' };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = university.getJWTToken();
 
     res.status(200).json({ success: true, token , status: university.verificationStatus, message: 'University logged in successfully' ,user:university});
   } catch (error) {

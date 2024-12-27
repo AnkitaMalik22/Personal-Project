@@ -88,12 +88,18 @@ exports.getSectionsByAssessmentId = catchAsyncErrors(async (req, res, next) => {
 exports.getSectionById = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
+    const level = req.query.level;
+    const options ={}
+    if(level){
+      options.QuestionLevel = level;
+    }
+    console.log(options, "options")
     const section = await Section.findById(id)
-      .populate("questions")
-      .populate("findAnswers")
-      .populate("essay")
-      .populate("video")
-      .populate("compiler");
+      .populate("questions", null, options)
+      .populate("findAnswers", null, options)
+      .populate("essay" , null, options)
+      .populate("video", null, options)
+      .populate("compiler", null, options);
 
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
@@ -381,14 +387,32 @@ exports.createTopicCollege = async (req, res) => {
 
 exports.getTopics = async (req, res) => {
   try {
-    const { level } = req.query; // Get source and level from req.query
+    const { 
+      level, 
+      category, 
+      accessibleDepartments, // Changed from accessbileDepartments
+      hasAccessToAllDepartments, 
+      hasAccessToAllCategories 
+    } = req.query;
+
+    // Convert string boolean to actual boolean
+    const hasAccessToAllDepts = hasAccessToAllDepartments === 'true';
+    const hasAccessToAllCats = hasAccessToAllCategories === 'true';
+
+    console.log('Query Parameters:', {
+      level,
+      category,
+      accessibleDepartments,
+      hasAccessToAllDepartments: hasAccessToAllDepts,
+      hasAccessToAllCategories: hasAccessToAllCats
+    });
+
     const userId = req.user.id;
     const source = req.user.role;
-    // Determine if the request is from a college or company based on the `source` query parameter
+
     const isCompany = source && source.toLowerCase() === "company";
     const UserModel = isCompany ? Company : source === "university" ? University : College;
 
-    // Fetch the user (Company or College)
     const user = await UserModel.findById(userId);
     if (!user) {
       return res
@@ -396,102 +420,257 @@ exports.getTopics = async (req, res) => {
         .json({ error: `${isCompany ? "Company" : "User"} not found` });
     }
 
-    let topics;
+    let baseQuery = {
+      [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
+    };
 
-    // Check the level query parameter to filter topics
+    // Add category filter
+    if (category && !hasAccessToAllCats) {
+      baseQuery.category = category;
+      console.log('Category filter:', category);
+    }
+
+    // Handle department access
+    if (!hasAccessToAllDepts && accessibleDepartments) {
+      console.log('Processing departments:', accessibleDepartments);
+      
+      const departments = Array.isArray(accessibleDepartments) 
+        ? accessibleDepartments 
+        : accessibleDepartments.split(',');
+
+      console.log('Processed departments:', departments);
+
+      baseQuery.$or = [
+        { hasAccessToAllDepartments: true },
+        { accessibleDepartments: { $in: departments } }
+      ];
+    }
+
+    const populateOptions = {
+      questions: { match: {} },
+      findAnswers: { match: {} },
+      essay: { match: {} },
+      video: { match: {} },
+      compiler: { match: {} }
+    };
+
+    if (level && level !== "adaptive") {
+      Object.keys(populateOptions).forEach(key => {
+        populateOptions[key].match.QuestionLevel = level;
+      });
+    }
+
+    let topics;
     if (level === "adaptive") {
-      topics = await Section.find({
-        [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
-      }).populate("questions");
+      topics = await Section.find(baseQuery)
+        .populate("questions")
+        .populate("category")
+        .populate("accessibleDepartments")
+        .lean();
     } else {
-     topics = await Section.find({
-        [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
-      })
+      topics = await Section.find(baseQuery)
         .populate({
           path: "questions",
-          match: { QuestionLevel: level },
-        }) 
+          match: populateOptions.questions.match
+        })
         .populate({
           path: "findAnswers",
-          match: { QuestionLevel: level },
+          match: populateOptions.findAnswers.match
         })
         .populate({
           path: "essay",
-          match: { QuestionLevel: level },
+          match: populateOptions.essay.match
         })
         .populate({
           path: "video",
-          match: { QuestionLevel: level },
+          match: populateOptions.video.match
         })
         .populate({
           path: "compiler",
-          match: { QuestionLevel: level },
+          match: populateOptions.compiler.match
         })
-        .lean(); // Add the lean() method to populate the fields as plain JavaScript objects
+        .populate("category")
+        .populate("accessibleDepartments")
+        .lean();
     }
+
+    // Post-query department filtering
+    if (!hasAccessToAllDepts && accessibleDepartments) {
+      console.log('Post-query filtering for departments');
+      
+      const departments = Array.isArray(accessibleDepartments) 
+        ? accessibleDepartments 
+        : accessibleDepartments.split(',');
+
+      topics = topics.filter(topic => {
+        // Include topics with access to all departments
+        if (topic.hasAccessToAllDepartments === true) return true;
+
+        // Check for department matches
+        return topic.accessibleDepartments && 
+          topic.accessibleDepartments.some(topicDept => {
+            const deptId = topicDept._id ? topicDept._id.toString() : topicDept.toString();
+            const matches = departments.includes(deptId);
+            console.log('Comparing department:', deptId, 'with', departments, 'Match:', matches);
+            return matches;
+          });
+      });
+    }
+
+    console.log('Final topics count:', topics.length);
 
     return res.status(200).json({
       message: "Topics found",
       topics,
+      metadata: {
+        totalCount: topics.length,
+        filters: {
+          level,
+          category,
+          accessibleDepartments: Array.isArray(accessibleDepartments) 
+            ? accessibleDepartments 
+            : accessibleDepartments?.split(','),
+          hasAccessToAllDepartments: hasAccessToAllDepts,
+          hasAccessToAllCategories: hasAccessToAllCats
+        }
+      }
     });
+
   } catch (error) {
+    console.error('Error in getTopics:', error);
     return res.status(500).json({
       message: "Unable to get topics",
-      error: error.message,
+      error: error.message
     });
   }
 };
 
 exports.getTopicsQB = async (req, res) => {
   try {
+    const { 
+      accessibleDepartments, 
+      hasAccessToAllDepartments, 
+      level, 
+      category 
+    } = req.query;
+
+    // Convert string boolean to actual boolean
+    const hasAccessToAllDepts = hasAccessToAllDepartments === 'true';
+
+    console.log('Query Parameters (QB):', {
+      accessibleDepartments,
+      hasAccessToAllDepartments: hasAccessToAllDepts,
+      level,
+      category
+    });
+
     const source = req.user.role;
     const userId = req.user.id;
 
     const isCompany = source && source.toLowerCase() === "company";
+    const UserModel = isCompany ? Company : source === "university" ? University : College;
 
-    
-    let  topics = await Section.find({
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: `${isCompany ? "Company" : "User"} not found` });
+    }
+
+    let baseQuery = {
       [isCompany ? "company" : source === "university" ? "university" : "college"]: userId,
-    })
+    };
+
+    // Conditionally add category filter
+    if (category) {
+      baseQuery.category = category;
+      console.log('Category filter (QB):', category);
+    }
+
+    // Handle department access
+    if (!hasAccessToAllDepts && accessibleDepartments) {
+      console.log('Processing departments (QB):', accessibleDepartments);
+
+      const departments = Array.isArray(accessibleDepartments) 
+        ? accessibleDepartments 
+        : accessibleDepartments.split(',');
+
+      console.log('Processed departments (QB):', departments);
+
+      baseQuery.$or = [
+        { hasAccessToAllDepartments: true },
+        { accessibleDepartments: { $in: departments } }
+      ];
+    }
+
+    let topics = await Section.find(baseQuery)
       .populate({
         path: "questions",
-       
-      }) 
+      })
       .populate({
         path: "findAnswers",
-      
       })
       .populate({
         path: "essay",
       })
       .populate({
         path: "video",
-      
       })
       .populate({
         path: "compiler",
-       
       })
-      .lean(); // Add the lean() method to populate the fields as plain JavaScript objects
-  
-      
-   
+      .populate("category")
+      .populate("accessibleDepartments")
+      .lean();
 
-    // console.log(topics, "topics");
+    // Post-query department filtering
+    if (!hasAccessToAllDepts && accessibleDepartments) {
+      console.log('Post-query filtering for departments (QB)');
 
-    // topics = await Section.find({ college: collegeId }).populate("questions").populate("findAnswers").populate("essay").populate("video").populate("compiler");
+      const departments = Array.isArray(accessibleDepartments) 
+        ? accessibleDepartments 
+        : accessibleDepartments.split(',');
+
+      topics = topics.filter(topic => {
+        if (topic.hasAccessToAllDepartments === true) return true;
+
+        return topic.accessibleDepartments && 
+          topic.accessibleDepartments.some(topicDept => {
+            const deptId = topicDept._id ? topicDept._id.toString() : topicDept.toString();
+            const matches = departments.includes(deptId);
+            console.log('Comparing department (QB):', deptId, 'with', departments, 'Match:', matches);
+            return matches;
+          });
+      });
+    }
+
+    console.log('Final topics count (QB):', topics.length);
 
     return res.status(200).json({
       message: "Topics found",
       topics,
+      metadata: {
+        totalCount: topics.length,
+        filters: {
+          level,
+          category: category || "All",
+          accessibleDepartments: Array.isArray(accessibleDepartments) 
+            ? accessibleDepartments 
+            : accessibleDepartments?.split(','),
+          hasAccessToAllDepartments: hasAccessToAllDepts,
+        }
+      }
     });
   } catch (error) {
+    console.error('Error in getTopicsQB:', error);
     return res.status(500).json({
       message: "Unable to get topics",
       error: error.message,
     });
   }
 };
+
+
 
 // ----------------------------- ADD QUESTIONS ------------------------------------
 
