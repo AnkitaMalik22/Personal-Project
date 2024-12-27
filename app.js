@@ -108,6 +108,7 @@ app.use("/api/student/graph", studentGraphRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/company/test", companyTestRoutes);
 app.use("/api/admin", adminTestRoutes);
+app.use("/api/admin/category", require("./routes/admin/categoryRoutes.js"));
 app.use("/api/admin/approval", require("./routes/admin/approvalRoutes.js"));
 app.use("/api/qb", qbRoutes);
 app.use("/api/payment", paymentRoutes);

@@ -4,6 +4,10 @@ const { Schema } = mongoose;
 // FOR MCQ ANSWERS
 
 const questionsSchema = new Schema({
+
+  image:{
+    type:String,
+  },
   assessment: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Assessment",

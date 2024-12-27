@@ -614,113 +614,118 @@ exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
 });
 
 // ====================================================== FORGOT PASSWORD ===========================================================
+const getRole = async ({ value, type }) => {
+  const query =
+    type === "email"
+      ? { Email: value }
+      : {
+          resetPasswordToken: value.resetPasswordToken,
+          resetPasswordExpire: { $gt: Date.now() },
+        };
+
+  if (await College.findOne(query)) return "college";
+  if (await University.findOne(type === "email" ? { email: value } : query)) return "university";
+  if (await Company.findOne(query)) return "company";
+
+  return null;
+};
+
 // Forgot Password
 exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
-  const college = await College.findOne({ Email: req.body.email });
-
-  if (!college) {
-    return next(new ErrorHandler("College not found", 404));
+  const role = await getRole({ value: req.body.email, type: "email" });
+  if (!role) {
+    return next(new ErrorHandler("Entity not found", 404));
   }
 
-  // Get ResetPassword Token
-  const resetToken = college.getResetPasswordToken();
+  const model = role === "college" ? College : role === "university" ? University : Company;
+  const query = role === "college" ? { Email: req.body.email } : { email: req.body.email };
+  const entity = await model.findOne(query);
 
-  await college.save({ validateBeforeSave: false });
+  if (!entity) {
+    return next(new ErrorHandler(`${role.charAt(0).toUpperCase() + role.slice(1)} not found`, 404));
+  }
 
-  // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/password/reset/${resetToken}`;
-  const resetPasswordUrl = `https://skillaccess.vercel.app/password/reset/${resetToken}`;
+  const resetToken = entity.getResetPasswordToken();
+  await entity.save({ validateBeforeSave: false });
 
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
   const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
 
   try {
-    // Send password reset email
     await sendEmail({
-      email: college.Email,
-      subject: `College Password Recovery`,
+      email: role === "college" ? entity.Email : entity.email,
+      subject: `${role.charAt(0).toUpperCase() + role.slice(1)} Password Recovery`,
       message,
     });
 
     res.status(200).json({
       success: true,
-      message: `Email sent to ${college.Email} successfully`,
+      message: `Email sent to ${
+        role === "college" ? entity.Email : entity.email
+      } successfully`,
     });
   } catch (error) {
-    college.resetPasswordToken = undefined;
-    college.resetPasswordExpire = undefined;
-
-    await college.save({ validateBeforeSave: false });
+    entity.resetPasswordToken = undefined;
+    entity.resetPasswordExpire = undefined;
+    await entity.save({ validateBeforeSave: false });
 
     return next(new ErrorHandler(error.message, 500));
   }
 });
 
-// ============================================================ RESET PASSWORD ===========================================================
 // Reset Password
 exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
-  // console.log(req.body, "reset password body");
-
-  const ip = req.body.ip;
-  // console.log(ip);
-  const device = req.headers["user-agent"];
-  // console.log(device);
-
-  // Creating token hash
   const resetPasswordToken = crypto
     .createHash("sha256")
     .update(req.params.token)
     .digest("hex");
 
-  const college = await College.findOne({
+  const role = await getRole({
+    value: { resetPasswordToken },
+    type: "token",
+  });
+
+  if (!role) {
+    return next(new ErrorHandler("Reset Password Token is invalid or has expired", 400));
+  }
+
+  const model = role === "college" ? College : role === "university" ? University : Company;
+  const user = await model.findOne({
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },
   });
 
-  if (!college) {
-    return next(
-      new ErrorHandler(
-        "Reset Password Token is invalid or has been expired",
-        400
-      )
-    );
+  if (!user) {
+    return next(new ErrorHandler("Reset Password Token is invalid or has expired", 400));
   }
 
-  // Check if passwords match
   if (req.body.password !== req.body.confirmPassword) {
     return next(new ErrorHandler("Passwords do not match", 400));
   }
 
-  // it should contain atleast one uppercase, one lowercase, one number and one special character
-  const passwordRegex = new RegExp(
-    "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])"
-  );
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/;
   if (!passwordRegex.test(req.body.password)) {
     return next(
       new ErrorHandler(
-        "Password should contain atleast one uppercase, one lowercase, one number and one special character",
+        "Password should contain at least one uppercase, one lowercase, one number, and one special character",
         400
       )
     );
   }
-  // try {
-  //   const isSame = await college.comparePassword(req.body.password);
-  //   if (isSame) {
-  //     return next(new ErrorHandler("Password cannot be same as old password", 400));
-  //   }
-  // } catch (error) {
-  //   console.error("Error comparing passwords:", error);
-  //   return next(new ErrorHandler("Error comparing passwords", 500));
-  // }
 
-  // Password validation and update code
+  // Set the new password
+  if (role === "college" || role === "company") {
+    user.Password = req.body.password;
+  } else if (role === "university") {
+    user.password = req.body.password;
+  }
 
-  college.Password = req.body.password;
-  college.resetPasswordToken = undefined;
-  college.resetPasswordExpire = undefined;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
 
-  await college.save();
+  await user.save();
 
-  // Send JWT token in response
-  sendToken(college, 200, res, ip, device);
+  sendToken(user, 200, res, req.body.ip, req.headers["user-agent"]);
 });
 
 // ========================================= UPDATE COLLEGE PASSWORD ===========================================================

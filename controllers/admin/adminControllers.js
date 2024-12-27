@@ -349,12 +349,18 @@ const createTopic = async (req, res) => {
 const getTopicById = async (req, res) => {
   try {
     const { topicId } = req.params;
+
+    const level = req.query.level;
+    const options ={}
+    if(level){
+      options.QuestionLevel = level;
+    }
     const section = await Section.findById(topicId)
-      .populate("questions")
-      .populate("findAnswers")
-      .populate("essay")
-      .populate("video")
-      .populate("compiler");
+      .populate("questions", null, options)
+      .populate("findAnswers", null,options)
+      .populate("essay", null,options)
+      .populate("video", null,options)
+      .populate("compiler", null,options);
     if (!section) {
       return res.status(404).json({
         message: "Topic not found",
