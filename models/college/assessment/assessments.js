@@ -4,9 +4,9 @@ const { Schema } = mongoose;
 const assessmentsSchema = new Schema(
   {
     visible: { type: Boolean, default: true },
-    isReportGenerated:{
-      type:Boolean,
-      default:false
+    isReportGenerated: {
+      type: Boolean,
+      default: false,
     },
     name: {
       type: String,
@@ -101,9 +101,9 @@ const assessmentsSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
-    university:{
-      type : mongoose.Schema.Types.ObjectId,
-      ref:"University"
+    university: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "University",
     },
     job: {
       type: mongoose.Schema.Types.ObjectId,
@@ -113,9 +113,9 @@ const assessmentsSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    createdByUniversity:{
-      type:Boolean,
-      default:false
+    createdByUniversity: {
+      type: Boolean,
+      default: false,
     },
     sections: [
       {
@@ -175,6 +175,38 @@ const assessmentsSchema = new Schema(
     ],
 
     // -----------------------------------------------------------------------
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+    },
+    categoryName: {
+      type: String,
+      default: "",
+    },
+    
+    hasAccessToAllBranches: {
+      type: Boolean,
+      default: false,
+    },
+    hasAccessToAllDepartments: {
+      type: Boolean,
+      default: false,
+    },
+
+    // accessibleBranches: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Branch",
+    //   },
+    // ],
+    accessibleDepartments: [
+      // {
+      //   type: mongoose.Schema.Types.ObjectId,
+      //   ref: "Department",
+      // },
+    ],
+
+    // -----------------------------------------------------------------------
     createdAt: {
       type: Date,
       default: Date.now,
@@ -194,8 +226,6 @@ const Assessments = mongoose.model("Assessments", assessmentsSchema);
 
 assessmentsSchema.index({ company: 1 });
 assessmentsSchema.index({ createdByCompany: 1 });
-assessmentsSchema.index({ college: 1 })
+assessmentsSchema.index({ college: 1 });
 
 module.exports = Assessments;
-
-
