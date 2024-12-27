@@ -88,12 +88,18 @@ exports.getSectionsByAssessmentId = catchAsyncErrors(async (req, res, next) => {
 exports.getSectionById = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
+    const level = req.query.level;
+    const options ={}
+    if(level){
+      options.QuestionLevel = level;
+    }
+    console.log(options, "options")
     const section = await Section.findById(id)
-      .populate("questions")
-      .populate("findAnswers")
-      .populate("essay")
-      .populate("video")
-      .populate("compiler");
+      .populate("questions", null, options)
+      .populate("findAnswers", null, options)
+      .populate("essay" , null, options)
+      .populate("video", null, options)
+      .populate("compiler", null, options);
 
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
