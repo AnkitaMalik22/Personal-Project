@@ -724,6 +724,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
     // console.log(collegeId, "collegeId" ,topicId,type)
     // const { Title, Options, Answer, AnswerIndex, QuestionType, Status, TotalMarks } = req.body;
     let section;
+    let uploadedQuestions = [];
 
     section = await Section.findById(topicId);
 
@@ -806,6 +807,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
         question = await Compiler.create(questions[i]);
         section.compiler.push(question._id);
       }
+      uploadedQuestions.push(question);
 
       question.section = topicId;
 
@@ -819,6 +821,7 @@ exports.addQuestionsToTopicCollege = async (req, res) => {
       message: "Question added successfully",
       questions: [question],
       topic: section,
+      uploadedQuestions: uploadedQuestions,
     });
   } catch (error) {
     console.log(error);
