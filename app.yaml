@@ -1,0 +1,2 @@
+env_variables:
+  CORS_ORIGINS: "https://app.skillaccess.in,https://student.skillaccess.in,http://localhost:3000"
