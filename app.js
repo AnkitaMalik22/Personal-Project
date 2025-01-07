@@ -28,6 +28,14 @@ cloudinary.config({
 // Setup Express middleware
 require("./config/express")(app);
 
+// Error middleware
+app.use(errorMiddleware);
+
+// Start server
+const server = app.listen(PORT, () => {
+  console.log(`Server is working on http://localhost:${PORT}`);
+});
+
 // Setup Socket.IO
 const io = new socketIo.Server(server, {
   cors: {
@@ -38,14 +46,6 @@ const io = new socketIo.Server(server, {
 
 // Setup routes
 require("./config/routes")(app);
-
-// Error middleware
-app.use(errorMiddleware);
-
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`Server is working on http://localhost:${PORT}`);
-});
 
 io.on("connection", (socket) => {
   console.log("A client connected");
