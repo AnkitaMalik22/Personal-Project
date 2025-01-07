@@ -10,6 +10,7 @@ const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
 const cloudinary = require("cloudinary");
 const socketIo = require("socket.io");
+const cors = require("cors");
 
 // Initialize Express app
 const app = express();
@@ -32,6 +33,14 @@ require("./config/routes")(app);
 
 // Error middleware
 app.use(errorMiddleware);
+
+// Cors
+app.use(
+  cors({
+    origin: CORS_ORIGINS,
+    credentials: true,
+  })
+);
 
 // Start server
 const server = app.listen(PORT, () => {
