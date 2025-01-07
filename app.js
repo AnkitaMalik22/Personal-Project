@@ -1,6 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-require("dotenv").config({ path: "./.env.local" });
+require("dotenv").config({ path: "./config/config.env" });
 const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
 const cors = require("cors");

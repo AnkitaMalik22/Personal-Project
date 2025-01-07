@@ -557,12 +557,12 @@ exports.getTopicsQB = async (req, res) => {
     // Convert string boolean to actual boolean
     const hasAccessToAllDepts = hasAccessToAllDepartments === 'true';
 
-    console.log('Query Parameters (QB):', {
-      accessibleDepartments,
-      hasAccessToAllDepartments: hasAccessToAllDepts,
-      level,
-      category
-    });
+    // console.log('Query Parameters (QB):', {
+    //   accessibleDepartments,
+    //   hasAccessToAllDepartments: hasAccessToAllDepts,
+    //   level,
+    //   category
+    // });
 
     const source = req.user.role;
     const userId = req.user.id;
@@ -644,7 +644,7 @@ exports.getTopicsQB = async (req, res) => {
       });
     }
 
-    console.log('Final topics count (QB):', topics.length);
+    // console.log('Final topics count (QB):', topics.length);
 
     return res.status(200).json({
       message: "Topics found",
