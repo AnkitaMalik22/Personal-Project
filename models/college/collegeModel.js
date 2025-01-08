@@ -12,6 +12,12 @@ const validateRef = function (value) {
 };
 
 const collegeSchema = new mongoose.Schema({
+    campusDrives: [
+      {
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'CampusDrive',
+      },
+    ],
   status: {
     type: String,
     enum: ['approved', 'pending', 'rejected'],

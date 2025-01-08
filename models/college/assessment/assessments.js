@@ -4,6 +4,11 @@ const { Schema } = mongoose;
 const assessmentsSchema = new Schema(
   {
     visible: { type: Boolean, default: true },
+    campusDrive: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CampusDrive",
+    },
+
     isReportGenerated: {
       type: Boolean,
       default: false,
@@ -183,7 +188,7 @@ const assessmentsSchema = new Schema(
       type: String,
       default: "",
     },
-    
+
     hasAccessToAllBranches: {
       type: Boolean,
       default: false,

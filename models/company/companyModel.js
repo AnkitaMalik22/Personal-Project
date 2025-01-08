@@ -38,6 +38,12 @@ const dashboardSchema = new mongoose.Schema({
 });
 
 const companySchema = new mongoose.Schema({
+  campusDrives: [
+    {
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'CampusDrive',
+    },
+  ],
  status: {
     type: String,
     enum: ['approved', 'pending', 'rejected'],
