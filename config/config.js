@@ -1,7 +1,7 @@
 require("dotenv").config({ path: "./config/config.env" }); 
 
 module.exports = {
-  PORT: process.env.PORT || 3000,
+  PORT: process.env.PORT || 8080,
   MONGODB_URI: process.env.MONGODB_URI,
   CLOUDINARY_NAME: process.env.CLOUDINARY_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
@@ -10,6 +10,8 @@ module.exports = {
     "http://localhost:3000",
     "https://app.skillaccess.in",
     "https://student.skillaccess.in",
+    "https://admin.skillaccess.in",
+
     // Add other allowed origins here
   ],
 };

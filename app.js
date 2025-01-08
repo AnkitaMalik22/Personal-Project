@@ -28,26 +28,13 @@ cloudinary.config({
 // Setup Express middleware
 require("./config/express")(app);
 
-// Setup routes
-require("./config/routes")(app);
-
 // Error middleware
 app.use(errorMiddleware);
-
-
 
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`Server is working on http://localhost:${PORT}`);
 });
-
-// Cors
-app.use(
-  cors({
-    origin: CORS_ORIGINS,
-    credentials: true,
-  })
-);
 
 // Setup Socket.IO
 const io = new socketIo.Server(server, {
@@ -56,6 +43,9 @@ const io = new socketIo.Server(server, {
     credentials: true,
   },
 });
+
+// Setup routes
+require("./config/routes")(app);
 
 io.on("connection", (socket) => {
   console.log("A client connected");

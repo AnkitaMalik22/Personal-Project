@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  node-app:
+    build: .
+    ports:
+      - "3000:3000" # Exposing the correct production port
+    environment:
+      NODE_ENV: production # Set the Node.js environment to production
+    command: node app.js # Use the production command
