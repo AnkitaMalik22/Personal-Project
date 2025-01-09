@@ -268,85 +268,85 @@ exports.selectAuth = catchAsyncErrors(async (req, res, next) => {
 
 exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
   console.log("register college");
-  if (req.body.googleAccessToken) {
-    console.log("googleAccessToken");
-    try {
-      const { googleAccessToken, ip } = req.body;
+  // if (req.body.googleAccessToken) {
+  //   console.log("googleAccessToken");
+  //   try {
+  //     const { googleAccessToken, ip } = req.body;
 
-      const response = await axios.get(
-        "https://www.googleapis.com/oauth2/v3/userinfo",
-        {
-          headers: {
-            Authorization: `Bearer ${googleAccessToken}`,
-          },
-        }
-      );
+  //     const response = await axios.get(
+  //       "https://www.googleapis.com/oauth2/v3/userinfo",
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${googleAccessToken}`,
+  //         },
+  //       }
+  //     );
 
-      const {
-        given_name: FirstName,
-        family_name: LastName,
-        email: Email,
-        picture: profilePicture,
-      } = response.data;
+  //     const {
+  //       given_name: FirstName,
+  //       family_name: LastName,
+  //       email: Email,
+  //       picture: profilePicture,
+  //     } = response.data;
 
-      const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
-        folder: "avatars",
-        width: 150,
-        crop: "scale",
-      });
+  //     const myCloud = await cloudinary.v2.uploader.upload(profilePicture, {
+  //       folder: "avatars",
+  //       width: 150,
+  //       crop: "scale",
+  //     });
 
-      const avatar = {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      };
+  //     const avatar = {
+  //       public_id: myCloud.public_id,
+  //       url: myCloud.secure_url,
+  //     };
 
-      const existingUser = await College.findOne({ Email });
-      const mailUsed = await Student.findOne({ Email });
+  //     const existingUser = await College.findOne({ Email });
+  //     const mailUsed = await Student.findOne({ Email });
 
-      if (existingUser || mailUsed) {
-        return res
-          .status(400)
-          .json({ message: "User already registered with this email" });
-      }
-      // const ip =  (req.headers['x-forwarded-for'] || '')
-      // .split(',').pop().trim() ||
-      // req.connection.remoteAddress||
-      // req.socket.remoteAddress ||
-      // req.connection.socket.remoteAddress;
+  //     if (existingUser || mailUsed) {
+  //       return res
+  //         .status(400)
+  //         .json({ message: "User already registered with this email" });
+  //     }
+  //     // const ip =  (req.headers['x-forwarded-for'] || '')
+  //     // .split(',').pop().trim() ||
+  //     // req.connection.remoteAddress||
+  //     // req.socket.remoteAddress ||
+  //     // req.connection.socket.remoteAddress;
 
-      const device = req.headers["user-agent"];
+  //     const device = req.headers["user-agent"];
 
-      const college = await College.create({
-        FirstName,
-        LastName,
-        Email,
-        avatar,
-        CollegeName: `${FirstName} ${LastName}`,
-      });
+  //     const college = await College.create({
+  //       Email,
+  //       avatar,
+  //       CollegeName,
+  //     });
 
-      // var ip = (req.headers['x-forwarded-for'] || '')
-      // .split(',').pop().trim() ||
-      // req.connection.remoteAddress||
-      // req.socket.remoteAddress ||
-      // req.connection.socket.remoteAddress;
+  //     // var ip = (req.headers['x-forwarded-for'] || '')
+  //     // .split(',').pop().trim() ||
+  //     // req.connection.remoteAddress||
+  //     // req.socket.remoteAddress ||
+  //     // req.connection.socket.remoteAddress;
 
-      sendToken(college, 200, res, ip, device);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
-  } else {
-    const { Email, FirstName, LastName, Password, Phone, CollegeName, ip } =
+  //     sendToken(college, 200, res, ip, device);
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).json({ message: "Internal Server Error" });
+  //   }
+  // } else {
+    const { Email, Password, Phone, CollegeName, Website, ip, Country, State, City, ZipCode } =
       req.body;
 
     // Check if required fields are present
     if (
       !Email ||
-      !FirstName ||
-      !LastName ||
       !Password ||
       !Phone ||
-      !CollegeName
+      !CollegeName ||
+      !Country ||
+      !State ||
+      !City||
+      !ZipCode
     ) {
       return next(new ErrorHandler("Please Enter All Fields", 400));
     }
@@ -390,7 +390,7 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
 
     // Send JWT token in response
     sendToken(college, 201, res, ip, device);
-  }
+  // }
 });
 
 // =================================================== LOGIN COLLEGE ===========================================================
@@ -1704,6 +1704,7 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
   await response.save();
 
   res.status(200).json({
+    response,
     success: true,
     message: "Student selected/rejected sucessfully",
   });

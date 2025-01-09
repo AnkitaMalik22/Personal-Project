@@ -18,7 +18,7 @@ const XLSX = require('xlsx');
 const PaymentPlan = require("../../../models/college/account/planModel");
 const cloudinary = require("cloudinary");
 const fs = require('fs');
-
+const path = require('path');
 const puppeteer = require('puppeteer');
 const University = require("../../../models/university/universityModel");
 // =========================================================================================================================================
@@ -1528,158 +1528,8 @@ const generateStudentReportPdf = async (req, res) => {
     
     const overallAveragePercentage = studentResponseRes.topics.reduce((sum, topic) => sum + (topic.topicMarks > 0 ? (topic.totalMarks / topic.topicMarks) * 100 : 0), 0) / studentResponseRes.topics.length;
     
-    const reportHtml = `<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Performance Report</title>
-        <style>
-            body {
-                font-family: 'Arial', sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #f4f4f4;
-            }
-            .generic-content {
-              padding : 10px;
-            }
-            .report-container {
-                background-color: #ffffff;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                overflow: hidden;
-            }
-            .header {
-                background-color: #3498db;
-                color: #ffffff;
-                padding: 20px;
-                text-align: center;
-            }
-            .header h1 {
-                margin: 0;
-                font-size: 28px;
-            }
-            .header h2 {
-                margin: 10px 0 0;
-                font-size: 20px;
-                font-weight: normal;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 20px;
-            }
-            th, td {
-                padding: 12px 15px;
-                text-align: left;
-                border-bottom: 1px solid #e0e0e0;
-            }
-            thead {
-                background-color: #f2f2f2;
-            }
-            th {
-                font-weight: bold;
-                text-transform: uppercase;
-                font-size: 14px;
-                color: #555;
-            }
-            tr:nth-child(even) {
-                background-color: #f8f8f8;
-            }
-            tr:hover {
-                background-color: #e8f4fd;
-            }
-            .up {
-                color: green;
-            }
-            .down {
-                color: red;
-            }
-            .footer {
-                margin-top: 20px;
-                padding: 10px;
-                text-align: center;
-                background-color: #f2f2f2;
-                border-top: 1px solid #e0e0e0;
-            }
-            .footer p {
-                margin: 5px 0;
-            }
-            .explanation {
-                margin-top: 20px;
-                padding: 20px;
-                background-color: #eaf3fc;
-                border-left: 5px solid #3498db;
-            }
-            .status {
-                margin-top: 20px;
-                padding: 15px;
-                text-align: center;
-                font-size: 18px;
-                font-weight: bold;
-                background-color: ${studentResponseRes.status === 'Pass' ? '#d4edda' : '#f8d7da'};
-                color: ${studentResponseRes.status === 'Pass' ? '#155724' : '#721c24'};
-                border: 1px solid ${studentResponseRes.status === 'Pass' ? '#c3e6cb' : '#f5c6cb'};
-            }
-        </style>
-    </head>
-    <body>
-        <div class="report-container">
-            <div class="header">
-                <h1>Performance Report</h1>
-                <h2>${studentName}</h2>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Topic</th>
-                        <th>Score</th>
-                        <th>Maximum Marks</th>
-                        <th>Your Test %</th>
-                        <th>Remark</th>
-                        <th>Avg Test%</th>
-                        <th>Average Marks</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${topicsHtml}
-                </tbody>
-            </table>
-            <div class="status">
-                Status: ${studentResponseRes.status}
-            </div>
-            <div class="footer">
-                <p><strong>Overall Average Percentage:</strong> ${overallAveragePercentage.toFixed(2)}%</p>
-                <p><strong>Rank:</strong> ${studentResponseRes.rank}</p>
-                <p>${studentResponseRes.comment}</p>
-                <p><em>Evaluation performed by SkillAccess.</em></p>
-            </div>
-            <div class="explanation">
-                <h3>Report Explanation</h3>
-                <ul>
-                    <li><strong>Topic:</strong> The subject or area of the test.</li>
-                    <li><strong>Score:</strong> The marks obtained by the student in this topic.</li>
-                    <li><strong>Maximum Marks:</strong> The highest possible marks for this topic.</li>
-                    <li><strong>Your Test %:</strong> The percentage score achieved in the topic.</li>
-                    <li><strong>Remark:</strong> A brief comment on performance in the topic.</li>
-                    <li><strong>Avg Test%:</strong> The average test percentage for all students.</li>
-                    <li><strong>Average Marks:</strong> The average marks obtained by all students in this topic.</li>
-                </ul>
-            </div>
-            <div class="generic-content">
-                <h3>About This Report Card</h3>
-                <p>This report card reflects the performance of ${studentName} in the conducted tests. It highlights strengths and areas for improvement, providing a comparative analysis with peers.</p>
-                <p>Keep working hard and striving for excellence. Remember, every effort counts!</p>
-            </div>
-        </div>
-    </body>
-    </html>`;
-    
-    
-
+    const reportHtml = ``;
+   
     // Launch Puppeteer
     browser = await puppeteer.launch({
       headless: 'new',
@@ -1838,7 +1688,7 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
        topics,
         _id: response._id,
         name: response.studentId.FirstName + " " + response.studentId.LastName,
-        overallPercentage,
+        overallPercentage: response.percentage || overallPercentage,
         totalStudentMarks,
         totalMaximumMarks,
       };
@@ -1906,10 +1756,491 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
 
 });
 
+
+
+// const generateReportForCollege = catchAsyncErrors(async (req, res, next) => {
+
+//   const test = await Assessments.findById(req.params.id).populate([
+//     {
+//       path: 'selectedStudents',
+//       select: 'status studentId timeTaken percentage'
+//     },
+//     {
+//       path: 'rejectedStudents',
+//       select: 'status studentId timeTaken percentage'
+//     },
+//     {
+//       path: 'invitedStudents',
+//       select: 'status studentId timeTaken percentage'
+//     }
+//   ]);
+  
+//   let selectedStudents = test.selectedStudents;
+//   let pendingStudents = test.invitedStudents.filter(student => student.status === "pending"); 
+//   let rejectedStudents = test.rejectedStudents;
+
+
+
+
+
+//   selectedStudents.sort((a, b) => b.percentage - a.percentage);
+//   pendingStudents.sort((a, b) => b.percentage - a.percentage);
+//   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
+
+
+//   const topStudents = selectedStudents.slice(0, 3);
+//   const topAveragePercentage =
+//     selectedStudents.reduce((sum, student) => sum + student.percentage, 0) / selectedStudents.length || 0;
+
+//   console.log(selectedStudents);
+//   // Your HTML template for the report
+//   const reportHtml = `
+//     <html>
+//     <head>
+//       <title>College Report</title>
+//     </head>
+//     <body>
+//       <h1>College Report ${test.name}</h1>
+//       <p>Top Average Percentage: ${topAveragePercentage.toFixed(2)}%</p>
+//       <h2>Top 3 Students</h2>
+//       <ul>
+//         ${topStudents.map(student => `<li>${student.name} - ${student.percentage}%</li>`).join('')}
+//       </ul>
+//     </body>
+//     </html>
+//   `;
+
+//   // Launch Puppeteer
+//   const browser = await puppeteer.launch({
+//     headless: true,
+//     args: ['--no-sandbox'],
+//   });
+//   const page = await browser.newPage();
+
+//   // Set content and wait for full page load
+//   await page.setContent(reportHtml, { waitUntil: 'domcontentloaded' });
+
+//   // Generate PDF
+//   const pdfBuffer = await page.pdf({
+//     format: 'A4',
+//     printBackground: true,
+//     margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+//   });
+
+//   // Close the browser
+//   await browser.close();
+
+//   // Save PDF locally
+//   const pdfFilePath = path.join(__dirname, 'reports', `college-report-${test._id}.pdf`);
+//   fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true }); // Ensure the directory exists
+//   fs.writeFileSync(pdfFilePath, pdfBuffer);
+//   console.log(selectedStudents);
+//   return res.status(200).json({
+//     success: true,
+//     message: 'PDF generated and saved successfully.',
+//     filePath: pdfFilePath, // Optional: Return the path for debugging or further usage
+//     selectedStudents,
+//     pendingStudents:pendingStudents.length,
+//     rejectedStudents,
+//     // totalStudents:studentResponses.length,
+//   });
+// });
+
+
+const generateReportForCollege = catchAsyncErrors(async (req, res, next) => {
+  const test = await Assessments.findById(req.params.id).populate([
+    {
+      path: 'selectedStudents',
+      select: 'status studentId timeTaken percentage topics',
+    },
+    {
+      path: 'rejectedStudents',
+      select: 'status studentId timeTaken percentage topics',
+    },
+    {
+      path: 'studentResponses',
+      match: { status: "pending" }, // Filter to include only pending responses
+      select: 'status studentId timeTaken percentage topics',
+    },
+  ]);
+  
+  let selectedStudents = test.selectedStudents;
+  let pendingStudents = test.studentResponses;
+  let rejectedStudents = test.rejectedStudents;
+  console.log(test);
+
+  selectedStudents.sort((a, b) => b.percentage - a.percentage);
+  pendingStudents.sort((a, b) => b.percentage - a.percentage);
+  rejectedStudents.sort((a, b) => b.percentage - a.percentage);
+
+  const topStudents = selectedStudents.slice(0, 3);
+  const topAveragePercentage = selectedStudents.reduce((sum, student) => sum + student.percentage, 0) / selectedStudents.length || 0;
+
+  // Calculate statistics for the donut chart
+  const totalEvaluated = selectedStudents.length + rejectedStudents.length + pendingStudents.length;
+  const industryReady = selectedStudents.filter(s => s.percentage >= 25).length;
+  const needsPractice = selectedStudents.filter(s => s.percentage >= 10 && s.percentage < 25).length;
+  const needsTraining = totalEvaluated - industryReady - needsPractice;
+
+  // Generate the report HTML with the provided template
+  const reportHtml =`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${test.name} - Assessment Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        .svg-circle {
+    width: 300px;
+    height: 300px;
+}
+
+
+        body {
+            background: white;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+        }
+
+        .container {
+            padding: 20mm;
+            max-width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .header {
+            border-left: 4px solid #c41e3a;
+            padding-left: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .header h2 {
+            font-size: 18px;
+            color: #555;
+            font-weight: normal;
+            margin-bottom: 8px;
+        }
+
+        .header h3 {
+            color: #2b579a;
+            font-size: 16px;
+        }
+
+        .header p {
+            color: #666;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .circles-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+        }
+
+        .circle-wrapper {
+            text-align: center;
+        }
+
+        .svg-circle {
+            width: 120px;
+            height: 120px;
+        }
+
+        .circle-text h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .circle-text p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .columns {
+            display: flex;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .column h3 {
+            color: #333;
+            font-size: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #c41e3a;
+            margin-bottom: 12px;
+        }
+
+        .column ul li {
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20mm;
+            left: 20mm;
+            right: 20mm;
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        /* Chart styles */
+        .chart-container {
+            width: 300px;
+            margin: 2rem auto;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .legend {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .legend-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .legend-number {
+            font-weight: bold;
+        }
+    </style>
+    <!-- Include Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>${test.name}</h1>
+            <h2>${test.description || 'Assessment Report'}</h2>
+            <h3>${test.categoryName || 'Assessment Category'}</h3>
+            <p>Test executed on ${new Date(test.startDate).toLocaleDateString()}</p>
+        </div>
+
+        <!-- Circles Section -->
+        <div class="circles-container">
+            <div class="circle-wrapper">
+                <svg class="svg-circle">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#c41e3a" stroke-width="3"></circle>
+                </svg>
+                <div class="circle-text">
+                    <h2>${selectedStudents.length}</h2>
+                    <p>Selected</p>
+                </div>
+            </div>
+            <div class="circle-wrapper">
+                <svg class="svg-circle">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#c41e3a" stroke-width="3"></circle>
+                </svg>
+                <div class="circle-text">
+                    <h2>${totalEvaluated}</h2>
+                    <p>Attempts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columns Section -->
+        <div class="columns">
+            <div class="column">
+                <h3>Assessment Details</h3>
+                <ul>
+                    <li>Total Time: ${test.totalTime} minutes</li>
+                    <li>Total Marks: ${test.totalMarks}</li>
+                    <li>Total Questions: ${test.totalQuestionsCount}</li>
+                    <li>Level: ${test.level}</li>
+                    <li>Type: ${test.type}</li>
+                </ul>
+            </div>
+            <div class="column">
+                <h3>Topics Covered</h3>
+                <ul>
+                    ${test.topics.map(topic => `<li>${topic.Heading}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-container">
+            <canvas id="donutChart"></canvas>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4CAF50;"></div>
+                <span class="legend-label">Industry Ready <span class="legend-number">${industryReady}</span></span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFA726;"></div>
+                <span class="legend-label">Needs Practice <span class="legend-number">${needsPractice}</span></span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #757575;"></div>
+                <span class="legend-label">Needs Training <span class="legend-number">${needsTraining}</span></span>
+            </div>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="footer">
+            <p>Private and Confidential</p>
+            <p>© ${new Date().getFullYear()} Assessment Report</p>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the document to load and then initialize the chart
+   window.onload = function() {
+    var ctx = document.getElementById('donutChart').getContext('2d');
+    var donutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Industry Ready', 'Needs Practice', 'Needs Training'],
+            datasets: [{
+                data: [${industryReady}, ${needsPractice}, ${needsTraining}],
+                backgroundColor: ['#4CAF50', '#FFA726', '#757575'],
+                hoverBackgroundColor: ['#45a049', '#ff9c20', '#707070']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            return tooltipItem.raw;
+                        }
+                    }
+                }
+            },
+            cutout: "80%"
+        },
+        // Improve resolution for high-DPI screens
+        plugins: [{
+            beforeRender: function(chart) {
+                var canvas = chart.canvas;
+                var ctx = canvas.getContext('2d');
+                canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+                canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            }
+        }]
+    });
+};
+
+    </script>
+</body>
+</html>
+`;
+
+  // Launch Puppeteer and generate PDF
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox'],
+  });
+  const page = await browser.newPage();
+
+  await page.setContent(reportHtml, { waitUntil: 'load' });
+  await page.waitForSelector('#donutChart');  // Ensure the canvas is loaded
+  await page.evaluate(() => {
+    return new Promise(resolve => {
+        setTimeout(resolve, 2000); // Adjust to match your animation duration
+    });
+});
+await page.setViewport({ width: 1920, height: 1080 });
+
+  const pdfBuffer = await page.pdf({
+    format: 'A4',
+    printBackground: true,
+    margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+  });
+
+  await browser.close();
+
+  // Save PDF locally
+  const pdfFilePath = path.join(__dirname, 'reports', `assessment-report-${test._id}.pdf`);
+  fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true });
+  fs.writeFileSync(pdfFilePath, pdfBuffer);
+
+  return res.status(200).json({
+    success: true,
+   
+    message: 'PDF generated and saved successfully.',
+    filePath: pdfFilePath,
+    selectedStudents,
+    pendingStudents: pendingStudents,
+    rejectedStudents,
+  });
+});
+
 const now = new Date();
 const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
 module.exports = {
+  generateReportForCollege,
   generateStudentReportPdf,
   generateReport,
   getResultGraph,
