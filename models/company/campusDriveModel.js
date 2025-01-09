@@ -3,6 +3,27 @@ const studentResponse = require('../student/studentResponse');
 
 const campusDriveSchema = new mongoose.Schema({
 
+    name : {
+        type: String,
+        required: true
+    },
+    description : {
+        type: String,
+        required: true
+    },
+
+    coverPhoto :{
+        public_id: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+          file_name: {
+            type: String,
+          },
+    },
+
     company: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Company',

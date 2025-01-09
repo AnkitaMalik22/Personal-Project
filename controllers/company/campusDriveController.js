@@ -5,25 +5,38 @@ const CampusDrive = require("../../models/company/campusDriveModel");
 const College = require("../../models/college/collegeModel");
 const Student = require("../../models/student/studentModel");
 const Assessment = require("../../models/college/assessment/assessments");
-const StudentResponse = require("../../models/student/studentResponseModel");
+const StudentResponse = require("../../models/student/studentResponse");
 const sendToken = require("../../utils/jwtToken");
 const sendEmail = require("../../utils/sendEmail");
+const mongoose = require("mongoose");
 
 
 
 // Create a new campus drive
 // Route: /api/company/campusdrive/new
 exports.newCampusDrive = catchAsyncErrors(async (req, res, next) => {
-  const company = await Company.findById(req.user.id);
+ try{
+    const company = await Company.findById(req.user.id);
     if (!company) {
         return next(new ErrorHandler("Company not found", 404));
     }
     req.body.company = req.user.id;
     const campusDrive = await CampusDrive.create(req.body);
+
+    company.campusDrives.push(campusDrive._id);
+
+    await company.save();
+
+
+
     res.status(200).json({
         success: true,
         campusDrive,
     });
+ }
+ catch(err){
+     console.log(err);
+ }
 })
 
 // Get all campus drives of a company
@@ -34,21 +47,21 @@ const userRole = req.user.role;
 const user = req.user;
 let campusDrives;
 
-if (userRole === 'company') {
+console.log(userRole); //printing company
+
+if (userRole == 'company') {
     const company = await Company.findById(req.user.id).populate('campusDrives');
     if (!company) {
         return next(new ErrorHandler("Company not found", 404));
     }
     campusDrives = company.campusDrives;
-}
-if(userRole === 'college') {
+} else if(userRole == 'college') {
     const college = await College.findById(req.user.id).populate('campusDrives');
     if (!college) {
         return next(new ErrorHandler("College not found", 404));
     }
     campusDrives = college.campusDrives;
-}
-else {
+} else {
     return next(new ErrorHandler("You are not authorized to access this route", 401));
 }
 
@@ -259,6 +272,56 @@ exports.getStudentResponses = catchAsyncErrors(async (req, res, next) => {
     });
 });
 
+
+
+// @get colleges of a campus drive - with status that test assigned or not
+// Route: /api/company/campusdrive/:id/colleges
+
+exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return next(new ErrorHandler("Invalid campus drive ID", 400));
+    }
+
+    // Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const campusDrive = await CampusDrive.findById(req.params.id)
+    .populate({
+        path: 'colleges',
+        select: 'name email phone address tests',
+        populate: {
+            path: 'tests',
+            select: 'name status'
+        }
+    });
+
+    if (!campusDrive) {
+        return next(new ErrorHandler("Campus drive not found", 404));
+    }
+
+    const allColleges = await College.find().skip(skip).limit(limit);
+    const totalColleges = await College.countDocuments();
+
+    const colleges = allColleges.filter(college => 
+        !campusDrive.colleges.some(campusCollege => 
+            campusCollege._id.toString() === college._id.toString()
+        )
+    );
+
+    res.status(200).json({
+        success: true,
+        colleges,
+        pagination: {
+            totalColleges,
+            currentPage: page,
+            totalPages: Math.ceil(totalColleges / limit),
+            limit
+        }
+    });
+});
 
 
 

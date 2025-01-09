@@ -33,6 +33,7 @@ module.exports = (app) => {
   app.use("/api/student/graph", studentGraphRoutes);
   app.use("/api/company", companyRoutes);
   app.use("/api/company/test", companyTestRoutes);
+  app.use("/api/company/campus-drive", require("../routes/company/campusDriveRoutes.js"));``
   app.use("/api/admin", adminTestRoutes);
   app.use("/api/admin/category", require("../routes/admin/categoryRoutes.js"));
   app.use("/api/admin/approval", require("../routes/admin/approvalRoutes.js"));
