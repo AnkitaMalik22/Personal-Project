@@ -244,6 +244,13 @@ const collegeSchema = new mongoose.Schema({
       ref: 'Job',
     }
   ],
+  // location
+  Country: String,
+  State: String,
+  City: String,
+  ZipCode: String,
+  Region: String,
+  University: String,
 },
 {
   timestamps: true,

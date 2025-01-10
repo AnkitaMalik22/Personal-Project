@@ -70,6 +70,7 @@ const { authenticateMultiDatabase } = require("../../middlewares/authMultiUser")
 
 router.get("/publish-report/:id",assessmentsController.generateReport);
 router.get("/report/pdf/:id",assessmentsController.generateStudentReportPdf);
+router.get("/report/college/:id",assessmentsController.generateReportForCollege);
 
 router.post("/question/image",questionsController.uploadQuestionImage);
 
