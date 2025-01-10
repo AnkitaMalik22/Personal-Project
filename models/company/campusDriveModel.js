@@ -1,7 +1,8 @@
-const  mongoose = require('mongoose');
-const studentResponse = require('../student/studentResponse');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const campusDriveSchema = new mongoose.Schema({
+
+const CampusDriveSchema = new Schema({
 
     name : {
         type: String,
@@ -24,14 +25,14 @@ const campusDriveSchema = new mongoose.Schema({
           },
     },
 
-    company: {
-        type: mongoose.Schema.Types.ObjectId,
+    company:{ 
+        type: Schema.Types.ObjectId,
         ref: 'Company',
         required: true
     },
     colleges : [
         {
-            type: mongoose.Schema.Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: 'College'
         }
     ],
@@ -39,17 +40,17 @@ const campusDriveSchema = new mongoose.Schema({
     tests : [
         {
             test : {
-                type: mongoose.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: 'Assessments'
             },
             assignedTo : {
-                type: mongoose.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: 'College'
             },
             students :[
                 {
                   student : {
-                        type: mongoose.Schema.Types.ObjectId,
+                        type: Schema.Types.ObjectId,
                         ref: 'Student'
                     },
                     status : {
@@ -60,7 +61,7 @@ const campusDriveSchema = new mongoose.Schema({
                         type: Number
                     },
                     studentResponse : {
-                        type : mongoose.Schema.Types.ObjectId,
+                        type : Schema.Types.ObjectId,
                         ref : 'StudentResponse'
                     }
 
@@ -95,5 +96,4 @@ const campusDriveSchema = new mongoose.Schema({
 // });
 
 
-module.exports = mongoose.model('CampusDrive', campusDriveSchema);
-
+module.exports = mongoose.model('CampusDrive', CampusDriveSchema);
