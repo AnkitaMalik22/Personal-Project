@@ -11,6 +11,7 @@ const {
     removeCollegesFromCampusDrive,
     addStudentsToCampusDrive,
     removeStudentsFromCampusDrive,
+    assignTestToCampusDrive
  
 } = require('../../controllers/company/campusDriveController');
 const { isAuthenticatedCompany } = require('../../middlewares/companyAuth');
@@ -21,13 +22,16 @@ const { getCollegeCampusDrives } = require('../../controllers/college/campusDriv
 // Campus Drive CRUD Routes
 router.post('/create', isAuthenticatedCompany, newCampusDrive);
 router.get('/get', isAuthenticatedCompany, getCampusDrives);
-router.get('/:id', isAuthenticatedCompany, getCampusDrive);
+router.get('/:id', authenticateMultiDatabase, getCampusDrive);
 router.put('/:id', isAuthenticatedCompany, updateCampusDrive);
 router.delete('/:id', isAuthenticatedCompany, deleteCampusDrive);
 
 // College Management Routes
 router.get('/:id/colleges', isAuthenticatedCompany, getCollegesForCampusDrive);
 router.post('/v1/colleges/add/:id', isAuthenticatedCompany, addCollegesToCampusDrive);
+
+// Test Management Routes
+router.post('/v1/assignTest/:id', isAuthenticatedCompany, assignTestToCampusDrive);
 
 
 router.get('/get/college',isAuthenticatedCollege,getCollegeCampusDrives);

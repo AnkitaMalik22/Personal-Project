@@ -232,5 +232,7 @@ const Assessments = mongoose.model("Assessments", assessmentsSchema);
 assessmentsSchema.index({ company: 1 });
 assessmentsSchema.index({ createdByCompany: 1 });
 assessmentsSchema.index({ college: 1 });
+// Add index for campusDrive field
+assessmentsSchema.index({ campusDrive: 1 });
 
 module.exports = Assessments;

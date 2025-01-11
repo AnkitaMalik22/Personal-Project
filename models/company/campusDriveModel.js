@@ -13,16 +13,9 @@ const CampusDriveSchema = new Schema({
         required: true
     },
 
-    coverPhoto :{
-        public_id: {
-            type: String,
-          },
-          url: {
-            type: String,
-          },
-          file_name: {
-            type: String,
-          },
+    coverPhoto : {
+        type: String,
+        default: 'https://via.placeholder.com/150'
     },
 
     company:{ 
@@ -37,16 +30,22 @@ const CampusDriveSchema = new Schema({
         }
     ],
 
+    testsAssignedColleges : [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'College'
+        }],
+
     tests : [
         {
             test : {
                 type: Schema.Types.ObjectId,
                 ref: 'Assessments'
             },
-            assignedTo : {
+            assignedTo :[ {
                 type: Schema.Types.ObjectId,
                 ref: 'College'
-            },
+            }],
             students :[
                 {
                   student : {
@@ -63,7 +62,11 @@ const CampusDriveSchema = new Schema({
                     studentResponse : {
                         type : Schema.Types.ObjectId,
                         ref : 'StudentResponse'
-                    }
+                    },
+                    collegeId : {
+                        type: Schema.Types.ObjectId,
+                        ref: 'College'
+                    },
 
                 }
             ]

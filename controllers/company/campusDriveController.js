@@ -7,6 +7,7 @@ const Student = require("../../models/student/studentModel");
 const Assessment = require("../../models/college/assessment/assessments");
 const StudentResponse = require("../../models/student/studentResponse");
 const sendEmail = require("../../utils/sendEmail");
+const { sendMailForTestAdded } = require("../../utils/constants/emailMessagesConstants");
 // const uploadToCloud = require("../../utils/uploadToCloud");
 
 // Create a new campus drive
@@ -19,15 +20,15 @@ exports.newCampusDrive = catchAsyncErrors(async (req, res, next) => {
     }
     req.body.company = req.user.id;
 
-    let coverPhoto = {};
-    if (req.file) {
-      const uploadedFile = await uploadToCloud(req.file.path); // Replace with your actual upload logic
-      coverPhoto = {
-        public_id: uploadedFile.public_id,
-        url: uploadedFile.secure_url,
-        file_name: req.file.originalname,
-      };
-    }
+    let coverPhoto = company?.basic?.coverPhoto;
+    // if (req.file) {
+    //   const uploadedFile = await uploadToCloud(req.file.path); // Replace with your actual upload logic
+    //   coverPhoto = {
+    //     public_id: uploadedFile.public_id,
+    //     url: uploadedFile.secure_url,
+    //     file_name: req.file.originalname,
+    //   };
+    // }
 
     const campusDrive = await CampusDrive.create({
       ...req.body,
@@ -87,10 +88,28 @@ exports.getCampusDrives = catchAsyncErrors(async (req, res, next) => {
 // Route: /api/company/campusdrive/:id
 
 exports.getCampusDrive = catchAsyncErrors(async (req, res, next) => {
-  const campusDrive = await CampusDrive.findById(req.params.id);
+  const campusDrive = await CampusDrive.findById(req.params.id)
+    .populate({ 
+      path: 'colleges', 
+      select: 'CollegeName Email Phone Address avatar _id' 
+    })
+    .populate({
+      path: 'tests.test', 
+      select: 'name totalTime totalMarks'
+    })
+    .populate({
+      path: 'tests.students.studentResponse', 
+      select: 'status score'
+    })
+    .populate({
+      path: 'tests.assignedTo',  // Fixed path from test.assignedTo to tests.assignedTo
+      select: 'CollegeName Email Phone Address avatar _id'
+    });
+
   if (!campusDrive) {
     return next(new ErrorHandler("Campus drive not found", 404));
   }
+
   res.status(200).json({
     success: true,
     campusDrive,
@@ -134,9 +153,13 @@ exports.deleteCampusDrive = catchAsyncErrors(async (req, res, next) => {
     await assessments[i].deleteOne();
   }
   // remove from college and company
-  const college = await College.findById(campusDrive.assignedTo);
+
+for (let i = 0; i < campusDrive.colleges.length; i++) {
+  const college = await College.findById(campusDrive.assignedTo[i]);
+
   college.campusDrives.pull(req.params.id);
   await college.save();
+}
   const company = await Company.findById(campusDrive.company);
   company.campusDrives.pull(req.params.id);
   await company.save();
@@ -169,148 +192,7 @@ exports.addCollegesToCampusDrive = catchAsyncErrors(async (req, res, next) => {
       college.campusDrives.push(req.params.id);
       await college.save();
 
-      sendEmail({
-        email: college.Email,
-        subject: `Campus Drive Invitation from ${campusDrive.company.basic.companyName}`,
-        html: `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Campus Drive Invitation</title>
-                <style>
-                    :root {
-                        --primary-color: #6eb9be;
-                        --primary-dark: #0D9AAC;
-                        --text-color: #333;
-                        --background-color: #F1F4F8;
-                        --container-bg: #ffffff;
-                        --border-color: #e0e0e0;
-                    }
-            
-                    body {
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        color: var(--text-color);
-                        background-color: var(--background-color);
-                        margin: 0;
-                        padding: 0;
-                    }
-            
-                    .container {
-                        max-width: 600px;
-                        margin: 40px auto;
-                        padding: 40px;
-                        border: 1px solid var(--border-color);
-                        border-radius: 12px;
-                        background-color: var(--container-bg);
-                    }
-            
-                    .logo {
-                        display: block;
-                        width: 120px;
-                        margin: 0 auto 30px;
-                    }
-            
-                    .header {
-                        font-size: 24px;
-                        font-weight: bold;
-                        margin-bottom: 20px;
-                        color: var(--primary-dark);
-                    }
-            
-                    h3 {
-                        color: var(--primary-dark);
-                        margin-top: 30px;
-                    }
-            
-                    .button {
-                        display: inline-block;
-                        margin: 20px 0;
-                        padding: 12px 24px;
-                        color: white;
-                        background-color: var(--primary-color);
-                        text-decoration: none;
-                        border-radius: 5px;
-                        font-size: 16px;
-                        font-weight: bold;
-                    }
-            
-                    .footer {
-                        margin-top: 40px;
-                        padding-top: 20px;
-                        border-top: 1px solid var(--border-color);
-                        font-size: 14px;
-                        color: #555;
-                    }
-            
-                    ul {
-                        padding-left: 20px;
-                    }
-            
-                    li {
-                        margin-bottom: 10px;
-                    }
-            
-                    @media (max-width: 768px) {
-                        .container {
-                            padding: 20px;
-                            margin: 20px auto;
-                        }
-                        
-                        .logo {
-                            width: 100px;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <img class="logo" src="https://shorturl.at/gtQFu" alt="Skill Access Logo">
-                    
-                    <div class="header">Campus Drive Invitation</div>
-              
-                    <p>Dear ${college.CollegeName},</p>
-                    
-                    <p>
-                        We are thrilled to invite your institution to participate in the campus drive organized by 
-                        <strong>${campusDrive.company.basic.companyName}</strong>. This is an incredible opportunity 
-                        for your students to connect with a top organization and showcase their talents.
-                    </p>
-                    
-                    <h3>Access the Details</h3>
-            
-                    <p>
-                        Log in to your <strong>Skill Access</strong> account using the link below to view the details of the campus drive:
-                    </p>
-            
-                    <a href=${process.env.FRONTEND_URL} class="button">View Campus Drive</a>
-                    
-                    <p>
-                        If the button doesn't work, copy and paste this link into your browser: 
-                        <a href=${process.env.FRONTEND_URL}>${process.env.FRONTEND_URL}</a>
-                    </p>
-            
-                    <h3>Why Participate?</h3>
-                    <ul>
-                        <li>Provide your students with an opportunity to engage with a leading organization.</li>
-                        <li>Help your institution stand out by fostering industry connections.</li>
-                    </ul>
-              
-                    <p>
-                        If you have any questions or need assistance, feel free to contact our support team at 
-                        <a href="mailto:testskillacess@gmail.com">testskillacess@gmail.com</a>.
-                    </p>
-              
-                    <div class="footer">
-                        Best regards,<br>
-                        Skill Access Team
-                    </div>
-                </div>
-            </body>
-            </html>
-            `,
-      });
+   
     }
     await campusDrive.save();
     res.status(200).json({
@@ -329,41 +211,89 @@ exports.addCollegesToCampusDrive = catchAsyncErrors(async (req, res, next) => {
 // Route: /api/company/campusdrive/:id/test
 
 exports.assignTestToCampusDrive = catchAsyncErrors(async (req, res, next) => {
-  const campusDrive = await CampusDrive.findById(req.params.id);
-  const college = await College.findById(req.body.college);
-  if (!campusDrive) {
-    return next(new ErrorHandler("Campus drive not found", 404));
-  }
-  const assessment = await Assessment.findById(req.body.test);
-  if (!assessment) {
-    return next(new ErrorHandler("Assessment not found", 404));
-  }
+    try {
+        const campusDrive = await CampusDrive.findById(req.params.id)
+            .populate('company', 'basic.companyName');
+        const colleges = req.body.colleges;
+        const testId = req.body.test;
+        let failed = {};
 
-  assessment.campusDrive = req.params.id;
+        if (!campusDrive) {
+            return next(new ErrorHandler("Campus drive not found", 404));
+        }
 
-  campusDrive.tests.push({
-    test: req.body.test,
-    assignedTo: college._id,
-    students: [],
-  });
+        // Find assessment
+        const assessment = await Assessment.findById(testId);
+        if (!assessment) {
+            return next(new ErrorHandler("Assessment not found", 404));
+        }
 
-  college.campusDrives.push(req.params.id);
+        // Update assessment
+        assessment.campusDrive = req.params.id;
+        assessment.status = 'assigned';
+        await assessment.save();
 
-  // for (let i = 0; i < college.students.length; i++) {
-  //     const student = await Student.findById(college.students[i]);
-  //     campusDrive.tests[0].students.push({
-  //         student: college.students[i],
-  //         status: "pending",
-  //     });
-  //     await campusDrive.tests[0].save();
-  // }
-  await assessment.save();
-  await college.save();
-  await campusDrive.save();
-  res.status(200).json({
-    success: true,
-    message: "Test assigned successfully",
-  });
+        // Process each college
+        for (let i = 0; i < colleges.length; i++) {
+            try {
+                const college = await College.findById(colleges[i]);
+                if (!college) {
+                    failed[colleges[i]] = "College not found";
+                    continue;
+                }
+
+                // Check for duplicate assignment
+                const isTestAssigned = campusDrive.tests.some(
+                    test => test.assignedTo.toString() === colleges[i] && 
+                    test.test.toString() === testId
+                );
+
+                if (isTestAssigned) {
+                    failed[colleges[i]] = "Test already assigned";
+                    continue;
+                }
+
+                // Add test to campus drive
+                campusDrive.tests.push({
+                    test: testId,
+                    assignedTo: colleges[i],
+                    students: []
+                });
+
+                // Send email notification
+                await sendEmail({
+                    email: college.Email,
+                    subject: `New Test Added for ${campusDrive.name} Campus Drive`,
+                    html: sendMailForTestAdded(
+                        {
+                            _id: campusDrive._id,
+                            driveName: campusDrive.name
+                        },
+                        'college',
+                        college,
+                        assessment
+                    ).html
+                });
+
+            } catch (error) {
+                failed[colleges[i]] = error.message;
+                console.error(`Error processing college ${colleges[i]}:`, error);
+            }
+        }
+
+        await campusDrive.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Test assigned successfully",
+            failed: Object.keys(failed).length > 0 ? failed : undefined,
+            assessment: assessment._id
+        });
+
+    } catch (error) {
+        console.error("Error assigning test:", error);
+        return next(new ErrorHandler(error.message, 500));
+    }
 });
 
 // Get all students of a college for a campus drive
