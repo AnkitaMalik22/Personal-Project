@@ -142,7 +142,7 @@ exports.getAllJobTestsByCompany = catchAsyncErrors(async (req, res, next) => {
  const companyId = req.user.id;
 //  console.log("----------------------called----------------------");
 
-    const jobs = await Job.find({ company: companyId }).populate
+    const jobs = await Job.find({ company: companyId })
 
     const tests = jobs.map(job => job.assessments.map(assessment => assessment.test));
 
