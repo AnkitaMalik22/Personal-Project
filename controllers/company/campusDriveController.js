@@ -7,7 +7,9 @@ const Student = require("../../models/student/studentModel");
 const Assessment = require("../../models/college/assessment/assessments");
 const StudentResponse = require("../../models/student/studentResponse");
 const sendEmail = require("../../utils/sendEmail");
-const { sendMailForTestAdded } = require("../../utils/constants/emailMessagesConstants");
+const {
+  sendMailForTestAdded,
+} = require("../../utils/constants/emailMessagesConstants");
 // const uploadToCloud = require("../../utils/uploadToCloud");
 
 // Create a new campus drive
@@ -89,17 +91,17 @@ exports.getCampusDrives = catchAsyncErrors(async (req, res, next) => {
 
 exports.getCampusDrive = catchAsyncErrors(async (req, res, next) => {
   let campusDrive = await CampusDrive.findById(req.params.id)
-    .populate({ 
-      path: 'colleges', 
-      select: 'CollegeName Email Phone Address avatar _id' 
+    .populate({
+      path: "colleges",
+      select: "CollegeName Email Phone Address avatar _id",
     })
     .populate({
-      path: 'tests.test', 
-      select: 'name totalTime totalMarks'
+      path: "tests.test",
+      select: "name totalTime totalMarks",
     })
     .populate({
-      path: 'tests.assignedTo',
-      select: 'CollegeName Email avatar _id'
+      path: "tests.assignedTo",
+      select: "CollegeName Email avatar _id",
     });
 
   if (!campusDrive) {
@@ -107,56 +109,48 @@ exports.getCampusDrive = catchAsyncErrors(async (req, res, next) => {
   }
 
   // If user is college, filter tests assigned to them
-  if (req.user.role === 'college') {
-    const collegeTests = campusDrive.tests.filter(test => 
-      test.assignedTo.some(college => college._id.toString() === req.user.id)
+  if (req.user.role === "college") {
+    const collegeTests = campusDrive.tests.filter((test) =>
+      test.assignedTo.some((college) => college._id.toString() === req.user.id)
     );
 
-  let test = await Assessment.findById(collegeTests[0].test)
-    .populate('invitedStudents', 'FirstName LastName Email Phone avatar')
-    .populate('studentResponses', 'studentId status percentage totalMarks')
-    .select('name totalTime totalMarks invitedStudents studentResponses');
-
-  
+    for (let i = 0; i < collegeTests.length; i++) {
+      let test = await Assessment.findById(collegeTests[i].test)
+        .populate("invitedStudents", "FirstName LastName Email Phone avatar")
+        .populate("studentResponses", "studentId status percentage totalMarks")
+        .select("name totalTime totalMarks invitedStudents studentResponses");
+      campusDrive.tests[i].test = test;
+    }
     campusDrive = {
       ...campusDrive._doc,
-      tests: [
-        {
-          test,
-          assignedTo: collegeTests[0].assignedTo,
-          students: collegeTests[0].students,
-        }
-      ],
-      colleges: [{ _id: req.user.id }]
+      colleges: [{ _id: req.user.id }],
     };
-  }else{
+  } else {
+    //  get all invited students for  per test
+    // get all studentResponses for per test
+    // add to the test object
 
-  //  get all invited students for  per test
-  // get all studentResponses for per test
-  // add to the test object
+    for (let i = 0; i < campusDrive.tests.length; i++) {
+      let test = await Assessment.findById(campusDrive.tests[i].test)
+        .populate({
+          path: "invitedStudents",
+          select: "FirstName LastName Email Phone avatar",
+        })
+        .populate({ path: "studentResponses", select: "studentId status" })
+        .select("name totalTime totalMarks invitedStudents");
 
-  for (let i = 0; i < campusDrive.tests.length; i++) {
-    let test = await Assessment.findById(campusDrive.tests[i].test).populate(
-      {
-        path : 'invitedStudents',
-       select : 'FirstName LastName Email Phone avatar'
-      }
-    ).populate({ path: 'studentResponses', select: 'studentId status' }).select('name totalTime totalMarks invitedStudents');
-
-    // combine students and studentResponses
-     campusDrive.tests[i].test = test;
+      // combine students and studentResponses
+      campusDrive.tests[i].test = test;
+    }
   }
-  }
-
 
   res.status(200).json({
     success: true,
-    campusDrive
+    campusDrive,
   });
 });
 
 exports.searchCampusDrive = catchAsyncErrors(async (req, res, next) => {
-
   // const response = await axios.get(
   //   `${REACT_APP_API_URL}/api/company/campus-drive/${driveId}/colleges/search`
   //   , {
@@ -167,12 +161,11 @@ exports.searchCampusDrive = catchAsyncErrors(async (req, res, next) => {
   //   },
   // });
 
-  const campusDrives = await CampusDrive.find()
-    .populate({
-      path: 'colleges',
-      match: { CollegeName: { $regex: req.query.searchTerm, $options: 'i' } },
-      select: 'CollegeName Email Phone Address avatar _id'
-    });
+  const campusDrives = await CampusDrive.find().populate({
+    path: "colleges",
+    match: { CollegeName: { $regex: req.query.searchTerm, $options: "i" } },
+    select: "CollegeName Email Phone Address avatar _id",
+  });
 
   res.status(200).json({
     success: true,
@@ -218,12 +211,12 @@ exports.deleteCampusDrive = catchAsyncErrors(async (req, res, next) => {
   }
   // remove from college and company
 
-for (let i = 0; i < campusDrive.colleges.length; i++) {
-  const college = await College.findById(campusDrive.assignedTo[i]);
+  for (let i = 0; i < campusDrive.colleges.length; i++) {
+    const college = await College.findById(campusDrive.assignedTo[i]);
 
-  college.campusDrives.pull(req.params.id);
-  await college.save();
-}
+    college.campusDrives.pull(req.params.id);
+    await college.save();
+  }
   const company = await Company.findById(campusDrive.company);
   company.campusDrives.pull(req.params.id);
   await company.save();
@@ -255,8 +248,6 @@ exports.addCollegesToCampusDrive = catchAsyncErrors(async (req, res, next) => {
       campusDrive.colleges.push(colleges[i]);
       college.campusDrives.push(req.params.id);
       await college.save();
-
-   
     }
     await campusDrive.save();
     res.status(200).json({
@@ -264,7 +255,6 @@ exports.addCollegesToCampusDrive = catchAsyncErrors(async (req, res, next) => {
       message: "Colleges added successfully",
     });
   } catch (error) {
-
     console.log("ERROR", error);
 
     // return next(new ErrorHandler(error, 500));
@@ -275,89 +265,90 @@ exports.addCollegesToCampusDrive = catchAsyncErrors(async (req, res, next) => {
 // Route: /api/company/campusdrive/:id/test
 
 exports.assignTestToCampusDrive = catchAsyncErrors(async (req, res, next) => {
-    try {
-        const campusDrive = await CampusDrive.findById(req.params.id)
-            .populate('company', 'basic.companyName');
-        const colleges = req.body.colleges;
-        const testId = req.body.test;
-        let failed = {};
+  try {
+    const campusDrive = await CampusDrive.findById(req.params.id).populate(
+      "company",
+      "basic.companyName"
+    );
+    const colleges = req.body.colleges;
+    const testId = req.body.test;
+    let failed = {};
 
-        if (!campusDrive) {
-            return next(new ErrorHandler("Campus drive not found", 404));
+    if (!campusDrive) {
+      return next(new ErrorHandler("Campus drive not found", 404));
+    }
+
+    // Find assessment
+    const assessment = await Assessment.findById(testId);
+    if (!assessment) {
+      return next(new ErrorHandler("Assessment not found", 404));
+    }
+
+    // Update assessment
+    assessment.campusDrive = req.params.id;
+    assessment.status = "assigned";
+    await assessment.save();
+
+    // Process each college
+    for (let i = 0; i < colleges.length; i++) {
+      try {
+        const college = await College.findById(colleges[i]);
+        if (!college) {
+          failed[colleges[i]] = "College not found";
+          continue;
         }
 
-        // Find assessment
-        const assessment = await Assessment.findById(testId);
-        if (!assessment) {
-            return next(new ErrorHandler("Assessment not found", 404));
+        // Check for duplicate assignment
+        const isTestAssigned = campusDrive.tests.some(
+          (test) =>
+            test.assignedTo.toString() === colleges[i] &&
+            test.test.toString() === testId
+        );
+
+        if (isTestAssigned) {
+          failed[colleges[i]] = "Test already assigned";
+          continue;
         }
 
-        // Update assessment
-        assessment.campusDrive = req.params.id;
-        assessment.status = 'assigned';
-        await assessment.save();
-
-        // Process each college
-        for (let i = 0; i < colleges.length; i++) {
-            try {
-                const college = await College.findById(colleges[i]);
-                if (!college) {
-                    failed[colleges[i]] = "College not found";
-                    continue;
-                }
-
-                // Check for duplicate assignment
-                const isTestAssigned = campusDrive.tests.some(
-                    test => test.assignedTo.toString() === colleges[i] && 
-                    test.test.toString() === testId
-                );
-
-                if (isTestAssigned) {
-                    failed[colleges[i]] = "Test already assigned";
-                    continue;
-                }
-
-                // Add test to campus drive
-                campusDrive.tests.push({
-                    test: testId,
-                    assignedTo: colleges[i],
-                    students: []
-                });
-
-                // Send email notification
-                await sendEmail({
-                    email: college.Email,
-                    subject: `New Test Added for ${campusDrive.name} Campus Drive`,
-                    html: sendMailForTestAdded(
-                        {
-                            _id: campusDrive._id,
-                            driveName: campusDrive.name
-                        },
-                        'college',
-                        college,
-                        assessment
-                    ).html
-                });
-
-            } catch (error) {
-                failed[colleges[i]] = error.message;
-                console.error(`Error processing college ${colleges[i]}:`, error);
-            }
-        }
-
-        await campusDrive.save();
-
-        res.status(200).json({
-            success: true,
-            message: "Test assigned successfully",
-            failed: Object.keys(failed).length > 0 ? failed : undefined,
-            assessment: assessment._id
+        // Add test to campus drive
+        campusDrive.tests.push({
+          test: testId,
+          assignedTo: colleges[i],
+          students: [],
         });
 
-    } catch (error) {
-        console.error("Error assigning test:", error);
-        return next(new ErrorHandler(error.message, 500));
+        // Send email notification
+        await sendEmail({
+          email: college.Email,
+          subject: `New Test Added for ${campusDrive.name} Campus Drive`,
+          html: sendMailForTestAdded(
+            {
+              _id: campusDrive._id,
+              driveName: campusDrive.name,
+            },
+            "college",
+            college,
+            assessment
+          ).html,
+        });
+      } catch (error) {
+        failed[colleges[i]] = error.message;
+        console.error(`Error processing college ${colleges[i]}:`, error);
+      }
     }
+
+    await campusDrive.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Test assigned successfully",
+      failed: Object.keys(failed).length > 0 ? failed : undefined,
+      assessment: assessment._id,
+    });
+  } catch (error) {
+    console.error("Error assigning test:", error);
+    return next(new ErrorHandler(error.message, 500));
+  }
 });
 
 // Get all students of a college for a campus drive
@@ -481,4 +472,3 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler(error, 500));
   }
 });
-
