@@ -1,4 +1,4 @@
-require("dotenv").config({ path: "./config/config.env" }); 
+require("dotenv").config({ path: "./config/config.env" });
 
 module.exports = {
   PORT: process.env.PORT || 8080,
@@ -11,6 +11,7 @@ module.exports = {
     "https://app.skillaccess.in",
     "https://student.skillaccess.in",
     "https://admin.skillaccess.in",
+    "*",
 
     // Add other allowed origins here
   ],
