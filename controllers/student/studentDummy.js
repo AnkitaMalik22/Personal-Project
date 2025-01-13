@@ -109,6 +109,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
       path: "studentResponses",
       populate: {
         path: "studentId",
+        select: "FirstName LastName Email avatar",
       },
     })
     .populate({
@@ -119,49 +120,19 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
       path: "rejectedStudents",
       // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
     });
-    console.log(testSections)
-  // .populate({
-  //     path: "students",
-  //     populate: {
-  //       path: "studentId",
-  //     }
-  //   })
-  // console.log(testSections, "testSections");
 
-  // Fetch all students
-  // const allStudents = await Student.find();
-
-  // Iterate over each student response and add it to the respective student
-  // const populatedStudents = allStudents.map((student) => {
-  //   const response = testSections.studentResponses.find(
-  //     (response) => response.studentId.toString() === student._id.toString()
-  //   );
-  //   //    console.log(response._id, "response");
-
-  //   if (response) {
-  //     // Add the response to the student object
-  //     student.response = response;
-  //   } else {
-  //     // If no response found, set it to null or an empty object
-  //     student.response = null; // or {}
-  //   }
-
-  //   return student;
-  // });
 
   res.status(200).json({
     success: true,
     // appeared students
     // students: populatedStudents,
-    students: testSections.studentResponses,
+    students: testSections?.studentResponses,
     // selected students
-    selectStudents: testSections.selectedStudents
+    selectStudents: testSections?.selectedStudents
       ? testSections.selectedStudents
       : [],
     // rejected students
-    rejectedStudents: testSections.rejectedStudents
-      ? testSections.rejectedStudents
-      : [],
+    rejectedStudents: testSections?.rejectedStudents ? testSections.rejectedStudents : [],
   });
 });
 

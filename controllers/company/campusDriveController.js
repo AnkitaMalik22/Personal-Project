@@ -88,7 +88,7 @@ exports.getCampusDrives = catchAsyncErrors(async (req, res, next) => {
 // Route: /api/company/campusdrive/:id
 
 exports.getCampusDrive = catchAsyncErrors(async (req, res, next) => {
-  const campusDrive = await CampusDrive.findById(req.params.id)
+  let campusDrive = await CampusDrive.findById(req.params.id)
     .populate({ 
       path: 'colleges', 
       select: 'CollegeName Email Phone Address avatar _id' 
@@ -98,21 +98,85 @@ exports.getCampusDrive = catchAsyncErrors(async (req, res, next) => {
       select: 'name totalTime totalMarks'
     })
     .populate({
-      path: 'tests.students.studentResponse', 
-      select: 'status score'
-    })
-    .populate({
-      path: 'tests.assignedTo',  // Fixed path from test.assignedTo to tests.assignedTo
-      select: 'CollegeName Email Phone Address avatar _id'
+      path: 'tests.assignedTo',
+      select: 'CollegeName Email avatar _id'
     });
 
   if (!campusDrive) {
     return next(new ErrorHandler("Campus drive not found", 404));
   }
 
+  // If user is college, filter tests assigned to them
+  if (req.user.role === 'college') {
+    const collegeTests = campusDrive.tests.filter(test => 
+      test.assignedTo.some(college => college._id.toString() === req.user.id)
+    );
+
+  let test = await Assessment.findById(collegeTests[0].test)
+    .populate('invitedStudents', 'FirstName LastName Email Phone avatar')
+    .populate('studentResponses', 'studentId status percentage totalMarks')
+    .select('name totalTime totalMarks invitedStudents studentResponses');
+
+  
+    campusDrive = {
+      ...campusDrive._doc,
+      tests: [
+        {
+          test,
+          assignedTo: collegeTests[0].assignedTo,
+          students: collegeTests[0].students,
+        }
+      ],
+      colleges: [{ _id: req.user.id }]
+    };
+  }else{
+
+  //  get all invited students for  per test
+  // get all studentResponses for per test
+  // add to the test object
+
+  for (let i = 0; i < campusDrive.tests.length; i++) {
+    let test = await Assessment.findById(campusDrive.tests[i].test).populate(
+      {
+        path : 'invitedStudents',
+       select : 'FirstName LastName Email Phone avatar'
+      }
+    ).populate({ path: 'studentResponses', select: 'studentId status' }).select('name totalTime totalMarks invitedStudents');
+
+    // combine students and studentResponses
+     campusDrive.tests[i].test = test;
+  }
+  }
+
+
   res.status(200).json({
     success: true,
-    campusDrive,
+    campusDrive
+  });
+});
+
+exports.searchCampusDrive = catchAsyncErrors(async (req, res, next) => {
+
+  // const response = await axios.get(
+  //   `${REACT_APP_API_URL}/api/company/campus-drive/${driveId}/colleges/search`
+  //   , {
+  //   params: { searchTerm },
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //     "auth-token": getCookie("token"),
+  //   },
+  // });
+
+  const campusDrives = await CampusDrive.find()
+    .populate({
+      path: 'colleges',
+      match: { CollegeName: { $regex: req.query.searchTerm, $options: 'i' } },
+      select: 'CollegeName Email Phone Address avatar _id'
+    });
+
+  res.status(200).json({
+    success: true,
+    campusDrives,
   });
 });
 
@@ -382,6 +446,7 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
 
     const totalColleges = await College.countDocuments();
 
+    // Filter available colleges (excluding already assigned colleges)
     const availableColleges = allColleges.filter(
       (college) =>
         !campusDrive.colleges.some(
@@ -416,3 +481,4 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler(error, 500));
   }
 });
+
