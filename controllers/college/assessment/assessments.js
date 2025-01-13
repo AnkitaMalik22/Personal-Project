@@ -634,15 +634,21 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
     //   (assessment) => assessment._id == id
     // );
 
-    const assessment = await Assessments.findById(id).populate({
+    const assessment = await Assessments.findById(id)
+    .populate({
       path: "studentResponses",
       populate: {
         path: "studentId",
         select: "FirstName LastName Email avatar Placed",
       },
-      // only send those res who completed the test
+      // Only send responses where the student has completed the test
       match: { completed: true },
+    })
+    .populate({
+      path: "invitedStudents",
+      select: "FirstName LastName Email avatar Placed",
     });
+  
 
     if (!assessment) {
       return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
