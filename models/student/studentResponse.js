@@ -7,6 +7,10 @@ const studentResponseSchema = new mongoose.Schema(
       ref: "Students",
       // required: [true, 'Please enter student id']
     },
+    campusDrive: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CampusDrive",
+    },
     assessmentId: {
       type: mongoose.Schema.ObjectId,
       ref: "Assessments",
@@ -36,10 +40,10 @@ const studentResponseSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
-        percentage:Number,
-        comment:String,
-        averagePercengate:Number,
-        averageMarks:Number,
+        percentage: Number,
+        comment: String,
+        averagePercengate: Number,
+        averageMarks: Number,
         questions: [
           {
             // questionId: {
@@ -410,12 +414,12 @@ const studentResponseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    examScreenShots : {
-      type : mongoose.Schema.Types.ObjectId,
-      ref : 'StudentScreenshots'
+    examScreenShots: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentScreenshots",
     },
-    comment:String,
-    rank:Number
+    comment: String,
+    rank: Number,
   },
   {
     timestamps: true,

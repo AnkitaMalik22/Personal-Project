@@ -227,7 +227,8 @@ exports.getCompanyDetails = catchAsyncErrors(async (req, res, next) => {
 // ==================================================== GET Company PROFILE ===========================================================
 
 exports.getCompany = catchAsyncErrors(async (req, res, next) => {
-  const company = await Company.findById(req.params.companyId);
+  console.log(req.params.companyId , "company id")
+  const company = await Company.findById(req.params.companyId)
 
   if (!company) {
     return next(new ErrorHandler("Company not found", 404));

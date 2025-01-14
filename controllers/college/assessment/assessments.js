@@ -14,12 +14,12 @@ const studentResponse = require("../../../models/student/studentResponse");
 const collegeTransaction = require("../../../models/college/account/collegeTransactionModel");
 const Job = require("../../../models/company/jobModel");
 const mongoose = require("mongoose");
-const XLSX = require('xlsx');
+const XLSX = require("xlsx");
 const PaymentPlan = require("../../../models/college/account/planModel");
 const cloudinary = require("cloudinary");
-const fs = require('fs');
-const path = require('path');
-const puppeteer = require('puppeteer');
+const fs = require("fs");
+const path = require("path");
+const puppeteer = require("puppeteer");
 const University = require("../../../models/university/universityModel");
 // =========================================================================================================================================
 
@@ -44,18 +44,13 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
     await newTransaction.save();
 
-
-
     const college = await College.findById(id);
     const company = await Company.findById(id);
     const university = await University.findById(id);
 
     if (!college && !company && !university) {
       return next(
-        new ErrorHandler(
-          "You are not authorized to create assessments.",
-          400
-        )
+        new ErrorHandler("You are not authorized to create assessments.", 400)
       );
     }
     if (college) {
@@ -101,9 +96,9 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     // }
 
     const createdByCompany = role === "company";
-    const createdByUniversity = role ==="university";
+    const createdByUniversity = role === "university";
 
-    if (role !== "college" && role !== "company" && role!=="university") {
+    if (role !== "college" && role !== "company" && role !== "university") {
       return next(new ErrorHandler("Invalid user role", 400));
     }
 
@@ -273,7 +268,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     let assessment = await Assessments.create({
       ...req.body,
       topics: newTopics,
-     
+
       // college: id,
       // company: id,
       startDate: req.body.startDate,
@@ -282,7 +277,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       totalTime: req.body.totalDuration,
       totalMarks,
       createdByCompany,
-      createdByUniversity
+      createdByUniversity,
     });
 
     const recentQuestion = await RecentQuestions.findOne({ createdBy: id });
@@ -301,8 +296,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       await recentQuestion.save();
     }
     if (college) {
-      assessment.createdBy= id,
-      await credit.save();
+      (assessment.createdBy = id), await credit.save();
       await college.save();
     }
     if (company) {
@@ -320,11 +314,10 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       // await job.save();
 
       assessment.company = id;
-
     }
 
-    if(university){
-      assessment.university=id;
+    if (university) {
+      assessment.university = id;
     }
     await assessment.save();
 
@@ -340,8 +333,6 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
 
 // ==================================================| Add Test to Job |=======================================================================
 
-
-
 // ===================================================| Invite Student to Assessment |========================================================
 
 const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
@@ -356,24 +347,30 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
     const assessmentId = req.params.id;
     let entity;
 
-    if(req.user.role === "college"){
+    if (req.user.role === "college") {
       entity = await College.findById(userId);
-    }else{
-      entity = await University.findById(userId)
+    } else {
+      entity = await University.findById(userId);
     }
 
-  
-    const assessment = await Assessments.findById(assessmentId).populate("invitedStudents");
+    const assessment = await Assessments.findById(assessmentId).populate(
+      "invitedStudents"
+    );
     // const credit = await Credit.findOne({ college: CollegeId });
     // const plan = await PaymentPlan.findById(college.selectedPlan);
 
-
-    const invitedStudentsByCollege = assessment.invitedStudents.filter((student) => {
-      // //console.log(student.CollegeId,CollegeId,student.CollegeId===CollegeId )
-      //console.log(student);
-      return student[role==="college" ? "CollegeId" : "universityId"].toString() === userId
-    });
-    // //console.log(assessment.invitedStudents);
+    const invitedStudentsByCollege = assessment?.invitedStudents?.filter(
+      (student) => {
+        // console.log(student.CollegeId,CollegeId,student.CollegeId===CollegeId )
+        console.log(student);
+        return (
+          student[
+            role === "college" ? "CollegeId" : "universityId"
+          ].toString() === userId
+        );
+      }
+    );
+    // console.log(assessment.invitedStudents);
 
     // if (!college || !plan) {
     //   return next(new ErrorHandler("College not found or plan has expired", 404));
@@ -383,11 +380,10 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Assessment not found", 404));
     }
     if (students.length > 200) {
-      res.status(400).json({ success: false, message: "Rate Limit Exceeded" })
+      res.status(400).json({ success: false, message: "Rate Limit Exceeded" });
     }
     if (students) {
       for (let i = 0; i < students.length; i++) {
-
         const { FirstName, LastName, Email, _id } = students[i];
 
         //console.log(students[i])
@@ -403,21 +399,21 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
           //   invitedStudentsByCollege.length + 1 > credit.limit
           // ) {
 
-            //UNCOMMENT THIS AFTER DEMO 
-            // if (credit.credit === 0) {
-            //   return res
-            //     .status(200)
-            //     .json({ success: "true", message: i + " students invited" });
-            // }
+          //UNCOMMENT THIS AFTER DEMO
+          // if (credit.credit === 0) {
+          //   return res
+          //     .status(200)
+          //     .json({ success: "true", message: i + " students invited" });
+          // }
 
-            // credit.credit -= 1;
-            // await credit.save();
+          // credit.credit -= 1;
+          // await credit.save();
           // } else if (invitedStudentsByCollege.length + 1 > credit.limit) {
-            //UNCOMMENT THIS AFTER DEMO 
+          //UNCOMMENT THIS AFTER DEMO
 
-            // return res
-            //   .status(429)
-            //   .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
+          // return res
+          //   .status(429)
+          //   .json({ success: "false", message: `cannot invite more than ${credit.limit} students with your current plan` });
           // }
           assessment.invitedStudents.push(_id);
           invitedStudentsByCollege.push(_id);
@@ -428,7 +424,10 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
             {
               $set: { student: _id },
               $push: {
-                assessments: { [role === "university" ? "university": "sender" ]: userId, assessment: assessmentId },
+                assessments: {
+                  [role === "university" ? "university" : "sender"]: userId,
+                  assessment: assessmentId,
+                },
               },
             },
             {
@@ -439,10 +438,10 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
           // //console.log(Email)
 
           let isAdaptive = assessment.level === "adaptive";
-          let mail=  await sendEmail({
+          let mail = await sendEmail({
             email: Email,
             subject: "Invitation to join Test",
-            html:`<!DOCTYPE html>
+            html: `<!DOCTYPE html>
                   <html lang="en">
                   <head>
                       <meta charset="UTF-8">
@@ -541,12 +540,17 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
                             
                           <p><strong>${assessment.name}</strong></p>
                             
-                          <p>This invitation comes from ${role === "college" ? entity.FirstName : entity.name}.</p>
+                          <p>This invitation comes from ${role === "college" ? entity.FirstName : entity.name
+              }.</p>
                             
                           <p>To attend the test, please click the button below:</p>
                             
-                          <a href="${process.env.STUDENT_URL || "https://student.skillaccess.in"}/student/test/${assessmentId}?isAdaptive=${isAdaptive}" class="button">Start Test</a>
-                          "${process.env.STUDENT_URL || "https://student.skillaccess.in"}/student/test/${assessmentId}?isAdaptive=${isAdaptive}"
+                          <a href="${process.env.STUDENT_URL ||
+              "https://student.skillaccess.in"
+              }/student/test/${assessmentId}?isAdaptive=${isAdaptive}" class="button">Start Test</a>
+                          "${process.env.STUDENT_URL ||
+              "https://student.skillaccess.in"
+              }/student/test/${assessmentId}?isAdaptive=${isAdaptive}"
                           <p><strong>Note:</strong> If you are not registered yet, please register first before accessing the test.</p>
                             
                           <div class="footer">
@@ -557,7 +561,7 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
                   </body>
                   </html>
 
-`
+`,
             // message: `Hello ${FirstName}!,You have been invited to the Test ${assessment.name} by ${role==="college" ? entity.FirstName : entity.name}. Please click on the link to attend the test: https://skillaccess-student-iota.vercel.app/student/test/${assessmentId}?isAdaptive=${isAdaptive}. If you are not registered yet, please register first.`,
           });
 
@@ -565,7 +569,6 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
         }
       }
     }
-
 
     res.status(200).json({
       success: true,
@@ -585,21 +588,31 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   let assessments = [];
   //console.log(role)
   if (role === "company") {
-    assessments = await Assessments.find({ company: id, job: { $exists: req.query.withJob === "true" ? true : false } })
+    let alreadyUsed =
+      req.query.withJob === "true" || req.query.withCampusDrive === "true"
+        ? true
+        : false;
+
+    assessments = await Assessments.find({
+      company: id,
+      job: { $exists: alreadyUsed },
+      campusDrive: { $exists: alreadyUsed },
+    })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
     //console.log(assessments)
-  } else if(role==="college"){
+  } else if (role === "college") {
     assessments = await Assessments.find({ createdBy: id })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
+    console.log(assessments);
+  } else {
     //console.log(assessments);
-  }else{
+  }else {
     assessments = await Assessments.find({ university: id })
-    .sort({ createdAt: -1 })
-    .populate("invitedStudents");
+      .sort({ createdAt: -1 })
+      .populate("invitedStudents");
   }
-
 
   res.status(200).json({
     success: true,
@@ -615,21 +628,26 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
     const { id } = req.params;
     const collegeId = req.user.id;
 
-
     // const assessments = await College.findById(collegeId).populate("assessments");
     // const assessment = assessments.assessments.find(
     //   (assessment) => assessment._id == id
     // );
 
-    const assessment = await Assessments.findById(id).populate({
-      path: "studentResponses",
-      populate: {
-        path: "studentId",
+    const assessment = await Assessments.findById(id)
+      .populate({
+        path: "studentResponses",
+        populate: {
+          path: "studentId",
+          select: "FirstName LastName Email avatar Placed",
+        },
+        // Only send responses where the student has completed the test
+        match: { completed: true },
+      })
+      .populate({
+        path: "invitedStudents",
         select: "FirstName LastName Email avatar Placed",
-      },
-      // only send those res who completed the test
-      match: { completed: true },
-    });
+      });
+
 
     if (!assessment) {
       return next(new ErrorHandler(`Assessment not found with ID: ${id}`, 404));
@@ -641,7 +659,6 @@ const getAssessmentById = catchAsyncErrors(async (req, res, next) => {
     //console.log(error);
     res.status(500).json({ success: "false", message: "something went wrong" });
   }
-
 });
 
 // Get Assessment by ID
@@ -664,7 +681,7 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
 
   const startDate = new Date(assessment.startDate);
   const endDate = new Date(assessment.endDate);
-  
+
   // Always use 5 days
   const MAX_DAYS = 5;
   let totalAbsent = assessment.invitedStudents.length;
@@ -684,7 +701,7 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
     try {
       const completedDate = new Date(elem.completedAt);
       let day = Math.ceil((completedDate - startDate) / (1000 * 60 * 60 * 24));
-      
+
       // Limit to 5 days, aggregate anything beyond into day 4
       day = Math.min(Math.max(day, 0), MAX_DAYS - 1);
 
@@ -704,7 +721,7 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
         current.pending += 1;
       }
       current.absent = totalAbsent;
-      
+
     } catch (error) {
       console.error('Error processing response:', error);
     }
@@ -715,9 +732,9 @@ const getAssessmentOverview = catchAsyncErrors(async (req, res, next) => {
     arr[i].absent = totalAbsent;
   }
 
-  res.status(200).json({ 
-    success: true, 
-    overview: arr 
+  res.status(200).json({
+    success: true,
+    overview: arr
   });
 });
 // ===================================================| Update Assessment by ID |========================================================
@@ -909,13 +926,14 @@ const removeRecentAssessment = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, assessment });
 });
 
-
 const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id, role } = req.user;
 
     if (role === "company") {
-      const assessment = await Assessments.findById(req.params.id).populate('invitedStudents');
+      const assessment = await Assessments.findById(req.params.id).populate(
+        "invitedStudents"
+      );
       res.status(200).json({
         success: true,
         assessment,
@@ -926,39 +944,39 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
 
       // Extract skip and limit from query parameters
       const limit = parseInt(req.query.limit) || 10; // Default limit is 10
-      const skip = parseInt(req.query.skip) || 0;   // Default skip is 0
+      const skip = parseInt(req.query.skip) || 0; // Default skip is 0
       const batch = req.query.batch;
       const search = req.query.search;
 
       const query = { [role]: id };
       const populateOptions = {
         path: "students",
-        select: "FirstName LastName Avatar _id createdAt batch Email" ,
-        match: { _id: { $nin: assessment.invitedStudents } },
+        select: "FirstName LastName Avatar _id createdAt batch Email",
+        match: { _id: { $nin: assessment?.invitedStudents } },
         options: {
           sort: { _id: -1 },
-          skip: skip,  // Skip the first 'skip' documents
+          skip: skip, // Skip the first 'skip' documents
           limit: limit + 1, // Fetch one extra document to check for the next page
         },
       };
 
-
       if (batch) {
         populateOptions.match = { ...populateOptions.match, batch: batch };
       }
-      if(search){
-    
-        populateOptions.match = { 
-          ...populateOptions.match, 
+      if (search) {
+        populateOptions.match = {
+          ...populateOptions.match,
           $or: [
-            { FirstName: { $regex: search, $options: "i" } }, 
+            { FirstName: { $regex: search, $options: "i" } },
             { LastName: { $regex: search, $options: "i" } },
-           {Email:{$regex: search,$options:"i"}}
-          ] 
-        };        
+            { Email: { $regex: search, $options: "i" } },
+          ],
+        };
       }
 
-      const approved = await ApprovedStudents.findOne(query).populate(populateOptions);
+      const approved = await ApprovedStudents.findOne(query).populate(
+        populateOptions
+      );
       let students = approved ? approved.students : [];
 
       // //console.log(approved.students)
@@ -987,8 +1005,6 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
-
 const getResultGraph = catchAsyncErrors(async (req, res, next) => {
   const now = new Date();
   const lastYear = new Date(
@@ -997,7 +1013,6 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
     now.getDate()
   );
 
-  
   let assessments;
 
   //console.log(req.user.role);
@@ -1011,7 +1026,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role === "university" ? "university" : "createdBy"]:
+              new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -1034,7 +1050,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role === "university" ? "university" : "createdBy"]:
+              new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -1056,7 +1073,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role === "university" ? "university" : "createdBy"]:
+              new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -1080,7 +1098,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role === "university" ? "university" : "createdBy"]:
+              new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -1104,7 +1123,8 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
               $gte: lastYear,
               $lte: now,
             },
-            [req.user.role==="university"? "university" : "createdBy"]: new mongoose.Types.ObjectId(req.user.id),
+            [req.user.role === "university" ? "university" : "createdBy"]:
+              new mongoose.Types.ObjectId(req.user.id),
           },
         },
         {
@@ -1119,7 +1139,7 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
       ]);
       break;
   }
-//console.log(assessments)
+  console.log(assessments)
   // Populate the nested studentResponses field
   await studentResponse.populate(assessments, {
     path: "records.studentResponses",
@@ -1150,8 +1170,6 @@ const getResultGraph = catchAsyncErrors(async (req, res, next) => {
   return res.json({ assessments });
 });
 
-
-
 const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1163,20 +1181,20 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
       { $match: { _id: assessmentId } },
       {
         $lookup: {
-          from: 'studentresponses',
-          localField: 'studentResponses',
-          foreignField: '_id',
-          as: 'studentResponses',
+          from: "studentresponses",
+          localField: "studentResponses",
+          foreignField: "_id",
+          as: "studentResponses",
         },
       },
       { $unwind: "$studentResponses" },
       { $match: { "studentResponses.completed": true } },
       {
         $lookup: {
-          from: 'students',
-          localField: 'studentResponses.studentId',
-          foreignField: '_id',
-          as: 'studentInfo',
+          from: "students",
+          localField: "studentResponses.studentId",
+          foreignField: "_id",
+          as: "studentInfo",
         },
       },
       { $unwind: "$studentInfo" },
@@ -1196,25 +1214,29 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
           TimeTaken: "$studentResponses.timeTaken",
           TotalQuestionsAttempted: "$studentResponses.totalQuestionsAttempted",
           CorrectAnswers: "$studentResponses.correctAnswers",
-          Topics: "$studentResponses.topics"
+          Topics: "$studentResponses.topics",
         },
       },
     ]);
 
     if (!assessment || assessment.length === 0) {
-
-      return next(new ErrorHandler(`Assessment not found with ID: ${id} || No responses found`, 404));
+      return next(
+        new ErrorHandler(
+          `Assessment not found with ID: ${id} || No responses found`,
+          404
+        )
+      );
     }
 
     // Combine marks for non-unique topic headings
-    const combinedAssessment = assessment.map(item => {
+    const combinedAssessment = assessment.map((item) => {
       const topicMarksMap = {};
 
-      item.Topics.forEach(topic => {
+      item.Topics.forEach((topic) => {
         if (!topicMarksMap[topic.Heading]) {
           topicMarksMap[topic.Heading] = {
             Heading: topic.Heading,
-            TotalMarks: 0
+            TotalMarks: 0,
           };
         }
         topicMarksMap[topic.Heading].TotalMarks += topic.totalMarks; // Combine totalMarks
@@ -1242,27 +1264,34 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
       };
     });
 
-
     // Prepare headers
     const headers = [
-      'First Name', 'Last Name', 'Email',
-      'Placed', 'Status', 'Percentage', 'Marks', 'Total Marks',
-      'Time', 'Time Taken', 'Total Questions Attempted', 'Correct Answers'
+      "First Name",
+      "Last Name",
+      "Email",
+      "Placed",
+      "Status",
+      "Percentage",
+      "Marks",
+      "Total Marks",
+      "Time",
+      "Time Taken",
+      "Total Questions Attempted",
+      "Correct Answers",
     ];
 
     // Collect unique topic headings for dynamic columns
     const topicHeadings = new Set();
-    combinedAssessment.forEach(item => {
-      item.Topics.forEach(topic => topicHeadings.add(topic.Heading));
+    combinedAssessment.forEach((item) => {
+      item.Topics.forEach((topic) => topicHeadings.add(topic.Heading));
     });
 
     // Add topic headings to the headers
     headers.push(...Array.from(topicHeadings));
 
     // Prepare data rows
-    const dataRows = combinedAssessment.map(item => {
+    const dataRows = combinedAssessment.map((item) => {
       const row = [
-
         item.FirstName,
         item.LastName,
         item.Email,
@@ -1279,12 +1308,12 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
 
       // Create a map for topic marks
       const topicMarks = {};
-      item.Topics.forEach(topic => {
+      item.Topics.forEach((topic) => {
         topicMarks[topic.Heading] = topic.TotalMarks || 0; // Default to 0 if no marks
       });
 
       // Add topic marks to the row based on the headers
-      Array.from(topicHeadings).forEach(heading => {
+      Array.from(topicHeadings).forEach((heading) => {
         row.push(topicMarks[heading] || 0); // Default to 0 if no marks
       });
 
@@ -1297,20 +1326,27 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
 
-    res.setHeader('Content-Disposition', 'attachment; filename="data.xlsx"');
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader("Content-Disposition", 'attachment; filename="data.xlsx"');
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
     res.send(buffer);
-
   } catch (error) {
-
-    return next(new ErrorHandler("An error occurred while processing the request", 500));
+    return next(
+      new ErrorHandler("An error occurred while processing the request", 500)
+    );
   }
 });
 
-const generatePerformanceComment = (studentScore, maximumMarks, sortedScores) => {
+const generatePerformanceComment = (
+  studentScore,
+  maximumMarks,
+  sortedScores
+) => {
   if (maximumMarks === 0) return "No marks allocated";
 
   const studentPercentage = (studentScore / maximumMarks) * 100;
@@ -1342,13 +1378,13 @@ const calculatePercentile = (score, sortedScores) => {
 
   // Find how many scores are less than or equal to the current score
   const scoresBelow = sortedScores.filter(s => s <= score).length;
-  
+
   // Calculate percentile using the "nearest-rank method"
   // Formula: P = (n_below / N) × 100
   // where n_below is the number of scores at or below the given score
   // and N is the total number of scores
   const percentile = ((scoresBelow - 1) / (sortedScores.length - 1)) * 100;
-console.log(percentile);
+  console.log(percentile);
   return Math.max(0, Math.min(100, Math.round(percentile)));
 };
 
@@ -1494,9 +1530,9 @@ console.log(percentile);
 //     // Upload HTML report to Cloudinary
 //     const uploadResponse = await new Promise((resolve, reject) => {
 //       const cloudinaryStream = cloudinary.uploader.upload_stream(
-//         { 
-//           folder: 'reports', 
-//           resource_type: 'raw', 
+//         {
+//           folder: 'reports',
+//           resource_type: 'raw',
 //           public_id: `report_${studentResponseId}`,
 //           format: 'html'
 //         },
@@ -1529,8 +1565,6 @@ console.log(percentile);
 //   }
 // };
 
-
-
 const generateStudentReportPdf = async (req, res) => {
   // console.log("heee")
   let browser = null;
@@ -1538,14 +1572,17 @@ const generateStudentReportPdf = async (req, res) => {
     const studentResponseId = req.params.id;
 
     // Fetch the student response
-    const studentResponseRes = await studentResponse.findById(studentResponseId)
+    const studentResponseRes = await studentResponse
+      .findById(studentResponseId)
       .populate({
-        path: 'studentId',
-        select: 'FirstName LastName email',
+        path: "studentId",
+        select: "FirstName LastName email",
       });
 
     if (!studentResponseRes) {
-      return res.status(404).json({ success: false, message: 'Student response not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Student response not found" });
     }
 
     const studentName = `${studentResponseRes.studentId.FirstName} ${studentResponseRes.studentId.LastName}`;
@@ -1553,14 +1590,16 @@ const generateStudentReportPdf = async (req, res) => {
       const studentScore = topic.totalMarks || 0;
       const percentage = topic.topicMarks > 0 ? (studentScore / topic.topicMarks) * 100 : 0;
       const performanceComment = topic.comment || 'No comment';
-      const comparisonArrow = percentage >= topic.averagePercengate ? '↑' : percentage < topic.averagePercengate ? '↓' : '-';
+      const comparisonArrow = percentage > topic.averagePercengate ? '↑' : percentage < topic.averagePercengate ? '↓' : '-';
 
       return `
         <tr>
           <td>${topic.Heading}</td>
-          <td>${studentScore} <span class="${comparisonArrow === '↑' ? 'up' : comparisonArrow === '↓' ? 'down' : ''}">${comparisonArrow}</span></td>
+          <td>${studentScore} <span class="${comparisonArrow === "↑" ? "up" : comparisonArrow === "↓" ? "down" : ""
+        }">${comparisonArrow}</span></td>
           <td>${topic.topicMarks}</td>
-          <td>${percentage?.toFixed(1)|| 0}% <span class="${comparisonArrow === '↑' ? 'up' : comparisonArrow === '↓' ? 'down' : ''}">${comparisonArrow}</span></td>
+          <td>${percentage?.toFixed(1) || 0}% <span class="${comparisonArrow === "↑" ? "up" : comparisonArrow === "↓" ? "down" : ""
+        }">${comparisonArrow}</span></td>
           <td>${performanceComment}</td>
           <td>${topic.averagePercengate?.toFixed(1) || 0}%</td>
           <td>${topic.averageMarks}</td>
@@ -1568,196 +1607,25 @@ const generateStudentReportPdf = async (req, res) => {
       `;
     }).join('');
 
+    const overallAveragePercentage = studentResponseRes.topics.reduce((sum, topic) => sum + (topic.topicMarks > 0 ? (topic.totalMarks / topic.topicMarks) * 100 : 0), 0) / studentResponseRes.topics.length;
 
-    
-    // const overallAveragePercentage = studentResponseRes.topics.reduce((sum, topic) => sum + (topic.topicMarks > 0 ? (topic.totalMarks / topic.topicMarks) * 100 : 0), 0) / studentResponseRes.topics.length;
-  
-  const topics = studentResponseRes.topics;
-    const totalMarksScored = topics.reduce((sum, topic) => 
-      sum + (topic.totalMarks || 0), 
-      0
-    );
-  
-    // Then calculate maximum possible marks
-    const totalMaximumMarks = topics.reduce((sum, topic) => 
-      sum + (topic.topicMarks || 0), 
-      0
-    );
-  
-    // Finally calculate the overall percentage
-  let overallPercentage = totalMaximumMarks > 0 
-      ? (totalMarksScored / totalMaximumMarks) * 100 
-      : 0;
-  
-   const  overallAveragePercentage= Math.round(overallPercentage * 100) / 100;
-    
-    const reportHtml = `<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Performance Report</title>
-        <style>
-            body {
-                font-family: 'Arial', sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #f4f4f4;
-            }
-            .generic-content {
-              padding : 10px;
-            }
-            .report-container {
-                background-color: #ffffff;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                overflow: hidden;
-            }
-            .header {
-                background-color: #3498db;
-                color: #ffffff;
-                padding: 20px;
-                text-align: center;
-            }
-            .header h1 {
-                margin: 0;
-                font-size: 28px;
-            }
-            .header h2 {
-                margin: 10px 0 0;
-                font-size: 20px;
-                font-weight: normal;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 20px;
-            }
-            th, td {
-                padding: 12px 15px;
-                text-align: left;
-                border-bottom: 1px solid #e0e0e0;
-            }
-            thead {
-                background-color: #f2f2f2;
-            }
-            th {
-                font-weight: bold;
-                text-transform: uppercase;
-                font-size: 14px;
-                color: #555;
-            }
-            tr:nth-child(even) {
-                background-color: #f8f8f8;
-            }
-            tr:hover {
-                background-color: #e8f4fd;
-            }
-            .up {
-                color: green;
-            }
-            .down {
-                color: red;
-            }
-            .footer {
-                margin-top: 20px;
-                padding: 10px;
-                text-align: center;
-                background-color: #f2f2f2;
-                border-top: 1px solid #e0e0e0;
-            }
-            .footer p {
-                margin: 5px 0;
-            }
-            .explanation {
-                margin-top: 20px;
-                padding: 20px;
-                background-color: #eaf3fc;
-                border-left: 5px solid #3498db;
-            }
-            .status {
-                margin-top: 20px;
-                padding: 15px;
-                text-align: center;
-                font-size: 18px;
-                font-weight: bold;
-                background-color: ${studentResponseRes.status === 'Pass' ? '#d4edda' : '#f8d7da'};
-                color: ${studentResponseRes.status === 'Pass' ? '#155724' : '#721c24'};
-                border: 1px solid ${studentResponseRes.status === 'Pass' ? '#c3e6cb' : '#f5c6cb'};
-            }
-        </style>
-    </head>
-    <body>
-        <div class="report-container">
-            <div class="header">
-                <h1>Performance Report</h1>
-                <h2>${studentName}</h2>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Topic</th>
-                        <th>Score</th>
-                        <th>Maximum Marks</th>
-                        <th>Your Test %</th>
-                        <th>Remark</th>
-                        <th>Avg Test%</th>
-                        <th>Average Marks</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${topicsHtml}
-                </tbody>
-            </table>
-            <div class="status">
-                Status: ${studentResponseRes.status}
-            </div>
-            <div class="footer">
-                <p><strong>Overall Average Percentage:</strong> ${overallAveragePercentage.toFixed(2)}%</p>
-                <p><strong>Rank:</strong> ${studentResponseRes.rank}</p>
-                <p>${studentResponseRes.comment}</p>
-                <p><em>Evaluation performed by SkillAccess.</em></p>
-            </div>
-            <div class="explanation">
-                <h3>Report Explanation</h3>
-                <ul>
-                    <li><strong>Topic:</strong> The subject or area of the test.</li>
-                    <li><strong>Score:</strong> The marks obtained by the student in this topic.</li>
-                    <li><strong>Maximum Marks:</strong> The highest possible marks for this topic.</li>
-                    <li><strong>Your Test %:</strong> The percentage score achieved in the topic.</li>
-                    <li><strong>Remark:</strong> A brief comment on performance in the topic.</li>
-                    <li><strong>Avg Test%:</strong> The average test percentage for all students.</li>
-                    <li><strong>Average Marks:</strong> The average marks obtained by all students in this topic.</li>
-                </ul>
-            </div>
-            <div class="generic-content">
-                <h3>About This Report Card</h3>
-                <p>This report card reflects the performance of ${studentName} in the conducted tests. It highlights strengths and areas for improvement, providing a comparative analysis with peers.</p>
-                <p>Keep working hard and striving for excellence. Remember, every effort counts!</p>
-            </div>
-        </div>
-    </body>
-    </html>`;
-    
-    
+    const reportHtml = ``;
 
     // Launch Puppeteer
     browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox'],
+      headless: "new",
+      args: ["--no-sandbox"],
     });
     const page = await browser.newPage();
 
     // Set content and wait for full page load
-    await page.setContent(reportHtml, { waitUntil: 'domcontentloaded' });
+    await page.setContent(reportHtml, { waitUntil: "domcontentloaded" });
 
     // Ensure the PDF is generated with backgrounds
     const pdfBuffer = await page.pdf({
-      format: 'A2',
+      format: "A2",
       printBackground: true,
-      margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+      margin: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
     });
 
     // Check the file created
@@ -1765,20 +1633,20 @@ const generateStudentReportPdf = async (req, res) => {
     // Close the browser
     await browser.close();
 
-      // Save PDF locally
-  const pdfFilePath = path.join(__dirname, 'reports', `assessment-report-.pdf`);
-  fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true });
-  fs.writeFileSync(pdfFilePath, pdfBuffer);
+    // Save PDF locally
+    const pdfFilePath = path.join(__dirname, 'reports', `assessment-report-.pdf`);
+    fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true });
+    fs.writeFileSync(pdfFilePath, pdfBuffer);
 
     // Upload PDF to Cloudinary as a PDF
     const uploadResponse = await new Promise((resolve, reject) => {
       const cloudinaryStream = cloudinary.v2.uploader.upload_stream(
         {
-          folder: 'image',
-          access_control: [{ access_type: 'anonymous', }],
-          resource_type: 'raw', // Correct resource type for PDF files
+          folder: "image",
+          access_control: [{ access_type: "anonymous" }],
+          resource_type: "raw", // Correct resource type for PDF files
           public_id: `report_${studentResponseId}`,
-          format: "pdf" // Optional: Unique public ID for the report
+          format: "pdf", // Optional: Unique public ID for the report
         },
         (error, result) => {
           if (error) return reject(error);
@@ -1793,12 +1661,11 @@ const generateStudentReportPdf = async (req, res) => {
     // Return the Cloudinary link for the PDF
     res.status(200).json({
       success: true,
-      message: 'Report generated successfully',
+      message: "Report generated successfully",
       pdfUrl: uploadResponse,
     });
-
   } catch (error) {
-    console.error('Error generating report:', error);
+    console.error("Error generating report:", error);
 
     if (browser) {
       try {
@@ -1810,7 +1677,7 @@ const generateStudentReportPdf = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Server error generating student report PDF',
+      message: "Server error generating student report PDF",
       error: error.message,
     });
   }
@@ -1818,27 +1685,27 @@ const generateStudentReportPdf = async (req, res) => {
 
 const generateReport = catchAsyncErrors(async (req, res, next) => {
   const test = await Assessments.findById(req.params.id).populate({
-    path: 'studentResponses',
-    select: 'topics status studentId timeTaken percentage',
+    path: "studentResponses",
+    select: "topics status studentId timeTaken percentage",
     populate: {
-      path: 'studentId',
-      select: 'FirstName LastName email',
+      path: "studentId",
+      select: "FirstName LastName email",
     },
   });
 
   // Calculate topic-wise statistics
   let topicPercentages = test.topics.map((topic, topicIndex) => {
-    const studentScores = test.studentResponses.map(response => 
+    const studentScores = test.studentResponses.map(response =>
       response.topics[topicIndex]?.totalMarks || 0
     );
-    
+
     const maximumMarks = topic.topicMarks;
     const totalMarks = studentScores.reduce((sum, score) => sum + score, 0);
     const responseCount = test.studentResponses.length;
-    
+
     const avgTopicMarks = responseCount > 0 ? totalMarks / responseCount : 0;
-    const averageTopicPercentage = maximumMarks > 0 
-      ? (avgTopicMarks / maximumMarks) * 100 
+    const averageTopicPercentage = maximumMarks > 0
+      ? (avgTopicMarks / maximumMarks) * 100
       : 0;
 
     return {
@@ -1846,146 +1713,154 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
       avgTopicMarks,
       maximumMarks,
       averageTopicPercentage,
-      studentScores,
-      totalMarks
-    };
-  });
-
-  const processedResponses = await Promise.all(
-    test.studentResponses.map(async (response) => {
-      // Calculate student's performance for each topic with proper comment generation
-      const studentTopics = response.topics.map((studentTopic, topicIndex) => {
-        const topicStats = topicPercentages[topicIndex];
-        const studentScore = studentTopic?.totalMarks || 0;
-        const maximumMarks = topicStats.maximumMarks;
-        
-        const percentage = maximumMarks > 0 
-          ? (studentScore / maximumMarks) * 100 
-          : 0;
-
-        const topicComment = generatePerformanceComment(
-          studentScore,
-          maximumMarks,
-          topicStats.studentScores
-        );
-
-        // Return topic with all necessary fields for database update
-        return {
-          ...studentTopic._doc, // Spread the original document to keep existing fields
-          totalMarks: studentScore,
-          percentage: Math.round(percentage),
-          maximumMarks,
-          averageMarks: Math.round(topicStats.avgTopicMarks),
-          averagePercentage: Math.round(topicStats.averageTopicPercentage),
-          comment: topicComment // Ensure comment is included in the topic object
-        };
-      });
-
-      // Calculate overall performance
-      const totalStudentMarks = studentTopics.reduce(
-        (sum, topic) => sum + (topic.totalMarks || 0), 
-        0
-      );
-      const totalMaximumMarks = topicPercentages.reduce(
-        (sum, topic) => sum + topic.maximumMarks, 
-        0
-      );
-      const overallPercentage = totalMaximumMarks > 0 
-        ? (totalStudentMarks / totalMaximumMarks) * 100 
-        : 0;
-
-      return {
-        _id: response._id,
-        studentId: response.studentId,
-        name: `${response.studentId.FirstName} ${response.studentId.LastName}`,
-        topics: studentTopics, // Now includes comments for each topic
-        overallPercentage: Math.round(response.percentage || overallPercentage),
-        totalStudentMarks,
-        totalMaximumMarks
-      };
-    })
-  );
-
-  // Sort responses by overall percentage
-  processedResponses.sort((a, b) => b.overallPercentage - a.overallPercentage);
-
-  // Update all student responses with ranks and comments
-  await Promise.all(
-    processedResponses.map(async (response, index) => {
-      const rank = index + 1;
-      const overallComment = generatePerformanceComment(
-        response.totalStudentMarks,
-        response.totalMaximumMarks,
-        processedResponses.map(r => r.totalStudentMarks)
-      );
-
-      // Update student response with complete information including topic comments
-      await studentResponse.findByIdAndUpdate(
-        response._id,
-        {
-          $set: {
-            topics: response.topics, // Topics array now includes comments
-            percentage: response.overallPercentage,
-            comment: overallComment,
-            rank,
-            totalMarks: response.totalStudentMarks,
-            maximumMarks: response.totalMaximumMarks
-          }
-        },
-        { new: true }
-      );
-
-      return {
-        ...response,
-        rank,
-        comment: overallComment
-      };
-    })
-  );
-
-
-  // Mark report as generated
-  test.isReportGenerated = true;
-  await test.save();
-
-  // Prepare report data
-  const reportData = {
-    studentName: req.user.FirstName,
-    organizationName: req.user.CollegeName,
-    testName: test.name,
-    submissionDate: new Date().toLocaleDateString(),
-    totalScore: processedResponses[0].totalStudentMarks,
-    maxScore: processedResponses[0].totalMaximumMarks,
-    duration: test.duration,
-    sections: topicPercentages.map(topic => ({
-      name: topic.topicName,
-      score: topic.avgTopicMarks.toFixed(2),
-      maxScore: topic.maximumMarks,
-      percent: topic.averageTopicPercentage.toFixed(2),
-    }))
-  };
-
-  // Generate college report
-  generateReportForCollege(req.params.id, req.user.Email, reportData);
-
-  return res.status(200).json({ 
-    success: true, 
-    topStudents: processedResponses.slice(0, 3) 
-  });
+      studentScores
+    });
 });
-  
-  
-//   let selectedStudents = test.selectedStudents;
-//   let pendingStudents = test.invitedStudents.filter(student => student.status === "pending"); 
-//   let rejectedStudents = test.rejectedStudents;
+
+// Update student responses
+// await Promise.all(
+//   test.studentResponses.map(async (response) => {
+//     // Initialize topicUpdates to accumulate updates
+//     let topicUpdates = { $set: {} };
+
+//     topicPercentages.forEach((topic, topicIndex) => {
+//       const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+//       const comment = generatePerformanceComment(
+//         studentScore,
+//         topic.maximumMarks,
+//         [...topic.studentScores].sort((a, b) => a - b)
+//       );
+
+//       const percentage =
+//         topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
+
+//       // Accumulate updates for the current topic
+//       topicUpdates.$set[`topics.${topicIndex}.avgerageMarks`] = parseInt(topic.avgTopicMarks);
+//       topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
+//       topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
+//       topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
+//     });
+
+//     // Update the student response with all accumulated updates
+//     await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+//   })
+// );
+// Calculate overall percentages and add them to the responses
+const responsesWithPercentages = await Promise.all(
+  test.studentResponses.map(async (response) => {
+    let totalStudentMarks = 0;
+    let totalMaximumMarks = 0;
+    let topics = [];
+    topicPercentages.forEach((topic, topicIndex) => {
+      const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+      totalStudentMarks += studentScore;
+      totalMaximumMarks += topic.maximumMarks;
+      topics.push(topic);
+    });
+
+
+
+    const overallPercentage =
+      totalMaximumMarks > 0 ? (totalStudentMarks / totalMaximumMarks) * 100 : 0;
+
+    return {
+      topics,
+      _id: response._id,
+      studentId: response.studentId,
+      name: `${response.studentId.FirstName} ${response.studentId.LastName}`,
+      topics: studentTopics, // Now includes comments for each topic
+      overallPercentage: Math.round(response.percentage || overallPercentage),
+      totalStudentMarks,
+      totalMaximumMarks
+    };
+  })
+);
+
+console.log(topicPercentages)
+
+// Sort students by overall percentage to calculate rank
+responsesWithPercentages.sort((a, b) => b.overallPercentage - a.overallPercentage);
+
+// Update ranks and other data in the database
+await Promise.all(
+  responsesWithPercentages.map(async (response, index) => {
+    let topicUpdates = { $set: {} };
+
+
+    topicPercentages.forEach((topic, topicIndex) => {
+      const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+      const comment = generatePerformanceComment(
+        studentScore,
+        topic.maximumMarks,
+        [...topic.studentScores].sort((a, b) => a - b)
+      );
+
+      const percentage =
+        topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
+
+      // Accumulate updates for the current topic averageMarks
+      topicUpdates.$set[`topics.${topicIndex}.averageMarks`] = parseInt(topic.avgTopicMarks);
+      topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
+      topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
+      topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
+    });
+
+
+
+
+    // Assign rank based on position in the sorted array
+    const rank = index + 1;
+    const overallComment = generatePerformanceComment(
+      response.totalStudentMarks,
+      response.totalMaximumMarks,
+      processedResponses.map(r => r.totalStudentMarks)
+    );
+
+    // Prepare updates
+    topicUpdates.$set.percentage = response.overallPercentage;
+    topicUpdates.$set.comment = overallComment;
+    topicUpdates.$set.rank = rank;
+    // console.log(topicUpdates);
+    // Update the student response
+    let student = await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+    console.log(student.topics[0].averageMarks);
+  })
+);
+
+
+
+test.isReportGenerated = true;
+await test.save();
+return res.status(200).json({ success: true, topStudents: responsesWithPercentages.splice(0, 3) });
+
+});
+
+
+
+// const generateReportForCollege = catchAsyncErrors(async (req, res, next) => {
+
+//   const test = await Assessments.findById(req.params.id).populate([
+//     {
+//       path: 'selectedStudents',
+//       select: 'status studentId timeTaken percentage'
+//     },
+//     {
+//       path: 'rejectedStudents',
+//       select: 'status studentId timeTaken percentage'
+//     },
+//     {
+//       path: 'invitedStudents',
+//       select: 'status studentId timeTaken percentage'
+//     }
+//   ]);
 
 //   let selectedStudents = test.selectedStudents;
-//   let pendingStudents = test.invitedStudents.filter(student => student.status === "pending"); 
+//   let pendingStudents = test.invitedStudents.filter(student => student.status === "pending");
 //   let rejectedStudents = test.rejectedStudents;
 
 
 
-const generateReportForCollege = async (id,Email,reportData) => {
+const generateReportForCollege = async (id, Email, reportData) => {
 
   const {
     studentName,
@@ -1998,46 +1873,39 @@ const generateReportForCollege = async (id,Email,reportData) => {
     sections,
 
 
-//   selectedStudents.sort((a, b) => b.percentage - a.percentage);
-//   pendingStudents.sort((a, b) => b.percentage - a.percentage);
-//   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
-   
-//   selectedStudents.sort((a, b) => b.percentage - a.percentage);
-//   pendingStudents.sort((a, b) => b.percentage - a.percentage);
-//   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
+    //   selectedStudents.sort((a, b) => b.percentage - a.percentage);
+    //   pendingStudents.sort((a, b) => b.percentage - a.percentage);
+    //   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
 
-    
+    //   selectedStudents.sort((a, b) => b.percentage - a.percentage);
+    //   pendingStudents.sort((a, b) => b.percentage - a.percentage);
+    //   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
+
+
   } = reportData || {};
-  
- 
+
+
   const test = await Assessments.findById(id)
-  .populate([
-    {
-      path: 'selectedStudents',
-      select: 'status studentId timeTaken percentage topics totalMarks' ,
-      populate: {
-        path: 'studentId',
-        select:"FirstName LastName"  // Populate the studentId within studentResponses
+    .populate([
+      {
+        path: 'selectedStudents',
+        select: 'status studentId timeTaken percentage topics totalMarks',
+        populate: {
+          path: 'studentId',
+          select: "FirstName LastName"  // Populate the studentId within studentResponses
+        },
       },
-    },
-    {
-      path: 'rejectedStudents',
-      select: 'status studentId timeTaken percentage topics totalMarks',
-      populate: {
-        path: 'studentId',
-        select:"FirstName LastName"  // Populate the studentId within studentResponses
+      {
+        path: 'rejectedStudents',
+        select: 'status studentId timeTaken percentage topics',
       },
-    },
-    {
-      path: 'studentResponses',
-      match: { status: "pending" },  
-      select: 'status studentId timeTaken percentage topics totalMarks',
-      populate: {
-        path: 'studentId',
-        select:"FirstName LastName"  // Populate the studentId within studentResponses
+      {
+        path: 'studentResponses',
+        match: { status: "pending" }, // Filter to include only pending responses
+        select: 'status studentId timeTaken percentage topics',
       },
-    },
-  ])
+    ]);
+
   let selectedStudents = test.selectedStudents;
   let pendingStudents = test.studentResponses;
   let rejectedStudents = test.rejectedStudents;
@@ -2048,16 +1916,23 @@ const generateReportForCollege = async (id,Email,reportData) => {
   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
 
   const topStudents = selectedStudents.slice(0, 3);
-  const topAveragePercentage = selectedStudents.reduce((sum, student) => sum + student.percentage, 0) / selectedStudents.length || 0;
+  const topAveragePercentage =
+    selectedStudents.reduce((sum, student) => sum + student.percentage, 0) /
+    selectedStudents.length || 0;
 
   // Calculate statistics for the donut chart
-  const totalEvaluated = selectedStudents.length + rejectedStudents.length + pendingStudents.length;
-  const industryReady = selectedStudents.filter(s => s.percentage >= 25).length;
-  const needsPractice = selectedStudents.filter(s => s.percentage >= 10 && s.percentage < 25).length;
+  const totalEvaluated =
+    selectedStudents.length + rejectedStudents.length + pendingStudents.length;
+  const industryReady = selectedStudents.filter(
+    (s) => s.percentage >= 25
+  ).length;
+  const needsPractice = selectedStudents.filter(
+    (s) => s.percentage >= 10 && s.percentage < 25
+  ).length;
   const needsTraining = totalEvaluated - industryReady - needsPractice;
 
   // Generate the report HTML with the provided template
-  const reportHtml =`<!DOCTYPE html>
+  const reportHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2249,9 +2124,11 @@ const generateReportForCollege = async (id,Email,reportData) => {
         <!-- Header Section -->
         <div class="header">
             <h1>${test.name}</h1>
-            <h2>${test.description || 'Assessment Report'}</h2>
-            <h3>${test.categoryName || 'Assessment Category'}</h3>
-            <p>Test executed on ${new Date(test.startDate).toLocaleDateString()}</p>
+            <h2>${test.description || "Assessment Report"}</h2>
+            <h3>${test.categoryName || "Assessment Category"}</h3>
+            <p>Test executed on ${new Date(
+    test.startDate
+  ).toLocaleDateString()}</p>
         </div>
 
        
@@ -2297,7 +2174,9 @@ const generateReportForCollege = async (id,Email,reportData) => {
             <div class="column">
                 <h3>Topics Covered</h3>
                 <ul>
-                    ${test.topics.map(topic => `<li>${topic.Heading}</li>`).join('')}
+                    ${test.topics
+      .map((topic) => `<li>${topic.Heading}</li>`)
+      .join("")}
                 </ul>
             </div>
         </div>
@@ -2379,23 +2258,23 @@ const generateReportForCollege = async (id,Email,reportData) => {
   // Launch Puppeteer and generate PDF
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox'],
+    args: ["--no-sandbox"],
   });
   const page = await browser.newPage();
 
-  await page.setContent(reportHtml, { waitUntil: 'load' });
-  await page.waitForSelector('#donutChart');  // Ensure the canvas is loaded
+  await page.setContent(reportHtml, { waitUntil: "load" });
+  await page.waitForSelector("#donutChart"); // Ensure the canvas is loaded
   await page.evaluate(() => {
-    return new Promise(resolve => {
-        setTimeout(resolve, 2000); // Adjust to match your animation duration
+    return new Promise((resolve) => {
+      setTimeout(resolve, 2000); // Adjust to match your animation duration
     });
-});
-await page.setViewport({ width: 1920, height: 1080 });
+  });
+  await page.setViewport({ width: 1920, height: 1080 });
 
   const pdfBuffer = await page.pdf({
-    format: 'A4',
+    format: "A4",
     printBackground: true,
-    margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+    margin: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
   });
 
   await browser.close();
@@ -2405,184 +2284,16 @@ await page.setViewport({ width: 1920, height: 1080 });
   // fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true });
   // fs.writeFileSync(pdfFilePath, pdfBuffer);
 
+  return res.status(200).json({
+    success: true,
 
-  const uploadResponse = await new Promise((resolve, reject) => {
-    const cloudinaryStream = cloudinary.v2.uploader.upload_stream(
-      {
-        folder: 'image',
-        access_control: [{ access_type: 'anonymous', }],
-        resource_type: 'raw', // Correct resource type for PDF files
-        public_id: `report_${Email}`,
-        format: "pdf" // Optional: Unique public ID for the report
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-    cloudinaryStream.end(pdfBuffer);
+    message: 'PDF generated and saved successfully.',
+    filePath: pdfFilePath,
+    selectedStudents,
+    pendingStudents: pendingStudents,
+    rejectedStudents,
   });
-
-let mail = await sendEmail({
-  email: Email,
-  subject: "Invitation to join Test",
-  html: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>College Assessment Report</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .header {
-            border-bottom: 2px solid #043345;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .header .logo {
-            max-width: 150px;
-            margin-bottom: 10px;
-        }
-
-        .header h1 {
-            font-size: 26px;
-            color: #043345;
-        }
-
-        .content {
-            font-size: 14px;
-        }
-
-        .content p {
-            margin: 10px 0;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-
-        .table th, .table td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-
-        .table th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-            text-align: center;
-        }
-
-        .footer a {
-            color: #0D9AAC;
-            text-decoration: none;
-        }
-
-        .note {
-            font-size: 12px;
-            color: #0AB8C8;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img class="logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="Skill Access Logo">
-        </div>
-
-        <div class="content">
-            <p>Dear <strong>${organizationName || 'N/A'}</strong>,</p>
-            <p>We are pleased to share the performance report for the assessment <strong>"${testName || 'N/A'}"</strong>, conducted on <strong>${submissionDate || 'N/A'}</strong>.</p>
-            <p>The assessment consisted of <strong>${sections?.length || 0}</strong> sections and was attempted by <strong>${totalEvaluated}</strong> students from your institution.</p>
-            <p>Below is the overall sectional performance report:</p>
-        </div>
-
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Section</th>
-                    <th>Average Score</th>
-                    <th>Average Percent</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${sections?.map(section => `
-                <tr>
-                    <td>${section.name || 'N/A'}</td>
-                    <td>${section.score || '0'} out of ${section.maxScore || '0'}</td>
-                    <td>${section.percent || '0'}%</td>
-                </tr>`).join('')}
-            </tbody>
-        </table>
-
-        <div class="content">
-            <p>Additionally, the top performers from the assessment are as follows:</p>
-        </div>
-
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Student Name</th>
-                    <th>Score</th>
-                    <th>Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${topStudents?.map((student, index) => `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${student.studentId.FirstName + " " + student.studentId.LastName || 'N/A'}</td>
-                    <td>${student.totalMarks || '0'} out of ${test.totalMarks || '0'}</td>
-                    <td>${student.percentage || '0'}%</td>
-                </tr>`).join('')}
-            </tbody>
-        </table>
-
-        <div class="content">
-            <p><a href="${uploadResponse?.secure_url || '#'}" target="_blank">Click here</a> to download the detailed performance report.</p>
-        </div>
-
-        <div class="footer">
-            <p>Best Regards,</p>
-            <p>Skillaccess Team</p>
-            <p class="note">This is a system-generated report. For any queries, please contact us.</p>
-        </div>
-    </div>
-</body>
-</html>`
 });
-
-  console.log("report sent")
-};
 
 const now = new Date();
 const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());

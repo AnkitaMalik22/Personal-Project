@@ -12,6 +12,7 @@ module.exports = {
     "https://app.skillaccess.in",
     "https://student.skillaccess.in",
     "https://admin.skillaccess.in",
+    "*",
 
     // Add other allowed origins here
   ],

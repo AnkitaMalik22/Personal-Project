@@ -192,7 +192,7 @@ exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
   if (totalDocuments === 0) {
     return res.status(200).json({
       success: true,
-   ...responseData,
+      ...responseData,
       pagination: {
         currentPage: 1,
         totalPages: 0,

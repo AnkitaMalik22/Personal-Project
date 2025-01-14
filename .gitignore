@@ -1,8 +1,21 @@
 # Dependency directories
 node_modules/
 
+/dist
+/dist/
+/dist/*
+/build
+/build/
+
 # Environment variables
 .env
+.env.local
+config.env
+/config/config.env
+
+# IDE files
+.vscode/
+.idea/
 
 # Logs
 logs
