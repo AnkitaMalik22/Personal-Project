@@ -607,8 +607,6 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
       .populate("invitedStudents");
     console.log(assessments);
   } else {
-    //console.log(assessments);
-  }else {
     assessments = await Assessments.find({ university: id })
       .sort({ createdAt: -1 })
       .populate("invitedStudents");
@@ -1714,124 +1712,125 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
       maximumMarks,
       averageTopicPercentage,
       studentScores
-    });
-});
+    }
 
-// Update student responses
-// await Promise.all(
-//   test.studentResponses.map(async (response) => {
-//     // Initialize topicUpdates to accumulate updates
-//     let topicUpdates = { $set: {} };
+  });
 
-//     topicPercentages.forEach((topic, topicIndex) => {
-//       const studentScore = response.topics[topicIndex]?.totalMarks || 0;
-//       const comment = generatePerformanceComment(
-//         studentScore,
-//         topic.maximumMarks,
-//         [...topic.studentScores].sort((a, b) => a - b)
-//       );
+  // Update student responses
+  // await Promise.all(
+  //   test.studentResponses.map(async (response) => {
+  //     // Initialize topicUpdates to accumulate updates
+  //     let topicUpdates = { $set: {} };
 
-//       const percentage =
-//         topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
+  //     topicPercentages.forEach((topic, topicIndex) => {
+  //       const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+  //       const comment = generatePerformanceComment(
+  //         studentScore,
+  //         topic.maximumMarks,
+  //         [...topic.studentScores].sort((a, b) => a - b)
+  //       );
 
-//       // Accumulate updates for the current topic
-//       topicUpdates.$set[`topics.${topicIndex}.avgerageMarks`] = parseInt(topic.avgTopicMarks);
-//       topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
-//       topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
-//       topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
-//     });
+  //       const percentage =
+  //         topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
 
-//     // Update the student response with all accumulated updates
-//     await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
-//   })
-// );
-// Calculate overall percentages and add them to the responses
-const responsesWithPercentages = await Promise.all(
-  test.studentResponses.map(async (response) => {
-    let totalStudentMarks = 0;
-    let totalMaximumMarks = 0;
-    let topics = [];
-    topicPercentages.forEach((topic, topicIndex) => {
-      const studentScore = response.topics[topicIndex]?.totalMarks || 0;
-      totalStudentMarks += studentScore;
-      totalMaximumMarks += topic.maximumMarks;
-      topics.push(topic);
-    });
+  //       // Accumulate updates for the current topic
+  //       topicUpdates.$set[`topics.${topicIndex}.avgerageMarks`] = parseInt(topic.avgTopicMarks);
+  //       topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
+  //       topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
+  //       topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
+  //     });
 
-
-
-    const overallPercentage =
-      totalMaximumMarks > 0 ? (totalStudentMarks / totalMaximumMarks) * 100 : 0;
-
-    return {
-      topics,
-      _id: response._id,
-      studentId: response.studentId,
-      name: `${response.studentId.FirstName} ${response.studentId.LastName}`,
-      topics: studentTopics, // Now includes comments for each topic
-      overallPercentage: Math.round(response.percentage || overallPercentage),
-      totalStudentMarks,
-      totalMaximumMarks
-    };
-  })
-);
-
-console.log(topicPercentages)
-
-// Sort students by overall percentage to calculate rank
-responsesWithPercentages.sort((a, b) => b.overallPercentage - a.overallPercentage);
-
-// Update ranks and other data in the database
-await Promise.all(
-  responsesWithPercentages.map(async (response, index) => {
-    let topicUpdates = { $set: {} };
+  //     // Update the student response with all accumulated updates
+  //     await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+  //   })
+  // );
+  // Calculate overall percentages and add them to the responses
+  const responsesWithPercentages = await Promise.all(
+    test.studentResponses.map(async (response) => {
+      let totalStudentMarks = 0;
+      let totalMaximumMarks = 0;
+      let topics = [];
+      topicPercentages.forEach((topic, topicIndex) => {
+        const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+        totalStudentMarks += studentScore;
+        totalMaximumMarks += topic.maximumMarks;
+        topics.push(topic);
+      });
 
 
-    topicPercentages.forEach((topic, topicIndex) => {
-      const studentScore = response.topics[topicIndex]?.totalMarks || 0;
-      const comment = generatePerformanceComment(
-        studentScore,
-        topic.maximumMarks,
-        [...topic.studentScores].sort((a, b) => a - b)
+
+      const overallPercentage =
+        totalMaximumMarks > 0 ? (totalStudentMarks / totalMaximumMarks) * 100 : 0;
+
+      return {
+        topics,
+        _id: response._id,
+        studentId: response.studentId,
+        name: `${response.studentId.FirstName} ${response.studentId.LastName}`,
+        topics: studentTopics, // Now includes comments for each topic
+        overallPercentage: Math.round(response.percentage || overallPercentage),
+        totalStudentMarks,
+        totalMaximumMarks
+      };
+    })
+  );
+
+  console.log(topicPercentages)
+
+  // Sort students by overall percentage to calculate rank
+  responsesWithPercentages.sort((a, b) => b.overallPercentage - a.overallPercentage);
+
+  // Update ranks and other data in the database
+  await Promise.all(
+    responsesWithPercentages.map(async (response, index) => {
+      let topicUpdates = { $set: {} };
+
+
+      topicPercentages.forEach((topic, topicIndex) => {
+        const studentScore = response.topics[topicIndex]?.totalMarks || 0;
+        const comment = generatePerformanceComment(
+          studentScore,
+          topic.maximumMarks,
+          [...topic.studentScores].sort((a, b) => a - b)
+        );
+
+        const percentage =
+          topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
+
+        // Accumulate updates for the current topic averageMarks
+        topicUpdates.$set[`topics.${topicIndex}.averageMarks`] = parseInt(topic.avgTopicMarks);
+        topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
+        topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
+        topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
+      });
+
+
+
+
+      // Assign rank based on position in the sorted array
+      const rank = index + 1;
+      const overallComment = generatePerformanceComment(
+        response.totalStudentMarks,
+        response.totalMaximumMarks,
+        processedResponses.map(r => r.totalStudentMarks)
       );
 
-      const percentage =
-        topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
-
-      // Accumulate updates for the current topic averageMarks
-      topicUpdates.$set[`topics.${topicIndex}.averageMarks`] = parseInt(topic.avgTopicMarks);
-      topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
-      topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
-      topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
-    });
-
-
-
-
-    // Assign rank based on position in the sorted array
-    const rank = index + 1;
-    const overallComment = generatePerformanceComment(
-      response.totalStudentMarks,
-      response.totalMaximumMarks,
-      processedResponses.map(r => r.totalStudentMarks)
-    );
-
-    // Prepare updates
-    topicUpdates.$set.percentage = response.overallPercentage;
-    topicUpdates.$set.comment = overallComment;
-    topicUpdates.$set.rank = rank;
-    // console.log(topicUpdates);
-    // Update the student response
-    let student = await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
-    console.log(student.topics[0].averageMarks);
-  })
-);
+      // Prepare updates
+      topicUpdates.$set.percentage = response.overallPercentage;
+      topicUpdates.$set.comment = overallComment;
+      topicUpdates.$set.rank = rank;
+      // console.log(topicUpdates);
+      // Update the student response
+      let student = await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
+      console.log(student.topics[0].averageMarks);
+    })
+  );
 
 
 
-test.isReportGenerated = true;
-await test.save();
-return res.status(200).json({ success: true, topStudents: responsesWithPercentages.splice(0, 3) });
+  test.isReportGenerated = true;
+  await test.save();
+  return res.status(200).json({ success: true, topStudents: responsesWithPercentages.splice(0, 3) });
 
 });
 
@@ -2292,8 +2291,8 @@ const generateReportForCollege = async (id, Email, reportData) => {
     selectedStudents,
     pendingStudents: pendingStudents,
     rejectedStudents,
-  });
-});
+  })
+};
 
 const now = new Date();
 const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
