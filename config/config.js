@@ -1,4 +1,4 @@
-require("dotenv").config({path: "./config/config.env"});
+require("dotenv").config();
 
 module.exports = {
   PORT: process.env.PORT || 8080,
@@ -8,6 +8,7 @@ module.exports = {
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CORS_ORIGINS: [
     "http://localhost:3000",
+    "http://localhost:3001",
     "https://app.skillaccess.in",
     "https://student.skillaccess.in",
     "https://admin.skillaccess.in",

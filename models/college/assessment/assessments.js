@@ -183,7 +183,7 @@ const assessmentsSchema = new Schema(
       type: String,
       default: "",
     },
-    
+
     hasAccessToAllBranches: {
       type: Boolean,
       default: false,
@@ -217,7 +217,31 @@ const assessmentsSchema = new Schema(
       // ref : 'Company',
       // required: true,
     },
-    // -----------------------------------------
+
+    config: {
+      instructions:
+        [
+          {
+            title: String,
+            description: String
+          }
+        ]
+      ,
+      totalTime: Number,
+      isCameraRequired: {
+        type: Boolean,
+        default: true,
+      },
+      maxTabSwitches: {
+        type: Number,
+        default: 3
+      },
+      maxAudioLimitExceedCount: {
+        type: Number,
+        default: 3
+      }
+    }
+    //---------------------------------------
   },
   { timestamps: true }
 );

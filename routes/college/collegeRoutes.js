@@ -36,6 +36,9 @@ const {
   getSelectedStudents,
   getRejectedStudents,
   resultOverviewGraph,
+  bulkSelectStudents,
+  selectStudentsByThreshold,
+  updateCollegeDetails,
 } = require("../../controllers/college/collegeController");
 const {
   getAllAssessments,
@@ -96,6 +99,8 @@ router
   .route("/update/avatar")
   .put(authenticateMultiDatabase, updateProfilePictureCollege);
 
+router.route("/update/details").put(authenticateMultiDatabase, updateCollegeDetails);
+
 // 2FA - PHONE NUMBER VERIFICATION - OTP SMS
 
 router.route("/otp/example").post(checkExampleOtp);
@@ -120,6 +125,9 @@ router.post(
   authenticateMultiDatabase,
   selectStudentTest
 );
+
+router.patch("/test/:testId/bulk-select",authenticateMultiDatabase,bulkSelectStudents);
+router.patch("/test/:testId/select-by-threshold",authenticateMultiDatabase,selectStudentsByThreshold);
 // GET ALL SELECTED STUDENTS------ FOR TEST
 router.get(
   "/test/students/selected/:testId",

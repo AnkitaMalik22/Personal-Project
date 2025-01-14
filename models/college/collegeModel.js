@@ -141,6 +141,7 @@ const collegeSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Assessments",
     },
+
   ],
 
   // ---- College's Own  ----
@@ -245,6 +246,155 @@ const collegeSchema = new mongoose.Schema({
   ZipCode: String,
   Region: String,
   University: String,
+
+  // additional feilds
+    // Recognition & Accreditation
+    accreditations:[ {
+      body: {
+        type: String,
+        enum: ['NAAC', 'UGC', 'AICTE', 'Other'],
+        required: true,
+      },
+      grade: {
+        type: String,
+        enum: ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C', 'Unaccredited'],
+      },
+      validityPeriod: {
+        type: Date, // End date of validity
+      },
+      accreditationCertificate: {
+        public_id: String,
+        url: String,
+      },
+    }],
+   
+    collegeType: {
+      type: String,
+      enum: ['Government', 'Private', 'Autonomous'],
+
+    },
+    affiliationCertificate: {
+      public_id: String,
+      url: String,
+    },
+   
+  
+    // Courses Offered
+    coursesOffered: [
+      {
+        program: {
+          type: String,
+          required: true,
+        },
+        specializations: [
+          {
+            type: String,
+            required: true,
+          },
+        ],
+        intakeCapacity: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
+    topCompanies: [
+      {
+        type: String,
+      },
+    ],
+    mous: [
+      {
+        type: String,
+      },
+    ],
+    industryTieUps: [
+      {
+        type: String,
+      },
+    ],
+    placementOfficer: {
+      name: {
+        type: String,
+      },
+      email: {
+        type: String,
+      },
+      phone: {
+        type: String,
+      },
+    },
+    placementStatistics: {
+      average: {
+        type: String,
+      },
+      highest: {
+        type: String,
+      },
+      averagePackage: {
+        type: String,
+      },
+    },
+    studentStrength: {
+      total: {
+        type: String,
+      },
+      finalYear: {
+        type: String,
+      },
+    },
+    genderRatio: {
+      male: {
+        type: String,
+      },
+      female: {
+        type: String,
+      },
+    },
+    infrastructure: {
+      laboratoryDetails: {
+        type: String,
+      },
+      campusArea: {
+        type: String,
+      },
+      hostelFacility: {
+        type: String,
+        enum: ['yes', 'no'],
+      },
+      libraryFacilities: {
+        type: String,
+      },
+      sportsFacilities: {
+        type: String,
+      },
+      transportFacilities: {
+        type: String,
+      },
+    },
+    additionalInfo: {
+      mous: {
+        type: String,
+      },
+      industryTieUps: {
+        type: String,
+      },
+    },
+    bankingDetails: {
+      panCard: {
+        type: String,
+      },
+      bankName: {
+        type: String,
+      },
+      accountNumber: {
+        type: String,
+      },
+      ifscCode: {
+        type: String,
+      },
+    },
+    
 },
 {
   timestamps: true,

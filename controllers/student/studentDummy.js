@@ -24,7 +24,7 @@ exports.registerStudent = catchAsyncErrors(async (req, res, next) => {
     CollegeId,
     registrationLink,
   });
-  console.log(student);
+  // console.log(student);
 
   sendToken(student, 200, res);
 });
@@ -101,69 +101,120 @@ exports.addTest = catchAsyncErrors(async (req, res, next) => {
 });
 
 exports.getTestDetails = catchAsyncErrors(async (req, res, next) => {
-  // const { testId } = req.params;
+  // Get pagination parameters from query
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
 
-  // Find the assessment
-  const testSections = await Assessments.findById(req.params.id)
-    .populate({
+  // Get filter parameters with pending as default status
+  const status = req.query.status || 'pending';
+  const sortField = req.query.sortField || 'percentage';
+  const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+  // Base query to find the assessment
+  const baseQuery = Assessments.findById(req.params.id);
+
+  // Add population based on status filter
+  if (status === 'selected') {
+    baseQuery.populate({
+      path: "selectedStudents",
+      options: {
+        sort: { [sortField]: sortOrder },
+        skip,
+        limit
+      }
+    });
+  }
+
+  if (status === 'rejected') {
+    baseQuery.populate({
+      path: "rejectedStudents",
+      options: {
+        sort: { [sortField]: sortOrder },
+        skip,
+        limit
+      }
+    });
+  }
+
+  if (status === 'pending') {
+    baseQuery.populate({
       path: "studentResponses",
       populate: {
-        path: "studentId",
+        path: "studentId"
       },
-    })
-    .populate({
-      path: "selectedStudents",
-      // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
-    })
-    .populate({
-      path: "rejectedStudents",
-      // match: { $exists: true }, // Add this line to ignore if the field doesn't exist
+      options: {
+        sort: { [sortField]: sortOrder },
+        skip,
+        limit
+      }
     });
-    console.log(testSections)
-  // .populate({
-  //     path: "students",
-  //     populate: {
-  //       path: "studentId",
-  //     }
-  //   })
-  // console.log(testSections, "testSections");
+  }
 
-  // Fetch all students
-  // const allStudents = await Student.find();
+  // Execute the query
+  const testSections = await baseQuery;
 
-  // Iterate over each student response and add it to the respective student
-  // const populatedStudents = allStudents.map((student) => {
-  //   const response = testSections.studentResponses.find(
-  //     (response) => response.studentId.toString() === student._id.toString()
-  //   );
-  //   //    console.log(response._id, "response");
+  // Calculate total counts
+  let totalDocuments = 0;
+  let responseData = {
+    students: [],
+    selectStudents: [],
+    rejectedStudents: []
+  };
 
-  //   if (response) {
-  //     // Add the response to the student object
-  //     student.response = response;
-  //   } else {
-  //     // If no response found, set it to null or an empty object
-  //     student.response = null; // or {}
-  //   }
+  // Set data and get total count based on status
+  switch (status) {
+    case 'pending':
+      responseData.students = testSections.studentResponses || [];
+      totalDocuments = await Assessments.findById(req.params.id)
+        .populate('studentResponses')
+        .then(doc => doc.studentResponses ? doc.studentResponses.length : 0);
+      break;
 
-  //   return student;
-  // });
+    case 'selected':
+      responseData.selectStudents = testSections.selectedStudents || [];
+      totalDocuments = await Assessments.findById(req.params.id)
+        .populate('selectedStudents')
+        .then(doc => doc.selectedStudents ? doc.selectedStudents.length : 0);
+      break;
+
+    case 'rejected':
+      responseData.rejectedStudents = testSections.rejectedStudents || [];
+      totalDocuments = await Assessments.findById(req.params.id)
+        .populate('rejectedStudents')
+        .then(doc => doc.rejectedStudents ? doc.rejectedStudents.length : 0);
+      break;
+  }
+
+  const totalPages = Math.ceil(totalDocuments / limit);
+
+  // Handle case when there are no documents
+  if (totalDocuments === 0) {
+    return res.status(200).json({
+      success: true,
+   ...responseData,
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalDocuments: 0,
+        limit
+      },
+      message: `No ${status} students found`
+    });
+  }
 
   res.status(200).json({
     success: true,
-    // appeared students
-    // students: populatedStudents,
-    students: testSections.studentResponses,
-    // selected students
-    selectStudents: testSections.selectedStudents
-      ? testSections.selectedStudents
-      : [],
-    // rejected students
-    rejectedStudents: testSections.rejectedStudents
-      ? testSections.rejectedStudents
-      : [],
+    ...responseData,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalDocuments,
+      limit
+    }
   });
 });
+
 
 exports.giveTest = catchAsyncErrors(async (req, res, next) => {
   const { testId, topics } = req.body;

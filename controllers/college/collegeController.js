@@ -868,6 +868,133 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
 
 // ================================================ Update Profile Picture ===========================================================
 
+
+
+exports.updateCollegeDetails = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const formData = req.body;
+
+    // Parse all JSON string fields in `formData`
+    Object.keys(formData).forEach((key) => {
+      if (typeof formData[key] === "string") {
+        try {
+          formData[key] = JSON.parse(formData[key]);
+        } catch (error) {
+          // If parsing fails, leave the value as a string
+        }
+      }
+    });
+
+    // Handle file uploads for certificates
+    if (formData.accreditations) {
+      for (let i = 0; i < formData.accreditations.length; i++) {
+        if (req.files && req.files[`accreditations[${i}].accreditationCertificate`]) {
+          const file = req.files[`accreditations[${i}].accreditationCertificate`];
+          const uploadResult = await uploadPicture(file, "college-certificates");
+          formData.accreditations[i].accreditationCertificate = {
+            public_id: uploadResult.public_id,
+            url: uploadResult.secure_url
+          };
+        }
+      }
+    }
+
+    if (req.files && req.files.affiliationCertificate) {
+      const affiliationResult = await uploadPicture(
+        req.files.affiliationCertificate,
+        "college-certificates"
+      );
+      formData.affiliationCertificate = {
+        public_id: affiliationResult.public_id,
+        url: affiliationResult.secure_url
+      };
+    }
+
+    if (req.files && req.files.placementReport) {
+      const placementResult = await uploadPicture(
+        req.files.placementReport,
+        "college-documents"
+      );
+      formData.placementReport = {
+        public_id: placementResult.public_id,
+        url: placementResult.secure_url
+      };
+    }
+
+    const updatedCollege = await College.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          accreditations: formData.accreditations,
+          collegeType: formData.collegeType,
+          affiliationCertificate: formData.affiliationCertificate,
+          coursesOffered: formData.coursesOffered,
+          topCompanies: formData.topCompanies,
+          mous: formData.mous,
+          industryTieUps: formData.industryTieUps,
+          bankingDetails: {
+            panCard: formData.bankingDetails?.panCard,
+            bankName: formData.bankingDetails?.bankName,
+            accountNumber: formData.bankingDetails?.accountNumber,
+            ifscCode: formData.bankingDetails?.ifscCode
+          },
+          placementOfficer: {
+            name: formData.placementOfficer?.name,
+            email: formData.placementOfficer?.email,
+            phone: formData.placementOfficer?.phone
+          },
+          placementStatistics: {
+            average: formData.placementStatistics?.average,
+            highest: formData.placementStatistics?.highest,
+            averagePackage: formData.placementStatistics?.averagePackage
+          },
+          studentStrength: {
+            total: formData.studentStrength?.total,
+            finalYear: formData.studentStrength?.finalYear
+          },
+          genderRatio: {
+            male: formData.genderRatio?.male,
+            female: formData.genderRatio?.female
+          },
+          infrastructure: {
+            laboratoryDetails: formData.infrastructure?.laboratoryDetails,
+            campusArea: formData.infrastructure?.campusArea,
+            hostelFacility: formData.infrastructure?.hostelFacility,
+            libraryFacilities: formData.infrastructure?.libraryFacilities,
+            sportsFacilities: formData.infrastructure?.sportsFacilities,
+            transportFacilities: formData.infrastructure?.transportFacilities
+          },
+          additionalInfo: {
+            mous: formData.additionalInfo?.mous,
+            industryTieUps: formData.additionalInfo?.industryTieUps,
+            alumniNetwork: formData.additionalInfo?.alumniNetwork,
+            communityInvolvement: formData.additionalInfo?.communityInvolvement
+          }
+        }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "College details updated successfully",
+      data: updatedCollege
+    });
+
+  } catch (error) {
+    console.error("Error updating college details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating college details",
+      error: error.message
+    });
+  }
+};
+
+
+
+
 exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res) => {
   const role = req.user.role;
   const model = role === "college" ? College : University;
@@ -1377,93 +1504,150 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
-    const { batch, createdAt, skills, filterType, page, limit = 100 } = req.query;
+    const { batch, createdAt, skills, filterType, page = 1, limit = 100 } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
-    let entity = req.user.role;
+    let approvedTotal, invitedTotal, pendingTotal;
+    const entity = req.user.role;
+
     // Build the filter object
-    let filter = { [entity]: id };
-
-    if (batch) {
-      filter["students.batch"] = batch;
-    }
-
-    if (createdAt) {
-      filter["students.createdAt"] = { $gte: new Date(createdAt) };
-    }
+    const filter = { [entity]: id };
+    if (batch) filter["students.batch"] = batch;
+    if (createdAt) filter["students.createdAt"] = { $gte: new Date(createdAt) };
 
     const skip = (page - 1) * limit;
 
-    // completed profile
-    if (filterType === 'all students' || filterType === 'pending students') {
-      pendingStudents = await UploadedStudents.findOne({
-        [entity]: filter[entity]
-      })
+    // Pending Students
+    if (filterType === 'all-students' || filterType === 'pending-students') {
+      const pending = await UploadedStudents.findOne({ [entity]: filter[entity] })
         .populate({
           path: "students",
           match: {
             $and: [
               batch && batch !== "all" ? { batch: batch } : {},
               createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-            ]
+            ],
+          },
+        });
+
+      pendingTotal = pending ? pending.students.length : 0;
+      pendingStudents = await UploadedStudents.findOne({ [entity]: filter[entity] })
+        .populate({
+          path: "students",
+          match: {
+            $and: [
+              batch && batch !== "all" ? { batch: batch } : {},
+              createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+            ],
           },
           options: {
             skip: skip,
             limit: parseInt(limit),
-          }
+          },
         });
-      console.log("Pending Students:", pendingStudents?.students?.length);
     }
-    if (filterType === 'all students' || filterType === 'invited students') {
-      invitedStudents = await InvitedStudents.findOne({
-        [entity]: filter[entity],
-        $and: [
-          batch && batch !== "all" ? { batch: batch } : {},
-          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-        ]
-      })
+
+    // Invited Students
+    if (filterType === 'all-students' || filterType === 'invited-students') {
+      const fullInvitedStudents = await InvitedStudents.findOne({ [entity]: filter[entity] });
+      if (fullInvitedStudents && fullInvitedStudents.students) {
+        const filteredInvited = fullInvitedStudents.students.filter(
+          (student) => batch === "all" || student.batch === batch
+        );
+        invitedTotal = filteredInvited.length;
+        invitedStudents = filteredInvited.slice(skip, skip + parseInt(limit));
+      }
+    }
+
+    // Approved Students
+    if (filterType === 'all-students' || filterType === 'approved-students') {
+      const approved = await ApprovedStudents.findOne({ [entity]: filter[entity] })
         .populate({
           path: "students",
+          match: {
+            $and: [
+              batch && batch !== "all" ? { batch: batch } : {},
+              createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+            ],
+          },
+        });
+
+      approvedTotal = approved ? approved.students.length : 0;
+      approvedStudents = await ApprovedStudents.findOne({ [entity]: filter[entity] })
+        .populate({
+          path: "students",
+          match: {
+            $and: [
+              batch && batch !== "all" ? { batch: batch } : {},
+              createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+            ],
+          },
           options: {
             skip: skip,
             limit: parseInt(limit),
-          }
+          },
+          populate: {
+            path: "studentResponses",
+            select: ["assessmentId", "batch", "createdAt", "Skills"],
+            populate: {
+              path: "assessmentId",
+              select: "name",
+            },
+          },
         });
     }
-    if (filterType === 'all students' || filterType === 'approved students') {
-      approvedStudents = await ApprovedStudents.findOne({
-        [entity]: filter[entity]
-      }).populate({
-        path: "students",
-        match: {
-          $and: [
-            batch && batch !== "all" ? { batch: batch } : {},
-            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-          ]
-        },
-        options: {
-          skip: skip,
-          limit: parseInt(limit),
-        },
-        populate: {
-          path: "studentResponses",
-          select: ["assessmentId", "batch", "createdAt", "Skills"],
-          populate: {
-            path: "assessmentId",
-            select: "name"
-          }
-        }
-      });
-    }
 
-    console.log(approvedStudents,entity);
+   // Helper function for total pages calculation
+const calculateTotalPages = (total, limit) => (total ? Math.ceil(total / limit) : 0);
+
+const pendingTotalPages = calculateTotalPages(pendingTotal, limit);
+const invitedTotalPages = calculateTotalPages(invitedTotal, limit);
+const approvedTotalPages = calculateTotalPages(approvedTotal, limit);
+
+function getPaginationData({ filterType, page = 1, limit = 10, approvedTotalPages = 0, invitedTotalPages = 0, pendingTotalPages = 0 }) {
+    const totalPages = (() => {
+        switch (filterType) {
+            case "pending-students":
+                return pendingTotalPages;
+            case "invited-students":
+                return invitedTotalPages;
+            case "approved-students":
+                return approvedTotalPages;
+            default:
+                return 0;
+        }
+    })();
+
+    return {
+        pagination: {
+            currentPage: parseInt(page, 10),
+            totalPages,
+        },
+    };
+}
+
+const paginationData = getPaginationData({
+    filterType,
+    page,
+    limit,
+    approvedTotalPages,
+    invitedTotalPages,
+    pendingTotalPages,
+});
+
+
+  
+  console.log(paginationData);
+
     res.status(200).json({
       success: true,
       approvedStudents: approvedStudents ? approvedStudents.students : [],
-      uploadedStudents: invitedStudents && invitedStudents.students ? invitedStudents.students : [],
+      uploadedStudents: invitedStudents || [],
       pendingStudents: pendingStudents && pendingStudents.students ? pendingStudents.students : [],
+     ...paginationData
     });
+    
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 });
@@ -1709,6 +1893,135 @@ exports.selectStudentTest = catchAsyncErrors(async (req, res, next) => {
     message: "Student selected/rejected sucessfully",
   });
 });
+
+/**
+ * Update multiple students' selection status based on student IDs
+ */
+exports.bulkSelectStudents = catchAsyncErrors(async (req, res, next) => {
+  const { testId } = req.params;
+  const { studentIds, status } = req.body;
+
+  const assessment = await Assessments.findById(testId);
+  if (!assessment) {
+      return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  // Update all student responses
+  const updatedResponses = await studentResponse.updateMany(
+      { _id: { $in: studentIds } },
+      { $set: { status: status } }
+  );
+
+  if (status === "selected") {
+      // Add to selectedStudents if not already included
+      await Assessments.findByIdAndUpdate(testId, {
+          $addToSet: { selectedStudents: { $each: studentIds } }
+      });
+
+      if (assessment.avgSelectedPercentage !== undefined) {
+          const updatedAssessment = await Assessments.findById(testId);
+          updatedAssessment.avgSelectedPercentage = 
+              (updatedAssessment.selectedStudents.length / updatedAssessment.totalStudents) * 100;
+          await updatedAssessment.save();
+      }
+  } else if (status === "rejected") {
+      // Add to rejectedStudents if not already included
+      await Assessments.findByIdAndUpdate(testId, {
+          $addToSet: { rejectedStudents: { $each: studentIds } }
+      });
+
+      if (assessment.avgRejectedPercentage !== undefined) {
+          const updatedAssessment = await Assessments.findById(testId);
+          updatedAssessment.avgRejectedPercentage = 
+              (updatedAssessment.rejectedStudents.length / updatedAssessment.totalStudents) * 100;
+          await updatedAssessment.save();
+      }
+  }
+
+  res.status(200).json({
+      success: true,
+      message: `${studentIds.length} students ${status} successfully`,
+      updatedCount: updatedResponses.modifiedCount
+  });
+});
+
+
+/**
+ * Update students' status based on percentage threshold
+ */
+exports.selectStudentsByThreshold = catchAsyncErrors(async (req, res, next) => {
+  const { testId } = req.params;
+  const { threshold } = req.body;
+
+  const assessment = await Assessments.findById(testId).populate("studentResponses");
+  if (!assessment) {
+      return next(new ErrorHandler("Assessment not found", 404));
+  }
+
+  // Find all responses for this test
+  const responses = assessment.studentResponses;
+  const totalStudents = responses.length;
+
+  // Separate students based on threshold
+  const selectedIds = [];
+  const rejectedIds = [];
+  
+  responses.forEach(response => {
+      if (response.percentage >= threshold) {
+          selectedIds.push(response._id);
+      } else if(response.percentage <=threshold) {
+          rejectedIds.push(response._id);
+      }
+  });
+
+  // Update selected students
+  await studentResponse.updateMany(
+      { _id: { $in: selectedIds } },
+      { $set: { status: 'selected' } }
+  );
+
+  // Update rejected students
+  await studentResponse.updateMany(
+      { _id: { $in: rejectedIds } },
+      { $set: { status: 'rejected' } }
+  );
+
+  // Update assessment
+  await Assessments.findByIdAndUpdate(testId, {
+      $addToSet: { 
+          selectedStudents: { $each: selectedIds },
+          rejectedStudents: { $each: rejectedIds }
+      }
+  });
+
+
+  // Update percentages if they exist
+  if (assessment.avgSelectedPercentage !== undefined || assessment.avgRejectedPercentage !== undefined) {
+      const updatedAssessment = await Assessments.findById(testId);
+      
+      if (assessment.avgSelectedPercentage !== undefined) {
+          updatedAssessment.avgSelectedPercentage = 
+              (updatedAssessment.selectedStudents.length / responses.length ) * 100;
+      }
+      
+      if (assessment.avgRejectedPercentage !== undefined) {
+          updatedAssessment.avgRejectedPercentage = 
+              (updatedAssessment.rejectedStudents.length / responses.length) * 100;
+      }
+      
+      await updatedAssessment.save();
+  }
+
+  res.status(200).json({
+      success: true,
+      message: `Students updated based on ${threshold}% threshold`,
+      selectedCount: selectedIds.length,
+      rejectedCount: rejectedIds.length
+  });
+});
+
+
+
 
 // =========================================== GET ALL SELECTED STUDENTS FOR THE TEST  ===========================================
 

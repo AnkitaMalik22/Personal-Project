@@ -311,7 +311,7 @@ exports.checkInvitation = async (req, res, next) => {
     // Check if the student is already registered
     const existingStudent = await Student.findOne({ Email: email });
     if (existingStudent) {
-      return next(new ErrorHandler("User already registered", 400));
+      return res.status(200).redirect("/")
     }
 
     // If valid and not registered, proceed to registration page

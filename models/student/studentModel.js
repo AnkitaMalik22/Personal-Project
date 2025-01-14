@@ -81,8 +81,14 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  department: {
+    type: String,
+    default: "Others",
+    enum: ["Arts", "Science", "Commerce", "Engineering", "Computer Science", "Management", "Law", "Medicine", "Education", "Design","Others"],
+  },
   batch: {
     type: String,
+    default:"2024"
   },
   approved: {
     type: Boolean,
@@ -180,9 +186,9 @@ const studentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "College",
   }],
-  clearedEntrance:{
-    type:Boolean,
-    default:false
+  clearedEntrance: {
+    type: Boolean,
+    default: false
   },
   // ----
   // registrationLink: { type: String, unique: true, default: "" },
@@ -213,6 +219,11 @@ const studentSchema = new mongoose.Schema({
   Education: [
     {
       School: String,
+      Percentage: Number,
+      Type: {
+        type: String,
+        enum: ["ISC" | "ICSE" | "CBSE" | "StateBoard" | "IB" | "IGCSE" | "NIOS" | "OpenSchool" | "Diploma" | "Degree"]
+      }, // Expanded Enum
       Description: String,
       Degree: String,
       StartDate: Date,

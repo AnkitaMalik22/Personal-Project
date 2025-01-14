@@ -8,7 +8,7 @@ const {
   isAuthenticatedStudent,
   // isAuthenticatedCompany,
   authorizeRoles,
-} = require("../../middlewares/auth");
+} = require("../../middlewares/studentAuth");
 const { isAuthenticatedCompany } = require("../../middlewares/companyAuth");
 const {
   getResultGraph,
@@ -68,9 +68,9 @@ const { authenticateMultiDatabase } = require("../../middlewares/authMultiUser")
 
 // Assessments Routes
 
-router.get("/publish-report/:id",assessmentsController.generateReport);
-router.get("/report/pdf/:id",assessmentsController.generateStudentReportPdf);
-router.get("/report/college/:id",assessmentsController.generateReportForCollege);
+router.get("/publish-report/:id",authenticateMultiDatabase,assessmentsController.generateReport);
+router.get("/report/pdf/:id",isAuthenticatedStudent,assessmentsController.generateStudentReportPdf);
+router.get("/report/college/:id",authenticateMultiDatabase,assessmentsController.generateReportForCollege);
 
 router.post("/question/image",questionsController.uploadQuestionImage);
 
