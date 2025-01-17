@@ -18,7 +18,7 @@ module.exports = {
     "https://develop.skillaccess.in",
     "https://developstudent.skillaccess.in",
     "https://developadmin.skillaccess.in",
-    "https://skillaccess-college-develop.vercel.app/",
+    "https://skillaccess-college-develop.vercel.app",
     "*",
 
     // Add other allowed origins here
