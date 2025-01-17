@@ -413,8 +413,9 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
+    const search = req.query.search ? req.query.search.trim() : "";
+    
+    // Fetch the campus drive details
     const campusDrive = await CampusDrive.findById(req.params.id)
       .select("colleges company name status")
       .populate({
@@ -430,30 +431,40 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Campus drive not found", 404));
     }
 
-    const allColleges = await College.find()
+    // Get assigned college IDs
+    const assignedCollegeIds = campusDrive.colleges.map(college => 
+      college._id.toString()
+    );
+
+    // Build search query
+    const searchQuery = {
+      _id: { $nin: assignedCollegeIds }
+    };
+
+    if (search && search !== "undefined") {
+      searchQuery.CollegeName = { $regex: search, $options: "i" };
+    }
+
+    // Get total count
+    const totalColleges = await College.countDocuments(searchQuery);
+
+    // Calculate pagination
+    const totalPages = Math.max(1, Math.ceil(totalColleges / limit));
+    const currentPage = Math.min(page, totalPages);
+    const skip = (currentPage - 1) * limit;
+
+    // Fetch colleges
+    const availableColleges = await College.find(searchQuery)
       .select("CollegeName Email Phone Address avatar _id")
       .skip(skip)
-      .limit(limit);
-
-    const totalColleges = await College.countDocuments();
-
-    // Filter available colleges (excluding already assigned colleges)
-    const availableColleges = allColleges.filter(
-      (college) =>
-        !campusDrive.colleges.some(
-          (campusCollege) =>
-            campusCollege &&
-            campusCollege._id &&
-            college._id &&
-            campusCollege._id.toString() === college._id.toString()
-        )
-    );
+      .limit(limit)
+      .lean();
 
     res.status(200).json({
       success: true,
       data: {
         campusDrive: {
-          _id: campusDrive._id,
+          id: campusDrive.id,
           name: campusDrive.name,
           status: campusDrive.status,
           company: campusDrive.company,
@@ -462,13 +473,13 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
         assignedColleges: campusDrive.colleges,
         pagination: {
           total: totalColleges,
-          currentPage: page,
-          totalPages: Math.ceil(totalColleges / limit),
+          currentPage,
+          totalPages,
           limit,
         },
       },
     });
   } catch (error) {
-    return next(new ErrorHandler(error, 500));
+    return next(new ErrorHandler(error.message, 500));
   }
 });

@@ -202,7 +202,7 @@ exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
 
 exports.createTopicCollege = async (req, res) => {
   try {
-    const { Heading, Description, TotalQuestions, Time } = req.body;
+    const { Heading, Description, category } = req.body;
     const source = req.user.role;
     const userId = req.user.id;
 
@@ -215,12 +215,12 @@ exports.createTopicCollege = async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .json({ error: `${isCompany ? "Company" : "College"} not found` });
+        .json({ message: `${isCompany ? "Company" : "College"} not found` });
     }
 
     // Validate input fields
-    if (!Heading || !Description) {
-      return res.status(400).json({ error: "All fields are required" });
+    if (!Heading || !Description || !category) {
+      return res.status(400).json({ message: "All fields are required" });
     }
     let topics;
 
@@ -239,7 +239,7 @@ exports.createTopicCollege = async (req, res) => {
     const duplicateTopic = topics.some((topic) => topic.Heading === Heading);
 
     if (duplicateTopic) {
-      return res.status(400).json({ error: "Topic already exists" });
+      return res.status(400).json({ message : "Topic already exists" });
     }
 
     // Create the new topic, setting the appropriate fields
@@ -264,8 +264,8 @@ exports.createTopicCollege = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      message: "Unable to create topic",
-      error: error.message,
+      message: error.message,
+      error: "Unable to create topic",
     });
   }
 };
