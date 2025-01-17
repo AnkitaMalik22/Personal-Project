@@ -1186,7 +1186,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
         },
       },
       { $unwind: "$studentResponses" },
-      { $match: { "studentResponses.completed": true } },
+      // { $match: { "studentResponses.completed": true } },
       {
         $lookup: {
           from: "students",
