@@ -371,8 +371,11 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         isLast = true;
       }
       // console.log(firstQuestion);
-      console.log(isLast, "is last llllllllllllllllllllllllllllll");
+      // console.log(isLast, "is last llllllllllllllllllllllllllllll");
       res.json({
+        data: {
+          conf: assessment.assessment.config
+        },
         isLast: isLast,
         success: true,
         message: "Assessment started",
@@ -396,8 +399,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
           type === "mcq"
             ? "questions"
             : type === "findAnswer"
-            ? "findAnswers"
-            : type
+              ? "findAnswers"
+              : type
         ].length < 2
       ) {
         isLast = true;
@@ -572,8 +575,8 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
     studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-    console.log("timeTaken1",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
-    
+    console.log("timeTaken1", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
+
 
     await studentResponse.save();
 
@@ -853,7 +856,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           assessment.totalStudentAttempted;
 
         studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-        console.log("timeTaken2",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+        console.log("timeTaken2", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
         studentResponse.correctAnswers = assessment.correctAnswers;
         studentResponse.percentage =
           (assessment.marks / assessment.assessment.totalMarks) * 100;
@@ -975,7 +978,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           studentResponse.totalQuestionsAttempted =
             assessment.totalStudentAttempted;
           studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-          console.log("timeTaken3",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+          console.log("timeTaken3", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
           studentResponse.correctAnswers = assessment.correctAnswers;
 
           studentResponse.percentage =
@@ -1065,7 +1068,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     const per = (assessment.marks / assessment.assessment.totalMarks) * 100;
     studentResponse.percentage = per || 0;
     studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-    console.log("timeTaken4",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+    console.log("timeTaken4", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
 
     // console.log(
     //   studentResponse.topics[topicIndex].questions[questionIndex]
