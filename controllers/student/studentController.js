@@ -186,7 +186,7 @@ exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
                         $filter: {
                           input: "$assessments",
                           as: "assessment",
-                          cond: { 
+                          cond: {
                             $eq: ["$$assessment._id", "$$response.assessmentId"]
                           }
                         }
@@ -206,22 +206,22 @@ exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
         FirstName: 1,
         LastName: 1,
         Email: 1,
-        completedProfile:1,
-        batch:1,
-        approved:1,
-        avatar:1,
-        FirstName:1,
-        LastName:1,
-        CollegeName:1,
-        CollegeId:1,
-        Education:1,
-        Skills:1,
-        Links:1,
-        Portfolio:1,
-        Cv:1,
-        Certificate:1,
-        CompanyPlaced:1,
-        JobPlace:1,
+        completedProfile: 1,
+        batch: 1,
+        approved: 1,
+        avatar: 1,
+        FirstName: 1,
+        LastName: 1,
+        CollegeName: 1,
+        CollegeId: 1,
+        Education: 1,
+        Skills: 1,
+        Links: 1,
+        Portfolio: 1,
+        Cv: 1,
+        Certificate: 1,
+        CompanyPlaced: 1,
+        JobPlace: 1,
         // Include all other student fields you need
         studentResponses: {
           $slice: ["$allStudentResponses", (page - 1) * limit, parseInt(limit)]
@@ -339,7 +339,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
   let entity;
   let student;
   let role = "college";
-
+  let approved = false;
   const device = req.headers["user-agent"];
 
   entity = await College.findById(CollegeId);
@@ -403,6 +403,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       if (student.link === inviteLink) {
         email = student.Email;
         batch = student.batch;
+        approved = student.approved;
       }
       return student.link === inviteLink;
     });
@@ -416,7 +417,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       Email,
       avatar,
       batch,
-      ...(role === "university" ? { universityId: CollegeId, CollegeName: "Unassigned" } : { CollegeName: entity.collegeName, CollegeId: CollegeId  }),
+      ...(role === "university" ? { universityId: CollegeId, CollegeName: "Unassigned" } : { CollegeName: entity.collegeName, CollegeId: CollegeId }),
       registrationLink: inviteLink,
 
     });
@@ -471,6 +472,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       if (student.link === inviteLink) {
         email = student.Email;
         batch = student.batch;
+        approved = student.approved
       }
       return student.link === inviteLink;
     });
@@ -481,12 +483,13 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
     student = await Student.create({
       ...req.body,
       Password: req.body.Password,
-      ...(role === "university" ? { universityId: CollegeId, CollegeName: "Unassigned" ,CollegeId:undefined} : { CollegeName: entity.collegeName, CollegeId: CollegeId }),
+      ...(role === "university" ? { universityId: CollegeId, CollegeName: "Unassigned", CollegeId: undefined } : { CollegeName: entity.collegeName, CollegeId: CollegeId }),
       avatar,
       Email: email,
       registrationLink: inviteLink,
       PhoneNumber,
-      batch: batch
+      batch: batch,
+      approved
     });
 
   }
@@ -821,10 +824,10 @@ exports.deleteStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudentsByCollegeId = catchAsyncErrors(async (req, res, next) => {
 
   let students;
-  if(req.user.role === "college"){
+  if (req.user.role === "college") {
     students = await Student.find({ CollegeId: req.user.id });
-  }else{
-    students = await Student.find({universityId : req.user.id});
+  } else {
+    students = await Student.find({ universityId: req.user.id });
   }
 
   console.log(students);

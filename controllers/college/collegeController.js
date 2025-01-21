@@ -1208,7 +1208,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const allDuplicateEmails = [];
 
   for (let i = 0; i < students.length; i++) {
-    const { FirstName, LastName, Email, Batch } = students[i];
+    const { FirstName, LastName, Email, Batch, approved = false } = students[i];
     // const student = await UploadedStudents.create({
     //   college_id: userId,
     //   FirstName,
@@ -1238,7 +1238,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
           link: link,
           FirstName: FirstName,
           LastName: LastName,
-          batch: Batch
+          batch: Batch,
+          approved
           // student: stu._id,
         });
 

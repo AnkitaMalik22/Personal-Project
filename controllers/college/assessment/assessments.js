@@ -950,37 +950,44 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       const skip = parseInt(req.query.skip) || 0; // Default skip is 0
       const batch = req.query.batch;
       const search = req.query.search;
-
-      const query = { [role]: id };
-      const populateOptions = {
-        path: "students",
-        select: "FirstName LastName Avatar _id createdAt batch Email",
-        match: { _id: { $nin: assessment?.invitedStudents } },
-        options: {
-          sort: { _id: -1 },
-          skip: skip, // Skip the first 'skip' documents
-          limit: limit + 1, // Fetch one extra document to check for the next page
-        },
+      const query = {
+        _id: { $nin: assessment?.invitedStudents || [] }, // Exclude invited students
+        approved: true, // Only approved students
       };
 
+      // Add batch filter if provided
       if (batch) {
-        populateOptions.match = { ...populateOptions.match, batch: batch };
-      }
-      if (search) {
-        populateOptions.match = {
-          ...populateOptions.match,
-          $or: [
-            { FirstName: { $regex: search, $options: "i" } },
-            { LastName: { $regex: search, $options: "i" } },
-            { Email: { $regex: search, $options: "i" } },
-          ],
-        };
+        query.batch = batch;
       }
 
-      const approved = await ApprovedStudents.findOne(query).populate(
-        populateOptions
-      );
-      let students = approved ? approved.students : [];
+      // Add search filter if provided
+      if (search) {
+        query.$or = [
+          { FirstName: { $regex: search, $options: "i" } },
+          { LastName: { $regex: search, $options: "i" } },
+          { Email: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      // Specify fields in a consistent projection format
+      const projection = {
+        FirstName: 1,
+        LastName: 1,
+        Avatar: 1,
+        _id: 1,
+        createdAt: 1,
+        batch: 1,
+        Email: 1,
+      };
+
+      // Perform the query
+      const approved = await Student.find(query, projection)
+        .sort({ _id: -1 })
+        .skip(skip) // Skip the first 'skip' documents
+        .limit(limit + 1); // Fetch one extra document to check for the next page
+
+      const students = approved || [];
+
 
       // //console.log(approved.students)
       // Check if there's a next page
