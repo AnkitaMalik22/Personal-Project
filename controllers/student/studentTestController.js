@@ -1261,6 +1261,8 @@ exports.sendResponseNonAdaptive = catchAsyncErrors(async (req, res, next) => {
       result: studentResponse,
     });
   } catch (error) {
+
+    res.status(500);
     // console.log("Error", error);
   }
 });
