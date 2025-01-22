@@ -1257,6 +1257,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
         invited.students.forEach((student, i) => {
           if (student.Email === Email) {
             invited.students[i].link = link;
+            invited.students[i].FirstName = FirstName;
+            invited.students[i].LastName = LastName;
           }
         });
 
