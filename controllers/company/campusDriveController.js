@@ -424,7 +424,7 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search ? req.query.search.trim() : "";
-
+    
     // Fetch the campus drive details
     const campusDrive = await CampusDrive.findById(req.params.id)
       .select("colleges company name status")
@@ -442,13 +442,13 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
     }
 
     // Get assigned college IDs
-    const assignedCollegeIds = campusDrive.colleges.map((college) =>
+    const assignedCollegeIds = campusDrive.colleges.map(college => 
       college._id.toString()
     );
 
     // Build search query
     const searchQuery = {
-      _id: { $nin: assignedCollegeIds },
+      _id: { $nin: assignedCollegeIds }
     };
 
     if (search && search !== "undefined") {
@@ -467,27 +467,14 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
     const availableColleges = await College.find(searchQuery)
       .select("CollegeName Email Phone Address avatar _id")
       .skip(skip)
-      .limit(limit);
-
-    const totalColleges = await College.countDocuments();
-
-    // Filter available colleges (excluding already assigned colleges)
-    const availableColleges = allColleges.filter(
-      (college) =>
-        !campusDrive.colleges.some(
-          (campusCollege) =>
-            campusCollege &&
-            campusCollege._id &&
-            college._id &&
-            campusCollege._id.toString() === college._id.toString()
-        )
-    );
+      .limit(limit)
+      .lean();
 
     res.status(200).json({
       success: true,
       data: {
         campusDrive: {
-          _id: campusDrive._id,
+          id: campusDrive.id,
           name: campusDrive.name,
           status: campusDrive.status,
           company: campusDrive.company,
