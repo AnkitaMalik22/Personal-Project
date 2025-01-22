@@ -420,12 +420,44 @@ const studentResponseSchema = new mongoose.Schema(
     },
     comment: String,
     rank: Number,
-  },
-  {
-    timestamps: true,
-  }
-);
 
+    selectedForInterview: {
+      type: Boolean,
+      default: false,
+    },
+    interviewStatus: {
+      type: String,
+      enum: ["pending", "completed", "rejected", "shortlisted", "hired", "not_hired"],
+      default: "pending",
+    },
+
+    // selectedBy : [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Company'
+    //   }
+    // ],
+
+    // selectionStatus: {
+    //   type: String,
+    //   enum: ["pending", "completed", "rejected", "shortlisted", "hired", "not_hired"],
+    //   default: "pending",
+    // },
+
+selection: [{
+  selectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company'
+  },
+  selectionStatus: {
+    type: String,
+    enum: ["pending", "completed", "rejected", "shortlisted", "hired", "not_hired"],
+    default: "pending"
+  }
+}]
+  },
+  { timestamps: true }
+);
 const studentResponse = mongoose.model(
   "StudentResponse",
   studentResponseSchema

@@ -17,12 +17,21 @@ const CampusDriveSchema = new Schema({
         type: String,
         default: 'https://via.placeholder.com/150'
     },
-
+// ----------- Act as an Community -------------
     company:{ 
         type: Schema.Types.ObjectId,
         ref: 'Company',
         required: true
     },
+// --------------------------------------------- 
+
+    companies : [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Company'
+        }
+    ],
+
     colleges : [
         {
             type: Schema.Types.ObjectId,
@@ -50,7 +59,7 @@ const CampusDriveSchema = new Schema({
                 {
                   student : {
                         type: Schema.Types.ObjectId,
-                        ref: 'Student'
+                        ref: 'Students'
                     },
                     status : {
                         type: String,
@@ -66,6 +75,38 @@ const CampusDriveSchema = new Schema({
                     collegeId : {
                         type: Schema.Types.ObjectId,
                         ref: 'College'
+                    },
+
+                    selectedBy : {
+                        type: Schema.Types.ObjectId,
+                        ref: 'Company'
+                    },
+
+                       
+                    // updated
+                        selection : {
+                    
+                          selectedBy : {
+                            type: mongoose.Schema.Types.ObjectId,
+                            ref: 'Company'
+                          },
+                          status : {
+                            type: String,
+                            enum: ["pending", "completed", "rejected", "shortlisted", "hired", "not_hired"],
+                            default: "pending",
+                          },
+                        },
+                    
+
+                    selectedForInterview : {
+                        type: Boolean,
+                        default: false
+                    },
+
+                    interviewStatus : {
+                        type: String,
+                        enum: ['pending', 'completed', 'rejected', 'shortlisted', 'hired', 'not_hired'],
+                        default: 'pending'
                     },
 
                 }
@@ -89,7 +130,15 @@ const CampusDriveSchema = new Schema({
     createdAt : {
         type: Date,
         default: Date.now
-    }
+    },
+    updatedAt : {
+        type: Date,
+        default: Date.now
+    },
+    createdBy : {
+        type: Schema.Types.ObjectId,
+        ref: 'Company'
+    },
 });
 
 
