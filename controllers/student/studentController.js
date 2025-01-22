@@ -287,6 +287,7 @@ exports.checkInvitation = async (req, res, next) => {
   try {
     const { inviteLink, CollegeId } = req.query;
     let entity;
+    let FirstName; let LastName;
 
     // Validate input
     if (!inviteLink || !CollegeId) {
@@ -322,6 +323,8 @@ exports.checkInvitation = async (req, res, next) => {
       if (student.link === inviteLink) {
         email = student.Email;
         valid = true;
+        FirstName = student.FirstName;
+        LastName = student.LastName;
       }
     });
 
@@ -332,11 +335,11 @@ exports.checkInvitation = async (req, res, next) => {
     // Check if the student is already registered
     const existingStudent = await Student.findOne({ Email: email });
     if (existingStudent) {
-      return res.status(200).redirect("/")
+      return res.status(200).redirect("/");
     }
-
     // If valid and not registered, proceed to registration page
     res.status(200).json({
+      FirstName, LastName,
       success: true,
       message: "Valid invitation link, proceed to registration",
       email,
