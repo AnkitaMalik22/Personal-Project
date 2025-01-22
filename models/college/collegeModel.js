@@ -11,280 +11,279 @@ const validateRef = function (value) {
   }
 };
 
-const collegeSchema = new mongoose.Schema({
+const collegeSchema = new mongoose.Schema(
+  {
     campusDrives: [
       {
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'CampusDrive',
-      },
-    ],
-  status: {
-    type: String,
-    enum: ['approved', 'pending', 'rejected'],
-    default: 'pending',
-  },
-  statusChangedAt: {
-    type: Date,
-  },
-  commentsByAdmin: {
-    type: Array,
-    default: [
-      {
-        comment: String,
-        commentedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Admin',
-        },
-        commentedAt: Date,
-      },
-    ],
-
-  },
-  tier: {
-    type: String,
-    enum: ["tier1", "tier2", "tier3"],
-    default: "tier1",
-  },
-
-  qrVerify: {
-    type: Boolean,
-    default: false,
-  },
-  role: {
-    type: String,
-    default: "college",
-  },
-  avatar: {
-    public_id: {
-      type: String,
-      // required:true
-    },
-    url: {
-      type: String,
-      // required:true
-    },
-  },
-  CollegeName: {
-    type: String,
-    // required: [true, 'Please Enter Your College Name'],
-    unique: true,
-  },
-  Email: {
-    type: String,
-    required: [true, "Please Enter Your Email"],
-    unique: true,
-  },
-  FirstName: {
-    type: String,
-    // required: [true, 'Please Enter Your First Name'],
-    maxLength: [30, "Name cannot exceed 30 characters"],
-    minLength: [2, "Name should have more than 2 characters"],
-  },
-  LastName: {
-    type: String,
-    // required: [true, 'Please Enter Your Last Name'],
-    maxLength: [30, "Name cannot exceed 30 characters"],
-    minLength: [2, "Name should have more than 2 characters"],
-  },
-  Password: {
-    type: String,
-    // required: [true, 'Please Enter Your Password'],
-    minLength: [8, "Password should be greater than 8 characters"],
-    select: false,
-  },
-  AvgPackage: {
-    type: Number,
-    default: 0,
-  },
-  Achievement: {
-    type: String,
-    enum: ["Statistics", "Percentage", "DataName"],
-  },
-  Phone: Number,
-  Description: String,
-  Website: String,
-  Address: String,
-  Performance: String,
-  Link: String,
-  Inbox: String,
-  Teams: String,
-  Accounting: String,
-  TotalStudents: {
-    type: Number,
-    default: 0,
-  },
-  TotalCompanies: {
-    type: Number,
-    default: 0,
-  },
-  TotalJobs: {
-    type: Number,
-    default: 0,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-
-  // Students needs to be approved by college
-  pendingStudents: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Students",
-    },
-  ],
-  //  students approved by college
-  students: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Students",
-    },
-  ],
-  assessments: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Assessments",
-    },
-
-  ],
-
-  // ---- College's Own  ----
-
-  // topic will be created and saved in redux and at the time of creating a test, it will be added to the test
-
-  topics: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Sections",
-    },
-  ],
-
-  // tests: [],
-
-  // --------------------
-
-  loginActivity: [
-    {
-      qrVerify: Boolean,
-      ip: String,
-      logged_in_at: Date,
-      logged_out_at: Date,
-      device: String,
-      token_id: String,
-      token_secret: String,
-      token_deleted: Boolean,
-    },
-  ],
-
-  otp: {
-    type: String,
-    default: null,
-  },
-  otpExpires: {
-    type: Date,
-    default: null,
-  },
-  otpVerified: {
-    type: Boolean,
-    default: false,
-  },
-  authType: {
-    type: String,
-    enum: ["otp", "qr", "none"],
-    default: "none",
-  },
-  emails: [
-    {
-      from: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "College",
-        // validate: [validateRef, "Invalid reference collection."],
+        ref: "CampusDrive",
       },
-      message: String,
-      subject: String,
+    ],
+    status: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "pending",
     },
-  ],
-  emailsSent: [
-    {
-      to: String,
-      message: String,
-      subject: String,
+    statusChangedAt: {
+      type: Date,
     },
-  ],
+    commentsByAdmin: {
+      type: Array,
+      default: [
+        {
+          comment: String,
+          commentedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Admin",
+          },
+          commentedAt: Date,
+        },
+      ],
+    },
+    tier: {
+      type: String,
+      enum: ["tier1", "tier2", "tier3"],
+      default: "tier1",
+    },
 
-  // --------------------
-  selectedPlan: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "PaymentPlan",
-  },
+    qrVerify: {
+      type: Boolean,
+      default: false,
+    },
+    role: {
+      type: String,
+      default: "college",
+    },
+    avatar: {
+      public_id: {
+        type: String,
+        // required:true
+      },
+      url: {
+        type: String,
+        // required:true
+      },
+    },
+    CollegeName: {
+      type: String,
+      // required: [true, 'Please Enter Your College Name'],
+      unique: true,
+    },
+    Email: {
+      type: String,
+      required: [true, "Please Enter Your Email"],
+      unique: true,
+    },
+    FirstName: {
+      type: String,
+      // required: [true, 'Please Enter Your First Name'],
+      maxLength: [30, "Name cannot exceed 30 characters"],
+      minLength: [2, "Name should have more than 2 characters"],
+    },
+    LastName: {
+      type: String,
+      // required: [true, 'Please Enter Your Last Name'],
+      maxLength: [30, "Name cannot exceed 30 characters"],
+      minLength: [2, "Name should have more than 2 characters"],
+    },
+    Password: {
+      type: String,
+      // required: [true, 'Please Enter Your Password'],
+      minLength: [8, "Password should be greater than 8 characters"],
+      select: false,
+    },
+    AvgPackage: {
+      type: Number,
+      default: 0,
+    },
+    Achievement: {
+      type: String,
+      enum: ["Statistics", "Percentage", "DataName"],
+    },
+    Phone: Number,
+    Description: String,
+    Website: String,
+    Address: String,
+    Performance: String,
+    Link: String,
+    Inbox: String,
+    Teams: String,
+    Accounting: String,
+    TotalStudents: {
+      type: Number,
+      default: 0,
+    },
+    TotalCompanies: {
+      type: Number,
+      default: 0,
+    },
+    TotalJobs: {
+      type: Number,
+      default: 0,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
 
-  subscription: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Subscription",
-  },
-  payments: [
-    {
+    // Students needs to be approved by college
+    pendingStudents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Students",
+      },
+    ],
+    //  students approved by college
+    students: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Students",
+      },
+    ],
+    assessments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Assessments",
+      },
+    ],
+
+    // ---- College's Own  ----
+
+    // topic will be created and saved in redux and at the time of creating a test, it will be added to the test
+
+    topics: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Sections",
+      },
+    ],
+
+    // tests: [],
+
+    // --------------------
+
+    loginActivity: [
+      {
+        qrVerify: Boolean,
+        ip: String,
+        logged_in_at: Date,
+        logged_out_at: Date,
+        device: String,
+        token_id: String,
+        token_secret: String,
+        token_deleted: Boolean,
+      },
+    ],
+
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpExpires: {
+      type: Date,
+      default: null,
+    },
+    otpVerified: {
+      type: Boolean,
+      default: false,
+    },
+    authType: {
+      type: String,
+      enum: ["otp", "qr", "none"],
+      default: "none",
+    },
+    emails: [
+      {
+        from: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "College",
+          // validate: [validateRef, "Invalid reference collection."],
+        },
+        message: String,
+        subject: String,
+      },
+    ],
+    emailsSent: [
+      {
+        to: String,
+        message: String,
+        subject: String,
+      },
+    ],
+
+    // --------------------
+    selectedPlan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PaymentPlan",
+    },
+
+    subscription: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subscription",
     },
-  ],
-  planEndDate: {
-    type: Date,
-  },
-  designatedCompanies: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
+    payments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subscription",
+      },
+    ],
+    planEndDate: {
+      type: Date,
     },
-  ],
-  jobs : [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Job',
-    }
-  ],
-  // location
-  Country: String,
-  State: String,
-  City: String,
-  ZipCode: String,
-  Region: String,
-  University: String,
+    designatedCompanies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Company",
+      },
+    ],
+    jobs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+      },
+    ],
+    // location
+    Country: String,
+    State: String,
+    City: String,
+    ZipCode: String,
+    Region: String,
+    University: String,
 
-  // additional feilds
+    // additional feilds
     // Recognition & Accreditation
-    accreditations:[ {
-      body: {
-        type: String,
-        enum: ['NAAC', 'UGC', 'AICTE', 'Other'],
-        required: true,
+    accreditations: [
+      {
+        body: {
+          type: String,
+          enum: ["NAAC", "UGC", "AICTE", "Other"],
+          required: true,
+        },
+        grade: {
+          type: String,
+          enum: ["A++", "A+", "A", "B++", "B+", "B", "C", "Unaccredited"],
+        },
+        validityPeriod: {
+          type: Date, // End date of validity
+        },
+        accreditationCertificate: {
+          public_id: String,
+          url: String,
+        },
       },
-      grade: {
-        type: String,
-        enum: ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C', 'Unaccredited'],
-      },
-      validityPeriod: {
-        type: Date, // End date of validity
-      },
-      accreditationCertificate: {
-        public_id: String,
-        url: String,
-      },
-    }],
-   
+    ],
+
     collegeType: {
       type: String,
-      enum: ['Government', 'Private', 'Autonomous'],
-
+      enum: ["Government", "Private", "Autonomous"],
     },
     affiliationCertificate: {
       public_id: String,
       url: String,
     },
-   
-  
+
     // Courses Offered
     coursesOffered: [
       {
@@ -366,7 +365,7 @@ const collegeSchema = new mongoose.Schema({
       },
       hostelFacility: {
         type: String,
-        enum: ['yes', 'no'],
+        enum: ["yes", "no"],
       },
       libraryFacilities: {
         type: String,
@@ -400,11 +399,10 @@ const collegeSchema = new mongoose.Schema({
         type: String,
       },
     },
-    
-},
-{
-  timestamps: true,
-}
+  },
+  {
+    timestamps: true,
+  }
 );
 
 collegeSchema.pre("save", async function (next) {
@@ -417,7 +415,7 @@ collegeSchema.pre("save", async function (next) {
 
 // JWT TOKEN
 collegeSchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
@@ -447,8 +445,6 @@ collegeSchema.methods.getResetPasswordToken = function () {
 const College = mongoose.model("College", collegeSchema);
 // create index on tier
 
-collegeSchema.index({ tier: 'text' });
-
-
+collegeSchema.index({ tier: "text" });
 
 module.exports = College;
