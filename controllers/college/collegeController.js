@@ -334,8 +334,18 @@ exports.registerCollege = catchAsyncErrors(async (req, res, next) => {
   //     res.status(500).json({ message: "Internal Server Error" });
   //   }
   // } else {
-  const { Email, Password, Phone, CollegeName, Website, ip, Country, State, City, ZipCode } =
-    req.body;
+  const {
+    Email,
+    Password,
+    Phone,
+    CollegeName,
+    Website,
+    ip,
+    Country,
+    State,
+    City,
+    ZipCode,
+  } = req.body;
 
   // Check if required fields are present
   if (
@@ -456,6 +466,9 @@ exports.loginCollege = catchAsyncErrors(async (req, res, next) => {
     // console.log(ip);
     const device = req.headers["user-agent"];
     // console.log(device);
+
+    // hide password
+    college.password = undefined;
 
     // Send JWT token in response
     sendToken(college, 200, res, ip, device);
@@ -580,8 +593,7 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 // Get College Details
 exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
   try {
-
-    const { role, id } = req.user
+    const { role, id } = req.user;
     let entity;
 
     if (role === "college") {
@@ -589,7 +601,6 @@ exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
     } else {
       entity = await University.findById(id);
     }
-
 
     let credit = await PaymentPlan.find(
       { members: { $in: [entity._id] } },
@@ -619,12 +630,13 @@ const getRole = async ({ value, type }) => {
     type === "email"
       ? { Email: value }
       : {
-        resetPasswordToken: value.resetPasswordToken,
-        resetPasswordExpire: { $gt: Date.now() },
-      };
+          resetPasswordToken: value.resetPasswordToken,
+          resetPasswordExpire: { $gt: Date.now() },
+        };
 
   if (await College.findOne(query)) return "college";
-  if (await University.findOne(type === "email" ? { email: value } : query)) return "university";
+  if (await University.findOne(type === "email" ? { email: value } : query))
+    return "university";
   if (await Company.findOne(query)) return "company";
 
   return null;
@@ -637,31 +649,41 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Entity not found", 404));
   }
 
-  const model = role === "college" ? College : role === "university" ? University : Company;
-  const query = role === "college" ? { Email: req.body.email } : { email: req.body.email };
+  const model =
+    role === "college" ? College : role === "university" ? University : Company;
+  const query =
+    role === "college" ? { Email: req.body.email } : { email: req.body.email };
   const entity = await model.findOne(query);
 
   if (!entity) {
-    return next(new ErrorHandler(`${role.charAt(0).toUpperCase() + role.slice(1)} not found`, 404));
+    return next(
+      new ErrorHandler(
+        `${role.charAt(0).toUpperCase() + role.slice(1)} not found`,
+        404
+      )
+    );
   }
 
   const resetToken = entity.getResetPasswordToken();
   await entity.save({ validateBeforeSave: false });
 
-  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}?role=${role}`;
   const message = `Your password reset token is:\n\n${resetPasswordUrl}\n\nIf you have not requested this email, please ignore it.`;
 
   try {
     await sendEmail({
       email: role === "college" ? entity.Email : entity.email,
-      subject: `${role.charAt(0).toUpperCase() + role.slice(1)} Password Recovery`,
+      subject: `${
+        role.charAt(0).toUpperCase() + role.slice(1)
+      } Password Recovery`,
       message,
     });
 
     res.status(200).json({
       success: true,
-      message: `Email sent to ${role === "college" ? entity.Email : entity.email
-        } successfully`,
+      message: `Email sent to ${
+        role === "college" ? entity.Email : entity.email
+      } successfully`,
     });
   } catch (error) {
     entity.resetPasswordToken = undefined;
@@ -679,23 +701,28 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
     .update(req.params.token)
     .digest("hex");
 
-  const role = await getRole({
-    value: { resetPasswordToken },
-    type: "token",
-  });
+  const role = req.query.role;
 
   if (!role) {
-    return next(new ErrorHandler("Reset Password Token is invalid or has expired", 400));
+    return next(
+      new ErrorHandler("Reset Password Token is invalid or has expired", 400)
+    );
   }
 
-  const model = role === "college" ? College : role === "university" ? University : Company;
+  const model =
+    role === "college" ? College : role === "university" ? University : Company;
   const user = await model.findOne({
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },
   });
 
   if (!user) {
-    return next(new ErrorHandler("Reset Password Token is invalid or has expired", 400));
+    return next(
+      new ErrorHandler("Reset Password Token is invalid or has expired", 400)
+    );
+  }
+  if (user?.role !== role) {
+    return next(new ErrorHandler("Entity has been modified by user", 400));
   }
 
   if (req.body.password !== req.body.confirmPassword) {
@@ -785,22 +812,24 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
   const model = role === "college" ? College : University;
   const newUserData = req.body;
 
-  const data = role === "college" ? {
-    CollegeName: newUserData.CollegeName,
-    Phone: newUserData.Phone,
-    Website: newUserData.Website,
-    Address: newUserData.Address,
-    Description: newUserData.Description,
-    avatar: newUserData.avatar,
-  } : {
-    name: newUserData.name,
-    phone: newUserData.phone,
-    address: newUserData.address,
-    website: newUserData.website,
-    description: newUserData.Description,
-    email: newUserData.email
-  }
-
+  const data =
+    role === "college"
+      ? {
+          CollegeName: newUserData.CollegeName,
+          Phone: newUserData.Phone,
+          Website: newUserData.Website,
+          Address: newUserData.Address,
+          Description: newUserData.Description,
+          avatar: newUserData.avatar,
+        }
+      : {
+          name: newUserData.name,
+          phone: newUserData.phone,
+          address: newUserData.address,
+          website: newUserData.website,
+          description: newUserData.Description,
+          email: newUserData.email,
+        };
 
   // Update user profile
   const updatedUser = await model.findByIdAndUpdate(
@@ -867,8 +896,6 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
 
 // ================================================ Update Profile Picture ===========================================================
 
-
-
 exports.updateCollegeDetails = async (req, res) => {
   try {
     const { id } = req.user;
@@ -888,12 +915,19 @@ exports.updateCollegeDetails = async (req, res) => {
     // Handle file uploads for certificates
     if (formData.accreditations) {
       for (let i = 0; i < formData.accreditations.length; i++) {
-        if (req.files && req.files[`accreditations[${i}].accreditationCertificate`]) {
-          const file = req.files[`accreditations[${i}].accreditationCertificate`];
-          const uploadResult = await uploadPicture(file, "college-certificates");
+        if (
+          req.files &&
+          req.files[`accreditations[${i}].accreditationCertificate`]
+        ) {
+          const file =
+            req.files[`accreditations[${i}].accreditationCertificate`];
+          const uploadResult = await uploadPicture(
+            file,
+            "college-certificates"
+          );
           formData.accreditations[i].accreditationCertificate = {
             public_id: uploadResult.public_id,
-            url: uploadResult.secure_url
+            url: uploadResult.secure_url,
           };
         }
       }
@@ -906,7 +940,7 @@ exports.updateCollegeDetails = async (req, res) => {
       );
       formData.affiliationCertificate = {
         public_id: affiliationResult.public_id,
-        url: affiliationResult.secure_url
+        url: affiliationResult.secure_url,
       };
     }
 
@@ -917,7 +951,7 @@ exports.updateCollegeDetails = async (req, res) => {
       );
       formData.placementReport = {
         public_id: placementResult.public_id,
-        url: placementResult.secure_url
+        url: placementResult.secure_url,
       };
     }
 
@@ -936,25 +970,25 @@ exports.updateCollegeDetails = async (req, res) => {
             panCard: formData.bankingDetails?.panCard,
             bankName: formData.bankingDetails?.bankName,
             accountNumber: formData.bankingDetails?.accountNumber,
-            ifscCode: formData.bankingDetails?.ifscCode
+            ifscCode: formData.bankingDetails?.ifscCode,
           },
           placementOfficer: {
             name: formData.placementOfficer?.name,
             email: formData.placementOfficer?.email,
-            phone: formData.placementOfficer?.phone
+            phone: formData.placementOfficer?.phone,
           },
           placementStatistics: {
             average: formData.placementStatistics?.average,
             highest: formData.placementStatistics?.highest,
-            averagePackage: formData.placementStatistics?.averagePackage
+            averagePackage: formData.placementStatistics?.averagePackage,
           },
           studentStrength: {
             total: formData.studentStrength?.total,
-            finalYear: formData.studentStrength?.finalYear
+            finalYear: formData.studentStrength?.finalYear,
           },
           genderRatio: {
             male: formData.genderRatio?.male,
-            female: formData.genderRatio?.female
+            female: formData.genderRatio?.female,
           },
           infrastructure: {
             laboratoryDetails: formData.infrastructure?.laboratoryDetails,
@@ -962,15 +996,15 @@ exports.updateCollegeDetails = async (req, res) => {
             hostelFacility: formData.infrastructure?.hostelFacility,
             libraryFacilities: formData.infrastructure?.libraryFacilities,
             sportsFacilities: formData.infrastructure?.sportsFacilities,
-            transportFacilities: formData.infrastructure?.transportFacilities
+            transportFacilities: formData.infrastructure?.transportFacilities,
           },
           additionalInfo: {
             mous: formData.additionalInfo?.mous,
             industryTieUps: formData.additionalInfo?.industryTieUps,
             alumniNetwork: formData.additionalInfo?.alumniNetwork,
-            communityInvolvement: formData.additionalInfo?.communityInvolvement
-          }
-        }
+            communityInvolvement: formData.additionalInfo?.communityInvolvement,
+          },
+        },
       },
       { new: true }
     );
@@ -978,21 +1012,17 @@ exports.updateCollegeDetails = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "College details updated successfully",
-      data: updatedCollege
+      data: updatedCollege,
     });
-
   } catch (error) {
     console.error("Error updating college details:", error);
     res.status(500).json({
       success: false,
       message: "Error updating college details",
-      error: error.message
+      error: error.message,
     });
   }
 };
-
-
-
 
 exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res) => {
   const role = req.user.role;
@@ -1033,10 +1063,15 @@ exports.updateProfilePictureCollege = catchAsyncErrors(async (req, res) => {
 //for adding students from students module
 //takes an array of students and sends and ivitation mail to them
 
-function generateInvitationEmail({ Email, FirstName, LastName, CollegeId, link }) {
-
-  const URL = process.env.STUDENT_URL || "https://student.skillaccess.in"
-  const registerLink = `${URL}/student?inviteLink=${link}&CollegeId=${CollegeId}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`
+function generateInvitationEmail({
+  Email,
+  FirstName,
+  LastName,
+  CollegeId,
+  link,
+}) {
+  const URL = process.env.STUDENT_URL || "https://student.skillaccess.in";
+  const registerLink = `${URL}/student?inviteLink=${link}&CollegeId=${CollegeId}&Email=${Email}&FirstName=${FirstName}&LastName=${LastName}`;
   return {
     email: Email,
     subject: "Invitation to join Skill Access",
@@ -1166,11 +1201,9 @@ function generateInvitationEmail({ Email, FirstName, LastName, CollegeId, link }
 </body>
 </html>
 
-`
-
+`,
   };
 }
-
 
 exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
   const { students } = req.body;
@@ -1182,10 +1215,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
 
   const college = await College.findById(userId);
 
-
   let invited;
   if (req.user.role === "university") {
-
   }
   //create invitation bucket if not exists
   invited = await InvitedStudents.findOneAndUpdate(
@@ -1225,9 +1256,7 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       student = invited.students.some((student) => student.Email === Email);
     }
 
-    const isRegisteredEmail = await Student.findOne(
-      { Email: Email },
-    );
+    const isRegisteredEmail = await Student.findOne({ Email: Email });
 
     const link = crypto.randomBytes(20).toString("hex");
     // const curr = await Student.findOne({ Email: Email });
@@ -1238,18 +1267,20 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
           link: link,
           FirstName: FirstName,
           LastName: LastName,
-          batch: Batch
+          batch: Batch,
           // student: stu._id,
         });
 
-        const mail = await sendEmail(generateInvitationEmail({
-          Email: Email,
-          link: link,
-          FirstName: FirstName,
-          LastName: LastName,
-          CollegeId: userId
-        }));
-        console.log(mail, "mail")
+        const mail = await sendEmail(
+          generateInvitationEmail({
+            Email: Email,
+            link: link,
+            FirstName: FirstName,
+            LastName: LastName,
+            CollegeId: userId,
+          })
+        );
+        console.log(mail, "mail");
         Invitations.push(mail);
         await invited.save();
       } else {
@@ -1259,14 +1290,15 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
           }
         });
 
-
-        const mail = await sendEmail(generateInvitationEmail({
-          Email: Email,
-          link: link,
-          FirstName: FirstName,
-          LastName: LastName,
-          CollegeId: userId
-        }));
+        const mail = await sendEmail(
+          generateInvitationEmail({
+            Email: Email,
+            link: link,
+            FirstName: FirstName,
+            LastName: LastName,
+            CollegeId: userId,
+          })
+        );
         Invitations.push(mail);
         await invited.save();
       }
@@ -1274,8 +1306,6 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
       allDuplicateEmails.push(Email);
     }
   }
-
-
 
   const uploadedStudents = await InvitedStudents.findOne({
     college: userId,
@@ -1287,9 +1317,8 @@ exports.uploadStudents = catchAsyncErrors(async (req, res, next) => {
     allDuplicateEmails,
     uploadedStudents: uploadedStudents?.students,
     message: "Students uploaded & Invited successfully",
-    Invitations
+    Invitations,
   });
-
 
   // college.uploadedStudents = students;
   // await college.save();
@@ -1448,7 +1477,6 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 
     await Student.findByIdAndDelete(req.params.studentId);
 
-
     let entity;
 
     if (req.user.role === "college") {
@@ -1503,7 +1531,14 @@ exports.rejectStudent = catchAsyncErrors(async (req, res, next) => {
 exports.getStudents = catchAsyncErrors(async (req, res, next) => {
   try {
     const id = req.user.id;
-    const { batch, createdAt, skills, filterType, page = 1, limit = 100 } = req.query;
+    const {
+      batch,
+      createdAt,
+      skills,
+      filterType,
+      page = 1,
+      limit = 100,
+    } = req.query;
     let approvedStudents, invitedStudents, pendingStudents;
     let approvedTotal, invitedTotal, pendingTotal;
     const entity = req.user.role;
@@ -1515,59 +1550,43 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 
     const skip = (page - 1) * limit;
 
-
-
     // Pending Students
-    if (filterType === 'all-students' || filterType === 'pending-students') {
-      // const pending = await UploadedStudents.findOne({ [entity]: filter[entity] })
-      //   .populate({
-      //     path: "students",
-      //     match: {
-      //       $and: [
-      //         batch && batch !== "all" ? { batch: batch } : {},
-      //         createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-      //       ],
-      //     },
-      //   });
-
-      pendingStudents = await Student.find({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
-        $and: [
-          batch && batch !== "all" ? { batch: batch } : {},
-          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-
-        ],
-        approved: false
-      }).skip(skip).limit(limit);
-
-      pendingTotal = await Student.countDocuments({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
-        $and: [
-          batch && batch !== "all" ? { batch: batch } : {},
-          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-
-        ],
-        approved: false
+    if (filterType === "all-students" || filterType === "pending-students") {
+      const pending = await UploadedStudents.findOne({
+        [entity]: filter[entity],
+      }).populate({
+        path: "students",
+        match: {
+          $and: [
+            batch && batch !== "all" ? { batch: batch } : {},
+            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+          ],
+        },
       });
-      // pendingStudents = await UploadedStudents.findOne({ [entity]: filter[entity] })
-      //   .populate({
-      //     path: "students",
-      //     match: {
-      //       $and: [
-      //         batch && batch !== "all" ? { batch: batch } : {},
-      //         createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-      //       ],
-      //     },
-      //     options: {
-      //       skip: skip,
-      //       limit: parseInt(limit),
-      //     },
-      //   });
+
+      pendingTotal = pending ? pending.students.length : 0;
+      pendingStudents = await UploadedStudents.findOne({
+        [entity]: filter[entity],
+      }).populate({
+        path: "students",
+        match: {
+          $and: [
+            batch && batch !== "all" ? { batch: batch } : {},
+            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+          ],
+        },
+        options: {
+          skip: skip,
+          limit: parseInt(limit),
+        },
+      });
     }
 
     // Invited Students
-    if (filterType === 'all-students' || filterType === 'invited-students') {
-      const fullInvitedStudents = await InvitedStudents.findOne({ [entity]: filter[entity] });
+    if (filterType === "all-students" || filterType === "invited-students") {
+      const fullInvitedStudents = await InvitedStudents.findOne({
+        [entity]: filter[entity],
+      });
       if (fullInvitedStudents && fullInvitedStudents.students) {
         const filteredInvited = fullInvitedStudents.students.filter(
           (student) => batch === "all" || student.batch === batch
@@ -1578,34 +1597,61 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     }
 
     // Approved Students
-    if (filterType === 'all-students' || filterType === 'approved-students') {
-      approvedStudents = await Student.find({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
-        $and: [
-          batch && batch !== "all" ? { batch: batch } : {},
-          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-        ],
-        approved: true
-      }).skip(skip).limit(limit);
+    if (filterType === "all-students" || filterType === "approved-students") {
+      const approved = await ApprovedStudents.findOne({
+        [entity]: filter[entity],
+      }).populate({
+        path: "students",
+        match: {
+          $and: [
+            batch && batch !== "all" ? { batch: batch } : {},
+            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+          ],
+        },
+      });
 
-      approvedTotal = await Student.countDocuments({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
-        $and: [
-          batch && batch !== "all" ? { batch: batch } : {},
-          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-        ],
-        approved: true
+      approvedTotal = approved ? approved.students.length : 0;
+      approvedStudents = await ApprovedStudents.findOne({
+        [entity]: filter[entity],
+      }).populate({
+        path: "students",
+        match: {
+          $and: [
+            batch && batch !== "all" ? { batch: batch } : {},
+            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+          ],
+        },
+        options: {
+          skip: skip,
+          limit: parseInt(limit),
+        },
+        populate: {
+          path: "studentResponses",
+          select: ["assessmentId", "batch", "createdAt", "Skills"],
+          populate: {
+            path: "assessmentId",
+            select: "name",
+          },
+        },
       });
     }
 
     // Helper function for total pages calculation
-    const calculateTotalPages = (total, limit) => (total ? Math.ceil(total / limit) : 0);
+    const calculateTotalPages = (total, limit) =>
+      total ? Math.ceil(total / limit) : 0;
 
     const pendingTotalPages = calculateTotalPages(pendingTotal, limit);
     const invitedTotalPages = calculateTotalPages(invitedTotal, limit);
     const approvedTotalPages = calculateTotalPages(approvedTotal, limit);
 
-    function getPaginationData({ filterType, page = 1, limit = 10, approvedTotalPages = 0, invitedTotalPages = 0, pendingTotalPages = 0 }) {
+    function getPaginationData({
+      filterType,
+      page = 1,
+      limit = 10,
+      approvedTotalPages = 0,
+      invitedTotalPages = 0,
+      pendingTotalPages = 0,
+    }) {
       const totalPages = (() => {
         switch (filterType) {
           case "pending-students":
@@ -1636,18 +1682,18 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       pendingTotalPages,
     });
 
-
-
     console.log(paginationData);
 
     res.status(200).json({
       success: true,
-      approvedStudents: approvedStudents || [],
+      approvedStudents: approvedStudents ? approvedStudents.students : [],
       uploadedStudents: invitedStudents || [],
-      pendingStudents: pendingStudents || [],
-      ...paginationData
+      pendingStudents:
+        pendingStudents && pendingStudents.students
+          ? pendingStudents.students
+          : [],
+      ...paginationData,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
@@ -1751,14 +1797,13 @@ exports.getTotalCompanies = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("College not found", 404));
     }
     const filteredJobs = await Job.find({
-      tier: college.tier
+      tier: college.tier,
     }).populate("company");
 
     // Extract unique companies from the jobs
     const uniqueCompanies = [
-      ...new Set(filteredJobs.map((job) => job.company)) // Using Set to ensure uniqueness
+      ...new Set(filteredJobs.map((job) => job.company)), // Using Set to ensure uniqueness
     ];
-
 
     if (!uniqueCompanies) {
       return next(new ErrorHandler("No designated companies found", 404));
@@ -1917,25 +1962,29 @@ exports.bulkSelectStudents = catchAsyncErrors(async (req, res, next) => {
   if (status === "selected") {
     // Add to selectedStudents if not already included
     await Assessments.findByIdAndUpdate(testId, {
-      $addToSet: { selectedStudents: { $each: studentIds } }
+      $addToSet: { selectedStudents: { $each: studentIds } },
     });
 
     if (assessment.avgSelectedPercentage !== undefined) {
       const updatedAssessment = await Assessments.findById(testId);
       updatedAssessment.avgSelectedPercentage =
-        (updatedAssessment.selectedStudents.length / updatedAssessment.totalStudents) * 100;
+        (updatedAssessment.selectedStudents.length /
+          updatedAssessment.totalStudents) *
+        100;
       await updatedAssessment.save();
     }
   } else if (status === "rejected") {
     // Add to rejectedStudents if not already included
     await Assessments.findByIdAndUpdate(testId, {
-      $addToSet: { rejectedStudents: { $each: studentIds } }
+      $addToSet: { rejectedStudents: { $each: studentIds } },
     });
 
     if (assessment.avgRejectedPercentage !== undefined) {
       const updatedAssessment = await Assessments.findById(testId);
       updatedAssessment.avgRejectedPercentage =
-        (updatedAssessment.rejectedStudents.length / updatedAssessment.totalStudents) * 100;
+        (updatedAssessment.rejectedStudents.length /
+          updatedAssessment.totalStudents) *
+        100;
       await updatedAssessment.save();
     }
   }
@@ -1943,10 +1992,9 @@ exports.bulkSelectStudents = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: `${studentIds.length} students ${status} successfully`,
-    updatedCount: updatedResponses.modifiedCount
+    updatedCount: updatedResponses.modifiedCount,
   });
 });
-
 
 /**
  * Update students' status based on percentage threshold
@@ -1955,7 +2003,9 @@ exports.selectStudentsByThreshold = catchAsyncErrors(async (req, res, next) => {
   const { testId } = req.params;
   const { threshold } = req.body;
 
-  const assessment = await Assessments.findById(testId).populate("studentResponses");
+  const assessment = await Assessments.findById(testId).populate(
+    "studentResponses"
+  );
   if (!assessment) {
     return next(new ErrorHandler("Assessment not found", 404));
   }
@@ -1968,7 +2018,7 @@ exports.selectStudentsByThreshold = catchAsyncErrors(async (req, res, next) => {
   const selectedIds = [];
   const rejectedIds = [];
 
-  responses.forEach(response => {
+  responses.forEach((response) => {
     if (response.percentage >= threshold) {
       selectedIds.push(response._id);
     } else if (response.percentage <= threshold) {
@@ -1979,26 +2029,28 @@ exports.selectStudentsByThreshold = catchAsyncErrors(async (req, res, next) => {
   // Update selected students
   await studentResponse.updateMany(
     { _id: { $in: selectedIds } },
-    { $set: { status: 'selected' } }
+    { $set: { status: "selected" } }
   );
 
   // Update rejected students
   await studentResponse.updateMany(
     { _id: { $in: rejectedIds } },
-    { $set: { status: 'rejected' } }
+    { $set: { status: "rejected" } }
   );
 
   // Update assessment
   await Assessments.findByIdAndUpdate(testId, {
     $addToSet: {
       selectedStudents: { $each: selectedIds },
-      rejectedStudents: { $each: rejectedIds }
-    }
+      rejectedStudents: { $each: rejectedIds },
+    },
   });
 
-
   // Update percentages if they exist
-  if (assessment.avgSelectedPercentage !== undefined || assessment.avgRejectedPercentage !== undefined) {
+  if (
+    assessment.avgSelectedPercentage !== undefined ||
+    assessment.avgRejectedPercentage !== undefined
+  ) {
     const updatedAssessment = await Assessments.findById(testId);
 
     if (assessment.avgSelectedPercentage !== undefined) {
@@ -2018,12 +2070,9 @@ exports.selectStudentsByThreshold = catchAsyncErrors(async (req, res, next) => {
     success: true,
     message: `Students updated based on ${threshold}% threshold`,
     selectedCount: selectedIds.length,
-    rejectedCount: rejectedIds.length
+    rejectedCount: rejectedIds.length,
   });
 });
-
-
-
 
 // =========================================== GET ALL SELECTED STUDENTS FOR THE TEST  ===========================================
 
@@ -2183,7 +2232,3 @@ exports.resultOverviewGraph = async (req, res, next) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
-
-

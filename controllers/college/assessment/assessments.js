@@ -264,7 +264,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     // Need to calculate the marks of subjective questions also
 
     // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
-    console.log("heer")
+
     let assessment = await Assessments.create({
       ...req.body,
       topics: newTopics,
@@ -297,10 +297,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     }
     if (college) {
       (assessment.createdBy = id), await credit.save();
-      console.log("kk")
       await college.save();
-      console.log("jjs")
-
     }
     if (company) {
       // find the jobId and push the assessment id in the job
@@ -330,7 +327,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       newTopics,
     });
   } catch (error) {
-    console.log(error);
+    //console.log(error);
   }
 });
 
@@ -617,9 +614,7 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    assessmentsCount: assessments.length,
     assessments,
-
   });
 });
 
@@ -1191,7 +1186,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
         },
       },
       { $unwind: "$studentResponses" },
-      // { $match: { "studentResponses.completed": true } },
+      { $match: { "studentResponses.completed": true } },
       {
         $lookup: {
           from: "students",

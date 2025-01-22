@@ -467,14 +467,27 @@ exports.getCollegesForCampusDrive = catchAsyncErrors(async (req, res, next) => {
     const availableColleges = await College.find(searchQuery)
       .select("CollegeName Email Phone Address avatar _id")
       .skip(skip)
-      .limit(limit)
-      .lean();
+      .limit(limit);
+
+    const totalColleges = await College.countDocuments();
+
+    // Filter available colleges (excluding already assigned colleges)
+    const availableColleges = allColleges.filter(
+      (college) =>
+        !campusDrive.colleges.some(
+          (campusCollege) =>
+            campusCollege &&
+            campusCollege._id &&
+            college._id &&
+            campusCollege._id.toString() === college._id.toString()
+        )
+    );
 
     res.status(200).json({
       success: true,
       data: {
         campusDrive: {
-          id: campusDrive.id,
+          _id: campusDrive._id,
           name: campusDrive.name,
           status: campusDrive.status,
           company: campusDrive.company,

@@ -84,11 +84,23 @@ const studentSchema = new mongoose.Schema({
   department: {
     type: String,
     default: "Others",
-    enum: ["Arts", "Science", "Commerce", "Engineering", "Computer Science", "Management", "Law", "Medicine", "Education", "Design","Others"],
+    enum: [
+      "Arts",
+      "Science",
+      "Commerce",
+      "Engineering",
+      "Computer Science",
+      "Management",
+      "Law",
+      "Medicine",
+      "Education",
+      "Design",
+      "Others",
+    ],
   },
   batch: {
     type: String,
-    default:"2024"
+    default: "2024",
   },
   approved: {
     type: Boolean,
@@ -182,13 +194,15 @@ const studentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "University",
   },
-  eligibleColleges: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "College",
-  }],
+  eligibleColleges: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "College",
+    },
+  ],
   clearedEntrance: {
     type: Boolean,
-    default: false
+    default: false,
   },
   // ----
   // registrationLink: { type: String, unique: true, default: "" },
@@ -222,7 +236,18 @@ const studentSchema = new mongoose.Schema({
       Percentage: Number,
       Type: {
         type: String,
-        enum: ["ISC" | "ICSE" | "CBSE" | "StateBoard" | "IB" | "IGCSE" | "NIOS" | "OpenSchool" | "Diploma" | "Degree"]
+        enum: [
+          "ISC" |
+            "ICSE" |
+            "CBSE" |
+            "StateBoard" |
+            "IB" |
+            "IGCSE" |
+            "NIOS" |
+            "OpenSchool" |
+            "Diploma" |
+            "Degree",
+        ],
       }, // Expanded Enum
       Description: String,
       Degree: String,
@@ -367,7 +392,7 @@ studentSchema.pre("save", async function (next) {
 
 // JWT TOKEN
 studentSchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };

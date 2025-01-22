@@ -54,7 +54,16 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     let attachments = req.body.attachments || [];
     let emailTo, user, recepient;
 
+    // const role = req.params.role;
+    // console.log(role);
+
+    // if (role === "college") {
+    //   user = await College.findOne({ Email: req.body.Email });
+    // } else {
+
+    // }
     user = await Student.findOne({ Email: req.body.Email });
+
     const college = await College.findOne({ Email: req.body.Email });
 
     const approvedStudents = await ApprovedStudents.findOne({
@@ -64,20 +73,28 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
     const student = approvedStudents.students.find((student) => {
       return student.Email === req.body.Email;
     });
+    // const student = await Student.findOne({ Email: req.body.Email });
 
-    if (!student) {
-      return next(new ErrorHandler("User not registered on the platform", 404));
+    // if (college) {
+    //   emailTo = "College";
+    //   recepient = college;
+    // } else
+    console.log(student);
+    if (student) {
+      emailTo = "Students";
+      recepient = student;
+    } else {
+      return next(new ErrorHandler("not found", 404));
     }
-
-    emailTo = "Students";
-    recepient = student;
     let from;
     if (req.user.role === "college") {
       from = "College";
     } else {
       from = "Students";
     }
+    console.log("ids");
 
+    console.log("ids", recepient._id);
     const mail = await Mail.create({
       Mailtype: emailTo,
       MailtypeFrom: from,
@@ -89,40 +106,33 @@ exports.sendEMail = catchAsyncErrors(async (req, res, next) => {
       subject: req.body.Subject,
       replies: [],
     });
-
+    // console.log(mail);
     const sender = await Inbox.findOneAndUpdate(
-      { user: req.user.id },
+      { user: req.user.id }, // Find the document with the specified user ID
       {
         $push: {
           emailsSent: { mail: mail._id },
         },
       },
-      { new: true, upsert: true }
+      { new: true, upsert: true } // Return the modified document after update
     );
     sender.emailsSent.reverse();
-
     const receiver = await Inbox.findOneAndUpdate(
-      { user: recepient._id },
+      { user: recepient._id }, // Find the document with the specified user ID
       {
         $push: {
           emailsReceived: { mail: mail._id },
         },
       },
-      { new: true, upsert: true }
+      { new: true, upsert: true } // Return the modified document after update
     );
 
-    res.status(200).json({ sender, receiver });
+    res.status(200).send({ sender, receiver });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      return next(new ErrorHandler('Validation error: ' + error.message, 400));
-    } else if (error.name === 'CastError') {
-      return next(new ErrorHandler('Invalid ID format', 400));
-    } else {
-      return next(new ErrorHandler('Internal Server Error', 500));
-    }
+    console.log(error);
+    return next(new ErrorHandler(error, 500));
   }
 });
-
 
 exports.sendReply = catchAsyncErrors(async (req, res) => {
   let attachments = req.body.attachments || [];

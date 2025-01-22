@@ -222,11 +222,6 @@ exports.getStudentById = catchAsyncErrors(async (req, res, next) => {
         Certificate:1,
         CompanyPlaced:1,
         JobPlace:1,
-        PhoneNumber:1,
-        Address: 1,
-        Website: 1,
-        Certificates : 1,
-        approved: 1,
         // Include all other student fields you need
         studentResponses: {
           $slice: ["$allStudentResponses", (page - 1) * limit, parseInt(limit)]
