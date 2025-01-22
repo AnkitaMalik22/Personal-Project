@@ -5,7 +5,7 @@ const Company = require("../models/company/companyModel");
 
 exports.isAuthenticatedCompany = catchAsyncErrors(async (req, res, next) => {
   // Get the token from the authorization header
-  const token = req.header("auth-token") || req.header("company-token");
+  const token = req.header("auth-token");
 
   if (!token) {
     return next(new ErrorHander("Please Login to access this resource", 401));

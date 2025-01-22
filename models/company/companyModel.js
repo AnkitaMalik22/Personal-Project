@@ -1,8 +1,7 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const leaderSchema = new mongoose.Schema({
   name: String,
@@ -40,14 +39,14 @@ const dashboardSchema = new mongoose.Schema({
 const companySchema = new mongoose.Schema({
   campusDrives: [
     {
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'CampusDrive',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CampusDrive",
     },
   ],
- status: {
+  status: {
     type: String,
-    enum: ['approved', 'pending', 'rejected'],
-    default: 'pending',
+    enum: ["approved", "pending", "rejected"],
+    default: "pending",
   },
   statusChangedAt: {
     type: Date,
@@ -59,35 +58,34 @@ const companySchema = new mongoose.Schema({
         comment: String,
         commentedBy: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Admin',
+          ref: "Admin",
         },
         commentedAt: Date,
       },
     ],
-
   },
 
   Email: {
     type: String,
-    required: [true, 'Please provide your email'],
+    required: [true, "Please provide your email"],
     unique: true,
     lowercase: true,
   },
   role: {
     type: String,
-    default: 'company',
+    default: "company",
   },
   FirstName: {
     type: String,
-    required: [true, 'Please provide your first name'],
+    required: [true, "Please provide your first name"],
   },
   LastName: {
     type: String,
-    required: [true, 'Please provide your last name'],
+    required: [true, "Please provide your last name"],
   },
   Password: {
     type: String,
-    required: [true, 'Please provide your password'],
+    required: [true, "Please provide your password"],
     minlength: 8,
     select: false,
   },
@@ -103,8 +101,8 @@ const companySchema = new mongoose.Schema({
   },
   basic: {
     coverPhoto: String,
-    publicIdLogo:String,
-    publicIdCover:String,
+    publicIdLogo: String,
+    publicIdCover: String,
     logo: String,
     companyName: String,
     website: String,
@@ -117,7 +115,7 @@ const companySchema = new mongoose.Schema({
     companyType: String,
     status: String,
   },
-  Phone : Number,
+  Phone: Number,
   location: locationSchema,
   leader: leaderSchema,
   about: {
@@ -127,18 +125,24 @@ const companySchema = new mongoose.Schema({
   },
   awards: [awardsSchema],
   dashboard: dashboardSchema,
-  students: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-  }],
-  jobs: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Job',
-  }],
-  assessments: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Assessment',
-  }],
+  students: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+    },
+  ],
+  jobs: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Job",
+    },
+  ],
+  assessments: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assessment",
+    },
+  ],
 
   createdAt: {
     type: Date,
@@ -194,9 +198,7 @@ const companySchema = new mongoose.Schema({
       subject: String,
     },
   ],
-
 });
-
 
 // companySchema.pre('save', async function (next) {
 //   if (!this.isModified('Password')) {
@@ -208,7 +210,7 @@ const companySchema = new mongoose.Schema({
 
 // JWT TOKEN
 companySchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
@@ -222,20 +224,19 @@ companySchema.methods.comparePassword = async function (password) {
 // Generating Password Reset Token
 companySchema.methods.getResetPasswordToken = function () {
   // Generating Token
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  const resetToken = crypto.randomBytes(20).toString("hex");
 
   // Hashing and adding resetPasswordToken to companySchema
   this.resetPasswordToken = crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(resetToken)
-    .digest('hex');
+    .digest("hex");
 
   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
   return resetToken;
 };
 
-
-const Company = mongoose.model('Company', companySchema);
+const Company = mongoose.model("Company", companySchema);
 
 module.exports = Company;

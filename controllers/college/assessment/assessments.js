@@ -264,7 +264,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     // Need to calculate the marks of subjective questions also
 
     // const totalQuestionsCount = topics.reduce((acc, topic) => acc + topic.TotalQuestions, 0);
-    console.log("heer")
+
     let assessment = await Assessments.create({
       ...req.body,
       topics: newTopics,
@@ -297,10 +297,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
     }
     if (college) {
       (assessment.createdBy = id), await credit.save();
-      console.log("kk")
       await college.save();
-      console.log("jjs")
-
     }
     if (company) {
       // find the jobId and push the assessment id in the job
@@ -330,7 +327,7 @@ const createAssessment = catchAsyncErrors(async (req, res, next) => {
       newTopics,
     });
   } catch (error) {
-    console.log(error);
+    //console.log(error);
   }
 });
 
@@ -617,9 +614,7 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    assessmentsCount: assessments.length,
     assessments,
-
   });
 });
 
@@ -950,44 +945,37 @@ const getStudentsForTest = catchAsyncErrors(async (req, res, next) => {
       const skip = parseInt(req.query.skip) || 0; // Default skip is 0
       const batch = req.query.batch;
       const search = req.query.search;
-      const query = {
-        _id: { $nin: assessment?.invitedStudents || [] }, // Exclude invited students
-        approved: true, // Only approved students
+
+      const query = { [role]: id };
+      const populateOptions = {
+        path: "students",
+        select: "FirstName LastName Avatar _id createdAt batch Email",
+        match: { _id: { $nin: assessment?.invitedStudents } },
+        options: {
+          sort: { _id: -1 },
+          skip: skip, // Skip the first 'skip' documents
+          limit: limit + 1, // Fetch one extra document to check for the next page
+        },
       };
 
-      // Add batch filter if provided
       if (batch) {
-        query.batch = batch;
+        populateOptions.match = { ...populateOptions.match, batch: batch };
       }
-
-      // Add search filter if provided
       if (search) {
-        query.$or = [
-          { FirstName: { $regex: search, $options: "i" } },
-          { LastName: { $regex: search, $options: "i" } },
-          { Email: { $regex: search, $options: "i" } },
-        ];
+        populateOptions.match = {
+          ...populateOptions.match,
+          $or: [
+            { FirstName: { $regex: search, $options: "i" } },
+            { LastName: { $regex: search, $options: "i" } },
+            { Email: { $regex: search, $options: "i" } },
+          ],
+        };
       }
 
-      // Specify fields in a consistent projection format
-      const projection = {
-        FirstName: 1,
-        LastName: 1,
-        Avatar: 1,
-        _id: 1,
-        createdAt: 1,
-        batch: 1,
-        Email: 1,
-      };
-
-      // Perform the query
-      const approved = await Student.find(query, projection)
-        .sort({ _id: -1 })
-        .skip(skip) // Skip the first 'skip' documents
-        .limit(limit + 1); // Fetch one extra document to check for the next page
-
-      const students = approved || [];
-
+      const approved = await ApprovedStudents.findOne(query).populate(
+        populateOptions
+      );
+      let students = approved ? approved.students : [];
 
       // //console.log(approved.students)
       // Check if there's a next page
@@ -1198,7 +1186,7 @@ const getResultInExcel = catchAsyncErrors(async (req, res, next) => {
         },
       },
       { $unwind: "$studentResponses" },
-      // { $match: { "studentResponses.completed": true } },
+      { $match: { "studentResponses.completed": true } },
       {
         $lookup: {
           from: "students",

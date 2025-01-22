@@ -1,4 +1,3 @@
-
 // isAuthenticatedUser middleware
 const ErrorHander = require("../utils/errorhandler");
 const catchAsyncErrors = require("./catchAsyncErrors");
@@ -6,13 +5,12 @@ const jwt = require("jsonwebtoken");
 const { Student } = require("../models/student/studentModel");
 const BlacklistToken = require("../models/college/blacklistToken");
 
-const isAuthenticatedUser= () => {
-
+const isAuthenticatedUser = () => {
   return catchAsyncErrors(async (req, res, next) => {
     const token = req.header("auth-token");
 
     // console.log(token, "token");
- 
+
     if (!token) {
       return next(new ErrorHander("Please Login to access this resource", 401));
     }
@@ -48,7 +46,7 @@ const isAuthenticatedUser= () => {
   });
 };
 // Usage
-exports.isAuthenticatedStudent = isAuthenticatedUser(Student);
+exports.isAuthenticatedStudent = isAuthenticatedUser();
 // exports.isAuthenticatedCollege = isAuthenticatedUser(College);
 // exports.isAuthenticatedCompany = isAuthenticatedUser(Company);
 
