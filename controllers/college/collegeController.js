@@ -630,9 +630,9 @@ const getRole = async ({ value, type }) => {
     type === "email"
       ? { Email: value }
       : {
-          resetPasswordToken: value.resetPasswordToken,
-          resetPasswordExpire: { $gt: Date.now() },
-        };
+        resetPasswordToken: value.resetPasswordToken,
+        resetPasswordExpire: { $gt: Date.now() },
+      };
 
   if (await College.findOne(query)) return "college";
   if (await University.findOne(type === "email" ? { email: value } : query))
@@ -673,17 +673,15 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   try {
     await sendEmail({
       email: role === "college" ? entity.Email : entity.email,
-      subject: `${
-        role.charAt(0).toUpperCase() + role.slice(1)
-      } Password Recovery`,
+      subject: `${role.charAt(0).toUpperCase() + role.slice(1)
+        } Password Recovery`,
       message,
     });
 
     res.status(200).json({
       success: true,
-      message: `Email sent to ${
-        role === "college" ? entity.Email : entity.email
-      } successfully`,
+      message: `Email sent to ${role === "college" ? entity.Email : entity.email
+        } successfully`,
     });
   } catch (error) {
     entity.resetPasswordToken = undefined;
@@ -815,21 +813,21 @@ exports.updateProfile = catchAsyncErrors(async (req, res) => {
   const data =
     role === "college"
       ? {
-          CollegeName: newUserData.CollegeName,
-          Phone: newUserData.Phone,
-          Website: newUserData.Website,
-          Address: newUserData.Address,
-          Description: newUserData.Description,
-          avatar: newUserData.avatar,
-        }
+        CollegeName: newUserData.CollegeName,
+        Phone: newUserData.Phone,
+        Website: newUserData.Website,
+        Address: newUserData.Address,
+        Description: newUserData.Description,
+        avatar: newUserData.avatar,
+      }
       : {
-          name: newUserData.name,
-          phone: newUserData.phone,
-          address: newUserData.address,
-          website: newUserData.website,
-          description: newUserData.Description,
-          email: newUserData.email,
-        };
+        name: newUserData.name,
+        phone: newUserData.phone,
+        address: newUserData.address,
+        website: newUserData.website,
+        description: newUserData.Description,
+        email: newUserData.email,
+      };
 
   // Update user profile
   const updatedUser = await model.findByIdAndUpdate(
@@ -1551,35 +1549,51 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     // Pending Students
-    if (filterType === "all-students" || filterType === "pending-students") {
-      const pending = await UploadedStudents.findOne({
-        [entity]: filter[entity],
-      }).populate({
-        path: "students",
-        match: {
-          $and: [
-            batch && batch !== "all" ? { batch: batch } : {},
-            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-          ],
-        },
-      });
+    if (filterType === 'all-students' || filterType === 'pending-students') {
+      // const pending = await UploadedStudents.findOne({ [entity]: filter[entity] })
+      //   .populate({
+      //     path: "students",
+      //     match: {
+      //       $and: [
+      //         batch && batch !== "all" ? { batch: batch } : {},
+      //         createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+      //       ],
+      //     },
+      //   });
 
-      pendingTotal = pending ? pending.students.length : 0;
-      pendingStudents = await UploadedStudents.findOne({
-        [entity]: filter[entity],
-      }).populate({
-        path: "students",
-        match: {
-          $and: [
-            batch && batch !== "all" ? { batch: batch } : {},
-            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-          ],
-        },
-        options: {
-          skip: skip,
-          limit: parseInt(limit),
-        },
+      pendingStudents = await Student.find({
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
+        $and: [
+          batch && batch !== "all" ? { batch: batch } : {},
+          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+
+        ],
+        approved: false
+      }).skip(skip).limit(limit);
+
+      pendingTotal = await Student.countDocuments({
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
+        $and: [
+          batch && batch !== "all" ? { batch: batch } : {},
+          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+
+        ],
+        approved: false
       });
+      // pendingStudents = await UploadedStudents.findOne({ [entity]: filter[entity] })
+      //   .populate({
+      //     path: "students",
+      //     match: {
+      //       $and: [
+      //         batch && batch !== "all" ? { batch: batch } : {},
+      //         createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+      //       ],
+      //     },
+      //     options: {
+      //       skip: skip,
+      //       limit: parseInt(limit),
+      //     },
+      //   });
     }
 
     // Invited Students
@@ -1597,42 +1611,23 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     }
 
     // Approved Students
-    if (filterType === "all-students" || filterType === "approved-students") {
-      const approved = await ApprovedStudents.findOne({
-        [entity]: filter[entity],
-      }).populate({
-        path: "students",
-        match: {
-          $and: [
-            batch && batch !== "all" ? { batch: batch } : {},
-            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-          ],
-        },
-      });
+    if (filterType === 'all-students' || filterType === 'approved-students') {
+      approvedStudents = await Student.find({
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
+        $and: [
+          batch && batch !== "all" ? { batch: batch } : {},
+          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+        ],
+        approved: true
+      }).skip(skip).limit(limit);
 
-      approvedTotal = approved ? approved.students.length : 0;
-      approvedStudents = await ApprovedStudents.findOne({
-        [entity]: filter[entity],
-      }).populate({
-        path: "students",
-        match: {
-          $and: [
-            batch && batch !== "all" ? { batch: batch } : {},
-            createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
-          ],
-        },
-        options: {
-          skip: skip,
-          limit: parseInt(limit),
-        },
-        populate: {
-          path: "studentResponses",
-          select: ["assessmentId", "batch", "createdAt", "Skills"],
-          populate: {
-            path: "assessmentId",
-            select: "name",
-          },
-        },
+      approvedTotal = await Student.countDocuments({
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
+        $and: [
+          batch && batch !== "all" ? { batch: batch } : {},
+          createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
+        ],
+        approved: true
       });
     }
 
