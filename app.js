@@ -32,7 +32,7 @@ cloudinary.config({
 
 // Apply CORS middleware to all routes
 
-const corsOptions = { 
+const corsOptions = {
   origin: (origin, callback) => {
     if (
       CORS_ORIGINS.includes("*") ||
