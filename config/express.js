@@ -2,6 +2,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
+const errorMiddleware = require("../middlewares/error");
 const { CORS_ORIGINS } = require("./config");
 
 module.exports = (app) => {
@@ -36,4 +37,7 @@ module.exports = (app) => {
       createParentPath: true,
     })
   );
+
+  // Error middleware
+app.use(errorMiddleware);
 };

@@ -1,22 +1,30 @@
 // routes/universityRoutes.js
 
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { registerUniversity, loginUniversity } = require('../../controllers/university/universityController');
-const { isAuthenticatedUniversity } = require('../../middlewares/universityAuth');
+const {
+  registerUniversity,
+  loginUniversity,
+  logout,
+} = require("../../controllers/university/universityController");
+const {
+  isAuthenticatedUniversity,
+} = require("../../middlewares/universityAuth");
 
 // Register Route
-router.post('/register', registerUniversity);
+router.post("/register", registerUniversity);
 
 // Login Route
-router.post('/login', loginUniversity);
+router.post("/login", loginUniversity);
+
+router.route("/logout").post(isAuthenticatedUniversity, logout);
 
 // Profile Route
-router.get('/profile', isAuthenticatedUniversity, (req, res) => {
+router.get("/profile", isAuthenticatedUniversity, (req, res) => {
   res.status(200).json({ success: true, user: req.user });
 });
 
-router.get('/', (req, res) => {
+router.get("/", (req, res) => {
   res.send("University API is running");
 });
 

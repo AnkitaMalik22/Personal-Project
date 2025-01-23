@@ -32,7 +32,7 @@ const university = new mongoose.Schema(
     website: {
       type: String,
     },
-    
+
     // Authentication & Access
     password: {
       type: String,
@@ -51,7 +51,7 @@ const university = new mongoose.Schema(
         type: String,
       },
     },
-    
+
     // Tests and Colleges
     tests: [
       {
@@ -73,7 +73,7 @@ const university = new mongoose.Schema(
     },
     verificationStatus: {
       type: String,
-      enum: ["pending", "approved" ,"rejected"],
+      enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
     statusChangedAt: {
@@ -137,13 +137,13 @@ university.methods.comparePassword = async function (password) {
     // console.log('Password:', password===this.password);
     return await bcrypt.compare(password, this.password);
   } catch (error) {
-    console.error('Password comparison error:', error);
+    console.error("Password comparison error:", error);
     return false;
   }
 };
 
 university.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
@@ -163,7 +163,6 @@ university.methods.getResetPasswordToken = function () {
 
   return resetToken;
 };
-
 
 const University = mongoose.model("University", university);
 

@@ -1,3 +1,8 @@
+const cloudinary = require("cloudinary");
+const socketIo = require("socket.io");
+const cookieParser = require("cookie-parser");
+const fileUpload = require("express-fileupload");
+const cors = require("cors");
 const express = require("express");
 const {
   PORT,
@@ -8,9 +13,6 @@ const {
 } = require("./config/config");
 const connectToMongoDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error");
-const cloudinary = require("cloudinary");
-const socketIo = require("socket.io");
-const cors = require("cors");
 
 // Initialize Express app
 const app = express();
@@ -26,10 +28,37 @@ cloudinary.config({
 });
 
 // Setup Express middleware
-require("./config/express")(app);
+// require("./config/express")(app);
 
-// Error middleware
-app.use(errorMiddleware);
+// Apply CORS middleware to all routes
+
+const corsOptions = { 
+  origin: (origin, callback) => {
+    if (
+      CORS_ORIGINS.includes("*") ||
+      CORS_ORIGINS.includes(origin) ||
+      !origin
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // Include credentials if needed
+};
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use(
+  fileUpload({
+    limits: { fileSize: 50 * 1024 * 1024 },
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+    createParentPath: true,
+  })
+);
 
 // Start server
 const server = app.listen(PORT, () => {
@@ -46,6 +75,9 @@ const io = new socketIo.Server(server, {
 
 // Setup routes
 require("./config/routes")(app);
+
+// Error middleware
+app.use(errorMiddleware);
 
 io.on("connection", (socket) => {
   console.log("A client connected");

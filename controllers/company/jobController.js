@@ -244,7 +244,7 @@ exports.getAllJobsCompany = catchAsyncErrors(async (req, res, next) => {
   const jobs = await Job.find(query).limit(parseInt(limit)).populate({
     path: "company",
     select: "avatar.url basic.companyName",
-  }).sort({createdAt:-1});
+  })
 
   const nextCursor = jobs.length > 0 ? jobs[jobs.length - 1]._id : null;
   // console.log(jobs);

@@ -6,21 +6,7 @@ module.exports = {
   CLOUDINARY_NAME: process.env.CLOUDINARY_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
-  CORS_ORIGINS: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://app.skillaccess.in",
-    "https://student.skillaccess.in",
-    "https://admin.skillaccess.in",
-    "https://staging.skillaccess.in",
-    "https://stagingstudent.skillaccess.in",
-    "https://stagingadmin.skillaccess.in",
-    "https://develop.skillaccess.in",
-    "https://developstudent.skillaccess.in",
-    "https://developadmin.skillaccess.in",
-    "https://skillaccess-college-develop.vercel.app",
-    "*",
-
-    // Add other allowed origins here
-  ],
+  CORS_ORIGINS: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",")
+    : ["http://localhost:3000"],
 };

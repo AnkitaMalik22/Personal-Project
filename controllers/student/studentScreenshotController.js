@@ -63,12 +63,12 @@ const saveStudentScreenshot = catchAsyncErrors(async (req, res, next) => {
           },
         },
       },
-      { upsert: true }
+      { upsert: true}
     );
 
     res.status(200).json({
       success: true,
-      screenshots: studentScreenshot.screenshots,
+     screenshots: studentScreenshot.screenshots,
     });
   } catch (err) {
     return next(new ErrorHandler(err.message, 400));
@@ -85,11 +85,11 @@ const getScrenshotsFromStudentResponse = catchAsyncErrors(async (req, res, next)
     }
     const limit = parseInt(req.query.limit) || 100; // Default limit to 10 if not provided
     const skip = parseInt(req.query.skip) || 0; // Default skip to 0 if not provided
-
+    
     const screenshots = await StudentScreenshots.find({ studentResponseId: req.params.id })
       .skip(skip)
       .limit(limit);
-
+    
 
     res.status(200).json({
       success: true,

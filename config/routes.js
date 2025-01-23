@@ -13,6 +13,7 @@ const studentTestRoutes = require("../routes/student/studentTestRoutes.js");
 const studentInboxRoutes = require("../routes/student/studentInboxRoutes.js");
 const studentGraphRoutes = require("../routes/student/studentGraphRoutes.js");
 const companyTestRoutes = require("../routes/company/companyTestRoutes.js");
+const authRoutes = require("../routes/auth/index.js");
 const { isAuthenticatedCompany } = require("../middlewares/companyAuth.js");
 
 module.exports = (app) => {
@@ -33,13 +34,18 @@ module.exports = (app) => {
   app.use("/api/student/graph", studentGraphRoutes);
   app.use("/api/company", companyRoutes);
   app.use("/api/company/test", companyTestRoutes);
-  app.use("/api/company/campus-drive", require("../routes/company/campusDriveRoutes.js"));``
+  app.use(
+    "/api/company/campus-drive",
+    require("../routes/company/campusDriveRoutes.js")
+  );
+  ``;
   app.use("/api/admin", adminTestRoutes);
   app.use("/api/admin/category", require("../routes/admin/categoryRoutes.js"));
   app.use("/api/admin/approval", require("../routes/admin/approvalRoutes.js"));
   app.use("/api/qb", qbRoutes);
   app.use("/api/payment", paymentRoutes);
   app.use("/api/compiler", require("../routes/compiler/compilerRoutes"));
+  app.use("/api/auth", authRoutes);
 
   app.get("/", (req, res) => {
     res.send("API is running");
