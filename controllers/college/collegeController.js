@@ -1681,11 +1681,11 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      approvedStudents: approvedStudents ? approvedStudents.students : [],
+      approvedStudents: approvedStudents ? approvedStudents : [],
       uploadedStudents: invitedStudents || [],
       pendingStudents:
-        pendingStudents && pendingStudents.students
-          ? pendingStudents.students
+        pendingStudents
+          ? pendingStudents
           : [],
       ...paginationData,
     });
