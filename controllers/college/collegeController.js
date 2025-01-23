@@ -1534,7 +1534,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       //   });
 
       pendingStudents = await Student.find({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
         $and: [
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
@@ -1544,7 +1544,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       }).skip(skip).limit(limit);
 
       pendingTotal = await Student.countDocuments({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
         $and: [
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
@@ -1583,7 +1583,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
     // Approved Students
     if (filterType === 'all-students' || filterType === 'approved-students') {
       approvedStudents = await Student.find({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
         $and: [
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
@@ -1592,7 +1592,7 @@ exports.getStudents = catchAsyncErrors(async (req, res, next) => {
       }).skip(skip).limit(limit);
 
       approvedTotal = await Student.countDocuments({
-        [entity !== "college" ? "UniversityId" : "CollegeId"]: req.user.id,
+        [entity !== "college" ? "universityId" : "CollegeId"]: req.user.id,
         $and: [
           batch && batch !== "all" ? { batch: batch } : {},
           createdAt ? { createdAt: { $gte: new Date(createdAt) } } : {},
