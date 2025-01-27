@@ -396,8 +396,8 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
           type === "mcq"
             ? "questions"
             : type === "findAnswer"
-            ? "findAnswers"
-            : type
+              ? "findAnswers"
+              : type
         ].length < 2
       ) {
         isLast = true;
@@ -572,8 +572,8 @@ exports.endAssessment = catchAsyncErrors(async (req, res, next) => {
     studentResponse.completed = true;
     studentResponse.completedAt = Date.now();
     studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-    console.log("timeTaken1",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
-    
+    console.log("timeTaken1", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
+
 
     await studentResponse.save();
 
@@ -674,22 +674,9 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     // ========== IF NO NEXT TOPIC FOUND END THE TEST ==========
     const topic = assessment.assessment?.topics[topicIndex];
     if (!topic) {
-      // assessment.currentTopicIndex = 0;
-      // assessment.currentQuestionIndex = 0;
-      // assessment.currentTopicMarks = 0;
-      // assessment.active = false;
-      // assessment.totalStudentAttempted = 0;
-      // assessment.totalQuestionsAttempted = 0;
-      // assessment.correctAnswers = 0;
-      // assessment.marks = 0;
-      // assessment.percentage = 0;
-      // assessment.L1Correct = 0;
-      // assessment.L2Correct = 0;
-      // assessment.L3Correct = 0;
-      await student.save();
-      // console.log("All topics completed 1");
 
-      // return next(new ErrorHandler("Topic not found", 404));
+      await student.save();
+
       return res.json({
         success: true,
         message: "Test Completed",
@@ -703,13 +690,13 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Question not found", 404));
     }
 
-    console.log(
-      "Question",
-      question.AnswerIndex,
-      response,
-      question.AnswerIndex === parseInt(response),
-      question.Title
-    );
+    // console.log(
+    //   "Question",
+    //   question.AnswerIndex,
+    //   response,
+    //   question.AnswerIndex === parseInt(response),
+    //   question.Title
+    // );
     //----------------------------------------------------------handle marks -------------------------------------------------------------------------------//
     let isCorrectAnswer = false;
     if (parseInt(question.AnswerIndex) === parseInt(response)) {
@@ -776,7 +763,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     //     new: true,
     //   }
     // );
-    let totalCompleted = assessment.totalQuestionsAttempted;
+    // let totalCompleted = assessment.totalQuestionsAttempted;
     let nextQuestion = topic.questions[questionIndex + 1];
     assessment.totalQuestionsAttempted += 1;
     assessment.totalStudentAttempted += 1;
@@ -853,7 +840,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           assessment.totalStudentAttempted;
 
         studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-        console.log("timeTaken2",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+        console.log("timeTaken2", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
         studentResponse.correctAnswers = assessment.correctAnswers;
         studentResponse.percentage =
           (assessment.marks / assessment.assessment.totalMarks) * 100;
@@ -975,7 +962,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
           studentResponse.totalQuestionsAttempted =
             assessment.totalStudentAttempted;
           studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-          console.log("timeTaken3",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+          console.log("timeTaken3", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
           studentResponse.correctAnswers = assessment.correctAnswers;
 
           studentResponse.percentage =
@@ -1065,7 +1052,7 @@ exports.sendResponse = catchAsyncErrors(async (req, res, next) => {
     const per = (assessment.marks / assessment.assessment.totalMarks) * 100;
     studentResponse.percentage = per || 0;
     studentResponse.timeTaken = (Date.now() - studentResponse.createdAt);
-    console.log("timeTaken4",  studentResponse.timeTaken , (Date.now() - studentResponse.createdAt))
+    console.log("timeTaken4", studentResponse.timeTaken, (Date.now() - studentResponse.createdAt))
 
     // console.log(
     //   studentResponse.topics[topicIndex].questions[questionIndex]

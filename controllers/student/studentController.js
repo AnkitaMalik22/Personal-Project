@@ -469,10 +469,12 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
 
     let email;
     let batch = "";
+    let approved = false;
     valid = collegeInv.students.some((student) => {
       if (student.link === inviteLink) {
         email = student.Email;
         batch = student.batch;
+        approved = student.approved;
       }
       return student.link === inviteLink;
     });
@@ -488,6 +490,7 @@ exports.createStudent = catchAsyncErrors(async (req, res, next) => {
       Email: email,
       registrationLink: inviteLink,
       PhoneNumber,
+      approved,
       batch: batch
     });
 

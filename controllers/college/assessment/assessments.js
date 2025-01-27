@@ -1607,7 +1607,155 @@ const generateStudentReportPdf = async (req, res) => {
 
     const overallAveragePercentage = studentResponseRes.topics.reduce((sum, topic) => sum + (topic.topicMarks > 0 ? (topic.totalMarks / topic.topicMarks) * 100 : 0), 0) / studentResponseRes.topics.length;
 
-    const reportHtml = ``;
+    const reportHtml = `<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Performance Report</title>
+        <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+            .generic-content {
+              padding : 10px;
+            }
+            .report-container {
+                background-color: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+            }
+            .header {
+                background-color: #3498db;
+                color: #ffffff;
+                padding: 20px;
+                text-align: center;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 28px;
+            }
+            .header h2 {
+                margin: 10px 0 0;
+                font-size: 20px;
+                font-weight: normal;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            th, td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            thead {
+                background-color: #f2f2f2;
+            }
+            th {
+                font-weight: bold;
+                text-transform: uppercase;
+                font-size: 14px;
+                color: #555;
+            }
+            tr:nth-child(even) {
+                background-color: #f8f8f8;
+            }
+            tr:hover {
+                background-color: #e8f4fd;
+            }
+            .up {
+                color: green;
+            }
+            .down {
+                color: red;
+            }
+            .footer {
+                margin-top: 20px;
+                padding: 10px;
+                text-align: center;
+                background-color: #f2f2f2;
+                border-top: 1px solid #e0e0e0;
+            }
+            .footer p {
+                margin: 5px 0;
+            }
+            .explanation {
+                margin-top: 20px;
+                padding: 20px;
+                background-color: #eaf3fc;
+                border-left: 5px solid #3498db;
+            }
+            .status {
+                margin-top: 20px;
+                padding: 15px;
+                text-align: center;
+                font-size: 18px;
+                font-weight: bold;
+                background-color: ${studentResponseRes.status === 'Pass' ? '#d4edda' : '#f8d7da'};
+                color: ${studentResponseRes.status === 'Pass' ? '#155724' : '#721c24'};
+                border: 1px solid ${studentResponseRes.status === 'Pass' ? '#c3e6cb' : '#f5c6cb'};
+            }
+        </style>
+    </head>
+    <body>
+        <div class="report-container">
+            <div class="header">
+                <h1>Performance Report</h1>
+                <h2>${studentName}</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Topic</th>
+                        <th>Score</th>
+                        <th>Maximum Marks</th>
+                        <th>Your Test %</th>
+                        <th>Remark</th>
+                        <th>Avg Test%</th>
+                        <th>Average Marks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${topicsHtml}
+                </tbody>
+            </table>
+            <div class="status">
+                Status: ${studentResponseRes.status}
+            </div>
+            <div class="footer">
+                <p><strong>Overall Average Percentage:</strong> ${overallAveragePercentage.toFixed(2)}%</p>
+                <p><strong>Rank:</strong> ${studentResponseRes.rank}</p>
+                <p>${studentResponseRes.comment}</p>
+                <p><em>Evaluation performed by SkillAccess.</em></p>
+            </div>
+            <div class="explanation">
+                <h3>Report Explanation</h3>
+                <ul>
+                    <li><strong>Topic:</strong> The subject or area of the test.</li>
+                    <li><strong>Score:</strong> The marks obtained by the student in this topic.</li>
+                    <li><strong>Maximum Marks:</strong> The highest possible marks for this topic.</li>
+                    <li><strong>Your Test %:</strong> The percentage score achieved in the topic.</li>
+                    <li><strong>Remark:</strong> A brief comment on performance in the topic.</li>
+                    <li><strong>Avg Test%:</strong> The average test percentage for all students.</li>
+                    <li><strong>Average Marks:</strong> The average marks obtained by all students in this topic.</li>
+                </ul>
+            </div>
+            <div class="generic-content">
+                <h3>About This Report Card</h3>
+                <p>This report card reflects the performance of ${studentName} in the conducted tests. It highlights strengths and areas for improvement, providing a comparative analysis with peers.</p>
+                <p>Keep working hard and striving for excellence. Remember, every effort counts!</p>
+            </div>
+        </div>
+    </body>
+    </html>`;
 
     // Launch Puppeteer
     browser = await puppeteer.launch({
@@ -1683,11 +1831,11 @@ const generateStudentReportPdf = async (req, res) => {
 
 const generateReport = catchAsyncErrors(async (req, res, next) => {
   const test = await Assessments.findById(req.params.id).populate({
-    path: "studentResponses",
-    select: "topics status studentId timeTaken percentage",
+    path: 'studentResponses',
+    select: 'topics status studentId timeTaken percentage',
     populate: {
-      path: "studentId",
-      select: "FirstName LastName email",
+      path: 'studentId',
+      select: 'FirstName LastName email',
     },
   });
 
@@ -1711,59 +1859,55 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
       avgTopicMarks,
       maximumMarks,
       averageTopicPercentage,
-      studentScores
-    }
-
+      studentScores,
+      totalMarks
+    };
   });
 
-  // Update student responses
-  // await Promise.all(
-  //   test.studentResponses.map(async (response) => {
-  //     // Initialize topicUpdates to accumulate updates
-  //     let topicUpdates = { $set: {} };
-
-  //     topicPercentages.forEach((topic, topicIndex) => {
-  //       const studentScore = response.topics[topicIndex]?.totalMarks || 0;
-  //       const comment = generatePerformanceComment(
-  //         studentScore,
-  //         topic.maximumMarks,
-  //         [...topic.studentScores].sort((a, b) => a - b)
-  //       );
-
-  //       const percentage =
-  //         topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
-
-  //       // Accumulate updates for the current topic
-  //       topicUpdates.$set[`topics.${topicIndex}.avgerageMarks`] = parseInt(topic.avgTopicMarks);
-  //       topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
-  //       topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
-  //       topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
-  //     });
-
-  //     // Update the student response with all accumulated updates
-  //     await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
-  //   })
-  // );
-  // Calculate overall percentages and add them to the responses
-  const responsesWithPercentages = await Promise.all(
+  const processedResponses = await Promise.all(
     test.studentResponses.map(async (response) => {
-      let totalStudentMarks = 0;
-      let totalMaximumMarks = 0;
-      let topics = [];
-      topicPercentages.forEach((topic, topicIndex) => {
-        const studentScore = response.topics[topicIndex]?.totalMarks || 0;
-        totalStudentMarks += studentScore;
-        totalMaximumMarks += topic.maximumMarks;
-        topics.push(topic);
+      // Calculate student's performance for each topic with proper comment generation
+      const studentTopics = response.topics.map((studentTopic, topicIndex) => {
+        const topicStats = topicPercentages[topicIndex];
+        const studentScore = studentTopic?.totalMarks || 0;
+        const maximumMarks = topicStats.maximumMarks;
+
+        const percentage = maximumMarks > 0
+          ? (studentScore / maximumMarks) * 100
+          : 0;
+
+        const topicComment = generatePerformanceComment(
+          studentScore,
+          maximumMarks,
+          topicStats.studentScores
+        );
+
+        // Return topic with all necessary fields for database update
+        return {
+          ...studentTopic._doc, // Spread the original document to keep existing fields
+          totalMarks: studentScore,
+          percentage: Math.round(percentage),
+          maximumMarks,
+          averageMarks: Math.round(topicStats.avgTopicMarks),
+          averagePercentage: Math.round(topicStats.averageTopicPercentage),
+          comment: topicComment // Ensure comment is included in the topic object
+        };
       });
 
-
-
-      const overallPercentage =
-        totalMaximumMarks > 0 ? (totalStudentMarks / totalMaximumMarks) * 100 : 0;
+      // Calculate overall performance
+      const totalStudentMarks = studentTopics.reduce(
+        (sum, topic) => sum + (topic.totalMarks || 0),
+        0
+      );
+      const totalMaximumMarks = topicPercentages.reduce(
+        (sum, topic) => sum + topic.maximumMarks,
+        0
+      );
+      const overallPercentage = totalMaximumMarks > 0
+        ? (totalStudentMarks / totalMaximumMarks) * 100
+        : 0;
 
       return {
-        topics,
         _id: response._id,
         studentId: response.studentId,
         name: `${response.studentId.FirstName} ${response.studentId.LastName}`,
@@ -1775,39 +1919,12 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
     })
   );
 
-  console.log(topicPercentages)
+  // Sort responses by overall percentage
+  processedResponses.sort((a, b) => b.overallPercentage - a.overallPercentage);
 
-  // Sort students by overall percentage to calculate rank
-  responsesWithPercentages.sort((a, b) => b.overallPercentage - a.overallPercentage);
-
-  // Update ranks and other data in the database
+  // Update all student responses with ranks and comments
   await Promise.all(
-    responsesWithPercentages.map(async (response, index) => {
-      let topicUpdates = { $set: {} };
-
-
-      topicPercentages.forEach((topic, topicIndex) => {
-        const studentScore = response.topics[topicIndex]?.totalMarks || 0;
-        const comment = generatePerformanceComment(
-          studentScore,
-          topic.maximumMarks,
-          [...topic.studentScores].sort((a, b) => a - b)
-        );
-
-        const percentage =
-          topic.maximumMarks > 0 ? (studentScore / topic.maximumMarks) * 100 : 0;
-
-        // Accumulate updates for the current topic averageMarks
-        topicUpdates.$set[`topics.${topicIndex}.averageMarks`] = parseInt(topic.avgTopicMarks);
-        topicUpdates.$set[`topics.${topicIndex}.averagePercengate`] = parseInt(topic.averageTopicPercentage);
-        topicUpdates.$set[`topics.${topicIndex}.comment`] = comment;
-        topicUpdates.$set[`topics.${topicIndex}.percentage`] = percentage;
-      });
-
-
-
-
-      // Assign rank based on position in the sorted array
+    processedResponses.map(async (response, index) => {
       const rank = index + 1;
       const overallComment = generatePerformanceComment(
         response.totalStudentMarks,
@@ -1815,24 +1932,61 @@ const generateReport = catchAsyncErrors(async (req, res, next) => {
         processedResponses.map(r => r.totalStudentMarks)
       );
 
-      // Prepare updates
-      topicUpdates.$set.percentage = response.overallPercentage;
-      topicUpdates.$set.comment = overallComment;
-      topicUpdates.$set.rank = rank;
-      // console.log(topicUpdates);
-      // Update the student response
-      let student = await studentResponse.findByIdAndUpdate(response._id, topicUpdates);
-      console.log(student.topics[0].averageMarks);
+      // Update student response with complete information including topic comments
+      await studentResponse.findByIdAndUpdate(
+        response._id,
+        {
+          $set: {
+            topics: response.topics, // Topics array now includes comments
+            percentage: response.overallPercentage,
+            comment: overallComment,
+            rank,
+            totalMarks: response.totalStudentMarks,
+            maximumMarks: response.totalMaximumMarks
+          }
+        },
+        { new: true }
+      );
+
+      return {
+        ...response,
+        rank,
+        comment: overallComment
+      };
     })
   );
 
 
-
+  // Mark report as generated
   test.isReportGenerated = true;
   await test.save();
-  return res.status(200).json({ success: true, topStudents: responsesWithPercentages.splice(0, 3) });
 
+  // Prepare report data
+  const reportData = {
+    studentName: req.user.FirstName,
+    organizationName: req.user.CollegeName,
+    testName: test.name,
+    submissionDate: new Date().toLocaleDateString(),
+    totalScore: processedResponses[0].totalStudentMarks,
+    maxScore: processedResponses[0].totalMaximumMarks,
+    duration: test.duration,
+    sections: topicPercentages.map(topic => ({
+      name: topic.topicName,
+      score: topic.avgTopicMarks.toFixed(2),
+      maxScore: topic.maximumMarks,
+      percent: topic.averageTopicPercentage.toFixed(2),
+    }))
+  };
+
+  // Generate college report
+  generateReportForCollege(req.params.id, req.user.Email, reportData);
+
+  return res.status(200).json({
+    success: true,
+    topStudents: processedResponses.slice(0, 3)
+  });
 });
+
 
 
 
@@ -1896,15 +2050,22 @@ const generateReportForCollege = async (id, Email, reportData) => {
       },
       {
         path: 'rejectedStudents',
-        select: 'status studentId timeTaken percentage topics',
+        select: 'status studentId timeTaken percentage topics totalMarks',
+        populate: {
+          path: 'studentId',
+          select: "FirstName LastName"  // Populate the studentId within studentResponses
+        },
       },
       {
         path: 'studentResponses',
-        match: { status: "pending" }, // Filter to include only pending responses
-        select: 'status studentId timeTaken percentage topics',
+        match: { status: "pending" },
+        select: 'status studentId timeTaken percentage topics totalMarks',
+        populate: {
+          path: 'studentId',
+          select: "FirstName LastName"  // Populate the studentId within studentResponses
+        },
       },
-    ]);
-
+    ])
   let selectedStudents = test.selectedStudents;
   let pendingStudents = test.studentResponses;
   let rejectedStudents = test.rejectedStudents;
@@ -1915,19 +2076,12 @@ const generateReportForCollege = async (id, Email, reportData) => {
   rejectedStudents.sort((a, b) => b.percentage - a.percentage);
 
   const topStudents = selectedStudents.slice(0, 3);
-  const topAveragePercentage =
-    selectedStudents.reduce((sum, student) => sum + student.percentage, 0) /
-    selectedStudents.length || 0;
+  const topAveragePercentage = selectedStudents.reduce((sum, student) => sum + student.percentage, 0) / selectedStudents.length || 0;
 
   // Calculate statistics for the donut chart
-  const totalEvaluated =
-    selectedStudents.length + rejectedStudents.length + pendingStudents.length;
-  const industryReady = selectedStudents.filter(
-    (s) => s.percentage >= 25
-  ).length;
-  const needsPractice = selectedStudents.filter(
-    (s) => s.percentage >= 10 && s.percentage < 25
-  ).length;
+  const totalEvaluated = selectedStudents.length + rejectedStudents.length + pendingStudents.length;
+  const industryReady = selectedStudents.filter(s => s.percentage >= 25).length;
+  const needsPractice = selectedStudents.filter(s => s.percentage >= 10 && s.percentage < 25).length;
   const needsTraining = totalEvaluated - industryReady - needsPractice;
 
   // Generate the report HTML with the provided template
@@ -2123,11 +2277,9 @@ const generateReportForCollege = async (id, Email, reportData) => {
         <!-- Header Section -->
         <div class="header">
             <h1>${test.name}</h1>
-            <h2>${test.description || "Assessment Report"}</h2>
-            <h3>${test.categoryName || "Assessment Category"}</h3>
-            <p>Test executed on ${new Date(
-    test.startDate
-  ).toLocaleDateString()}</p>
+            <h2>${test.description || 'Assessment Report'}</h2>
+            <h3>${test.categoryName || 'Assessment Category'}</h3>
+            <p>Test executed on ${new Date(test.startDate).toLocaleDateString()}</p>
         </div>
 
        
@@ -2173,9 +2325,7 @@ const generateReportForCollege = async (id, Email, reportData) => {
             <div class="column">
                 <h3>Topics Covered</h3>
                 <ul>
-                    ${test.topics
-      .map((topic) => `<li>${topic.Heading}</li>`)
-      .join("")}
+                    ${test.topics.map(topic => `<li>${topic.Heading}</li>`).join('')}
                 </ul>
             </div>
         </div>
@@ -2257,23 +2407,23 @@ const generateReportForCollege = async (id, Email, reportData) => {
   // Launch Puppeteer and generate PDF
   const browser = await puppeteer.launch({
     headless: true,
-    args: ["--no-sandbox"],
+    args: ['--no-sandbox'],
   });
   const page = await browser.newPage();
 
-  await page.setContent(reportHtml, { waitUntil: "load" });
-  await page.waitForSelector("#donutChart"); // Ensure the canvas is loaded
+  await page.setContent(reportHtml, { waitUntil: 'load' });
+  await page.waitForSelector('#donutChart');  // Ensure the canvas is loaded
   await page.evaluate(() => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(resolve, 2000); // Adjust to match your animation duration
     });
   });
   await page.setViewport({ width: 1920, height: 1080 });
 
   const pdfBuffer = await page.pdf({
-    format: "A4",
+    format: 'A4',
     printBackground: true,
-    margin: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
+    margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
   });
 
   await browser.close();
@@ -2283,15 +2433,183 @@ const generateReportForCollege = async (id, Email, reportData) => {
   // fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true });
   // fs.writeFileSync(pdfFilePath, pdfBuffer);
 
-  return res.status(200).json({
-    success: true,
 
-    message: 'PDF generated and saved successfully.',
-    filePath: pdfFilePath,
-    selectedStudents,
-    pendingStudents: pendingStudents,
-    rejectedStudents,
-  })
+  const uploadResponse = await new Promise((resolve, reject) => {
+    const cloudinaryStream = cloudinary.v2.uploader.upload_stream(
+      {
+        folder: 'image',
+        access_control: [{ access_type: 'anonymous', }],
+        resource_type: 'raw', // Correct resource type for PDF files
+        public_id: `report_${Email}`,
+        format: "pdf" // Optional: Unique public ID for the report
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    cloudinaryStream.end(pdfBuffer);
+  });
+
+  let mail = await sendEmail({
+    email: Email,
+    subject: "Invitation to join Test",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Assessment Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            border-bottom: 2px solid #043345;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header .logo {
+            max-width: 150px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            color: #043345;
+        }
+
+        .content {
+            font-size: 14px;
+        }
+
+        .content p {
+            margin: 10px 0;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #0D9AAC;
+            text-decoration: none;
+        }
+
+        .note {
+            font-size: 12px;
+            color: #0AB8C8;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img class="logo" src="https://res.cloudinary.com/dic0ukpeu/image/upload/v1734001129/logoFinal_tldpct.png" alt="Skill Access Logo">
+        </div>
+
+        <div class="content">
+            <p>Dear <strong>${organizationName || 'N/A'}</strong>,</p>
+            <p>We are pleased to share the performance report for the assessment <strong>"${testName || 'N/A'}"</strong>, conducted on <strong>${submissionDate || 'N/A'}</strong>.</p>
+            <p>The assessment consisted of <strong>${sections?.length || 0}</strong> sections and was attempted by <strong>${totalEvaluated}</strong> students from your institution.</p>
+            <p>Below is the overall sectional performance report:</p>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Section</th>
+                    <th>Average Score</th>
+                    <th>Average Percent</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${sections?.map(section => `
+                <tr>
+                    <td>${section.name || 'N/A'}</td>
+                    <td>${section.score || '0'} out of ${section.maxScore || '0'}</td>
+                    <td>${section.percent || '0'}%</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+
+        <div class="content">
+            <p>Additionally, the top performers from the assessment are as follows:</p>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Student Name</th>
+                    <th>Score</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${topStudents?.map((student, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${student.studentId.FirstName + " " + student.studentId.LastName || 'N/A'}</td>
+                    <td>${student.totalMarks || '0'} out of ${test.totalMarks || '0'}</td>
+                    <td>${student.percentage || '0'}%</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+
+        <div class="content">
+            <p><a href="${uploadResponse?.secure_url || '#'}" target="_blank">Click here</a> to download the detailed performance report.</p>
+        </div>
+
+        <div class="footer">
+            <p>Best Regards,</p>
+            <p>Skillaccess Team</p>
+            <p class="note">This is a system-generated report. For any queries, please contact us.</p>
+        </div>
+    </div>
+</body>
+</html>`
+  });
+
+  console.log("report sent")
 };
 
 const now = new Date();
