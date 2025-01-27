@@ -212,7 +212,7 @@ exports.deleteCompany = catchAsyncErrors(async (req, res, next) => {
 // ==================================================== GET Company PROFILE ===========================================================
 // Get Company Details
 exports.getCompanyDetails = catchAsyncErrors(async (req, res, next) => {
-  const company = await Company.findById(req.user.id);
+  const company = await Company.findById(req.user.id).populate('jobs');
 
   if (!company) {
     return next(new ErrorHandler("Company not found", 404));
@@ -228,7 +228,7 @@ exports.getCompanyDetails = catchAsyncErrors(async (req, res, next) => {
 
 exports.getCompany = catchAsyncErrors(async (req, res, next) => {
   console.log(req.params.companyId , "company id")
-  const company = await Company.findById(req.params.companyId)
+  const company = await Company.findById(req.params.companyId).populate('jobs')
 
   if (!company) {
     return next(new ErrorHandler("Company not found", 404));
