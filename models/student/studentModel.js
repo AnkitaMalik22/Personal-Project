@@ -129,13 +129,13 @@ const studentSchema = new mongoose.Schema({
     type: String,
     // required: [true, "Please Enter Your First Name"],
     maxLength: [30, "Name cannot exceed 30 characters"],
-    minLength: [2, "Name should have more than 2 characters"],
+    // minLength: [2, "Name should have more than 2 characters"],
   },
   LastName: {
     type: String,
     // required: [true, "Please Enter Your Last Name"],
     maxLength: [30, "Name cannot exceed 30 characters"],
-    minLength: [2, "Name should have more than 2 characters"],
+    // minLength: [2, "Name should have more than 2 characters"],
   },
   Password: {
     type: String,

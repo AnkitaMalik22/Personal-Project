@@ -202,7 +202,7 @@ exports.deleteSections = catchAsyncErrors(async (req, res, next) => {
 
 exports.createTopicCollege = async (req, res) => {
   try {
-    const { Heading, Description, TotalQuestions, Time } = req.body;
+    const { Heading, Description, category } = req.body;
     const source = req.user.role;
     const userId = req.user.id;
 
@@ -219,8 +219,8 @@ exports.createTopicCollege = async (req, res) => {
     }
 
     // Validate input fields
-    if (!Heading || !Description) {
-      return res.status(400).json({ error: "All fields are required" });
+    if (!Heading || !Description || !category) {
+      return res.status(400).json({ message: "All fields are required" });
     }
     let topics;
 
