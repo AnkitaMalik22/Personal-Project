@@ -586,10 +586,10 @@ const inviteStudentsToTest = catchAsyncErrors(async (req, res, next) => {
 const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
   const { id, role } = req.user;
   let assessments = [];
-  //console.log(role)
-  if (role === "company") {
+  // console.log(req.query , role , "query");
+  if (role === 'company' && req?.query?.type !== 'all') {
     let alreadyUsed =
-      req.query.withJob === "true" || req.query.withCampusDrive === "true"
+      req.query.withJob === 'true' || req.query.withCampusDrive === 'true'
         ? true
         : false;
 
@@ -599,17 +599,25 @@ const getAllAssessments = catchAsyncErrors(async (req, res, next) => {
       campusDrive: { $exists: alreadyUsed },
     })
       .sort({ createdAt: -1 })
-      .populate("invitedStudents");
+      .populate('invitedStudents');
+    // console.log("company");
     //console.log(assessments)
-  } else if (role === "college") {
+  } else if (role === 'company' && req?.query?.type == 'all') {
+    assessments = await Assessments.find({
+      company: id,
+    })
+      .sort({ createdAt: -1 })
+      .populate('invitedStudents');
+    // console.log("all company");
+  } else if (role === 'college') {
     assessments = await Assessments.find({ createdBy: id })
       .sort({ createdAt: -1 })
-      .populate("invitedStudents");
-    console.log(assessments);
+      .populate('invitedStudents');
+    // console.log(assessments);
   } else {
     assessments = await Assessments.find({ university: id })
       .sort({ createdAt: -1 })
-      .populate("invitedStudents");
+      .populate('invitedStudents');
   }
 
   res.status(200).json({
