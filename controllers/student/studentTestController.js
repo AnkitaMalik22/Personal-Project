@@ -371,8 +371,10 @@ exports.startAssessment = catchAsyncErrors(async (req, res, next) => {
         isLast = true;
       }
       // console.log(firstQuestion);
-      console.log(isLast, "is last llllllllllllllllllllllllllllll");
       res.json({
+        data: {
+          conf: assessment.assessment.config
+        },
         isLast: isLast,
         success: true,
         message: "Assessment started",
